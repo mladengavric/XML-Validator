@@ -1,0 +1,12 @@
+# Podrazumijevano: git normalizuje završetke linija za tekstualne fajlove.
+* text=auto
+
+# XML i XSD se čuvaju bajt po bajt (bez konverzije CRLF/LF), jer testovi zavise
+# od tačnih bajtova (završeci linija, BOM, hash šeme).
+*.xml -text
+*.xsd -text
+
+# Binarni fajlovi
+*.zip binary
+*.ico binary
+*.png binary

@@ -1,0 +1,38 @@
+# --- .NET build ---
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+[Pp]ublish/
+artifacts/
+TestResults/
+*.binlog
+*.nupkg
+*.snupkg
+
+# --- IDE / editori ---
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.userprefs
+*.DotSettings.user
+
+# --- OS ---
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# --- Python (legacy/clean.py, tests/tools) ---
+__pycache__/
+*.pyc
+
+# --- Stvarni podaci: XML fakture ---
+# XML fajlovi su dozvoljeni ISKLJUČIVO u tests/TestData/ (sintetički podaci i
+# odobreni anonimizovani primjeri u tests/TestData/samples/). Svi ostali .xml
+# fajlovi (npr. stvarne fakture u korijenu ili rezultati čišćenja *_ociscen.xml)
+# se nikad ne commituju.
+*.xml
+*.XML
+!tests/TestData/**/*.xml
