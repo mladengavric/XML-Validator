@@ -6,6 +6,9 @@ Desktop program za rad sa IZIS XML fakturama zdravstva (šema `fakture-zdravstva
 Program objedinjuje dva ranija alata: stari WinForms „XML validator” i Python skriptu `clean.py` za
 čišćenje faktura po pravilu Službe hitne medicinske pomoći (SHMP).
 
+Uputstvo za korišćenje sa slikama za svaki korak: [`docs/uputstvo/Uputstvo-XML-Validator.pdf`](docs/uputstvo/Uputstvo-XML-Validator.pdf)
+(izvor `uputstvo.html`, pravi ga `napravi-uputstvo.py`).
+
 ## Šta program radi
 
 - **Validacija** (tab „Validacija”): provjera XML fajla prema aktivnoj XSD šemi. Prikazuju se sve

@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="sr-Latn">
+<head>
+<meta charset="utf-8">
+<title>XML Validator – uputstvo za korišćenje</title>
+<style>
+  @page { size: A4; margin: 18mm 17mm 18mm 17mm; }
+  :root { --accent: #0f62b8; --muted: #555; --line: #d8dde3; --soft: #eef4fb; }
+  * { box-sizing: border-box; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { margin: 0; font-family: "Segoe UI", Arial, sans-serif; font-size: 10.5pt; line-height: 1.45; color: #1b1f24; background: #fff; }
+  h1, h2, h3 { color: #10243a; line-height: 1.25; }
+  h1 { font-size: 22pt; margin: 0 0 4mm; }
+  h2 { font-size: 15pt; margin: 0 0 3mm; padding-bottom: 1.5mm; border-bottom: 2px solid var(--accent); break-before: page; }
+  h3 { font-size: 11.5pt; margin: 6mm 0 2mm; break-after: avoid; }
+  p { margin: 0 0 2.5mm; }
+  ol, ul { margin: 0 0 3mm; padding-left: 6mm; }
+  li { margin-bottom: 1mm; }
+  code, kbd { font-family: Consolas, monospace; font-size: 9.5pt; }
+  kbd { border: 1px solid #b9c0c8; border-bottom-width: 2px; border-radius: 3px; padding: 0 1.2mm; background: #f6f8fa; }
+  b.ui { color: #10243a; }
+  figure { margin: 3mm 0 5mm; break-inside: avoid; }
+  figure img { display: block; width: 100%; height: auto; border: 1px solid var(--line); }
+  figcaption { font-size: 9pt; color: var(--muted); margin-top: 1.5mm; }
+  .step { break-inside: avoid; }
+  .note { background: var(--soft); border-left: 3px solid var(--accent); padding: 2.5mm 3.5mm; margin: 3mm 0; break-inside: avoid; }
+  .warn { background: #fff6e0; border-left: 3px solid #c98a00; padding: 2.5mm 3.5mm; margin: 3mm 0; break-inside: avoid; }
+  table { width: 100%; border-collapse: collapse; margin: 2mm 0 4mm; font-size: 9.5pt; break-inside: avoid; }
+  th, td { border: 1px solid var(--line); padding: 1.5mm 2mm; text-align: left; vertical-align: top; }
+  th { background: #f1f4f7; }
+  .cover { height: 250mm; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; }
+  .cover img { width: 38mm; height: 38mm; margin-bottom: 8mm; border: 0; }
+  .cover .sub { font-size: 13pt; color: var(--muted); margin-bottom: 14mm; }
+  .cover .meta { font-size: 10pt; color: var(--muted); }
+  .toc ol { padding-left: 6mm; }
+  .toc li { margin-bottom: 1.5mm; }
+</style>
+</head>
+<body>
+
+<section class="cover">
+  <img src="slike/ikona.png" alt="">
+  <h1>XML Validator</h1>
+  <div class="sub">Uputstvo za korišćenje<br>Validacija i čišćenje IZIS XML faktura zdravstva</div>
+  <div class="meta">Verzija programa 1.0.0 · novembar 2026.<br>Slike prikazuju program u tamnoj temi, nad sintetičkim (izmišljenim) ili anonimizovanim podacima.</div>
+</section>
+
+<section class="toc">
+  <h2>Sadržaj</h2>
+  <ol>
+    <li>Šta program radi</li>
+    <li>Pokretanje programa</li>
+    <li>Otvaranje i zatvaranje fajla</li>
+    <li>Validacija fajla</li>
+    <li>Čišćenje faktura (SHMP)</li>
+    <li>Podešavanja</li>
+    <li>Šeme</li>
+    <li>Prečice i „O programu”</li>
+    <li>Konzolni alat (za napredne korisnike)</li>
+  </ol>
+  <h3>Šta program radi</h3>
+  <p>XML Validator radi sa XML fakturama zdravstva (IZIS, šema <code>fakture-zdravstva.xsd</code>) i ima dvije glavne funkcije, svaku u svom tabu:</p>
+  <ul>
+    <li><b class="ui">Validacija</b>: provjera fajla prema XSD šemi FZO-a, sa svim greškama (linija, kolona, opis).</li>
+    <li><b class="ui">Čišćenje faktura</b>: izbacivanje faktura koje FZO ne prihvata po pravilu Službe hitne medicinske pomoći (SHMP), uz vašu kontrolu nad svakom fakturom i detaljan izvještaj.</li>
+  </ul>
+  <div class="note"><b>Kako čitati slike:</b> crveni okvir na slici označava dio programa o kojem korak govori (dugme, polje, tabelu ili poruku).</div>
+  <div class="note"><b>Ulazni fajl se nikad ne mijenja.</b> Rezultat čišćenja i izmjene uvijek se čuvaju u <b>novi</b> fajl. Ništa se ne briše tiho: svaka obrisana, preskočena, uređena ili popravljena faktura je navedena u izvještaju.</div>
+</section>
+
+<!-- ============================================================ -->
+<h2>1. Pokretanje programa</h2>
+
+<div class="step">
+<h3>Korak 1.1 – Pokrenite program</h3>
+<ol>
+  <li>Kopirajte <code>XmlValidator.exe</code> u bilo koji folder (npr. na radnu površinu). Instalacija nije potrebna, a nije potreban ni instaliran .NET.</li>
+  <li>Pokrenite ga duplim klikom. Prvo pokretanje traje nekoliko sekundi, a svako sljedeće oko dvije.</li>
+  <li>Ako Windows prikaže upozorenje „Windows protected your PC”, kliknite <b class="ui">More info → Run anyway</b> (program nije digitalno potpisan).</li>
+</ol>
+<p>Otvara se početni ekran. Gore je traka sa komandama (<b class="ui">Otvori…</b>, <b class="ui">Sačuvaj kao…</b>, <b class="ui">Zatvori</b>, <b class="ui">Nedavni fajlovi</b>, <b class="ui">Podešavanja</b>, pomoć <b class="ui">?</b>), ispod su tabovi <b class="ui">Validacija</b> i <b class="ui">Čišćenje faktura</b>, a dole statusna traka sa aktivnom šemom.</p>
+<figure><img src="slike/01-pocetni-ekran.png" alt=""><figcaption>Slika 1. Početni ekran prije otvaranja fajla.</figcaption></figure>
+</div>
+
+<div class="note"><b>Linux:</b> program <code>XmlValidator</code> nema ekstenziju. Prvo mu dajte dozvolu za pokretanje (<code>chmod +x XmlValidator</code>), pa ga pokrenite sa <code>./XmlValidator</code> ili duplim klikom.</div>
+
+<!-- ============================================================ -->
+<h2>2. Otvaranje i zatvaranje fajla</h2>
+
+<div class="step">
+<h3>Korak 2.1 – Otvorite XML fajl</h3>
+<p>Fajl možete otvoriti na tri načina:</p>
+<ol>
+  <li>kliknite <b class="ui">Otvori…</b> (ili <kbd>Ctrl</kbd>+<kbd>O</kbd>) i izaberite fajl;</li>
+  <li>prevucite fajl mišem iz Windows Explorera na prozor programa (slika 2);</li>
+  <li>izaberite fajl iz liste <b class="ui">Nedavni fajlovi</b> (slika 3).</li>
+</ol>
+<p>Otvoren fajl je dostupan u oba taba.</p>
+<figure><img src="slike/02-prevlacenje.png" alt=""><figcaption>Slika 2. Fajl prevučen na prozor: pustite ga i program ga otvara.</figcaption></figure>
+</div>
+
+<div class="step">
+<h3>Korak 2.2 – Nedavni fajlovi</h3>
+<p>Kliknite <b class="ui">Nedavni fajlovi</b> i izaberite jedan od posljednje otvorenih fajlova. Fajl koji više ne postoji uklanja se iz liste uz poruku.</p>
+<figure><img src="slike/03-nedavni-fajlovi.png" alt=""><figcaption>Slika 3. Lista nedavnih fajlova.</figcaption></figure>
+</div>
+
+<div class="step">
+<h3>Korak 2.3 – Zatvorite fajl bez zatvaranja programa</h3>
+<p>Kliknite <b class="ui">Zatvori</b> u traci (ili <kbd>Ctrl</kbd>+<kbd>W</kbd>). Fajl se zatvara u oba taba, a program ostaje otvoren za sljedeći fajl. Ako imate nesačuvane izmjene ili odluke o čišćenju, program prvo pita da li da ih odbaci. Fajl na disku se ne dira.</p>
+<figure><img src="slike/21-zatvori.png" alt=""><figcaption>Slika 4. Kad je fajl otvoren, dugme „Zatvori” je aktivno.</figcaption></figure>
+</div>
+
+<!-- ============================================================ -->
+<h2>3. Validacija fajla</h2>
+
+<div class="step">
+<h3>Korak 3.1 – Pokrenite validaciju</h3>
+<ol>
+  <li>Otvorite fajl i izaberite tab <b class="ui">Validacija</b> (<kbd>Ctrl</kbd>+<kbd>1</kbd>).</li>
+  <li>Kliknite <b class="ui">Validiraj</b> (<kbd>F5</kbd>). Fajl se provjerava prema šemi izabranoj desno u polju <b class="ui">Šema</b>.</li>
+  <li>Ako je fajl ispravan, pojavljuje se zelena poruka <b class="ui">Fajl je ispravan</b>.</li>
+</ol>
+<figure><img src="slike/04-validacija-ispravan.png" alt=""><figcaption>Slika 5. Ispravan fajl.</figcaption></figure>
+</div>
+
+<div class="step">
+<h3>Korak 3.2 – Pregledajte greške</h3>
+<p>Ako fajl ima grešaka, broj grešaka je prikazan crveno, sporne linije su označene u editoru, a sve greške su u tabeli <b class="ui">Nalazi</b> (ozbiljnost, linija, kolona, vrsta i poruka).</p>
+<figure><img src="slike/05-validacija-greske.png" alt=""><figcaption>Slika 6. Fajl sa četiri greške.</figcaption></figure>
+</div>
+
+<div class="step">
+<h3>Korak 3.3 – Idite na mjesto greške</h3>
+<p>Kliknite grešku u tabeli <b class="ui">Nalazi</b>: editor skače na tu liniju i kolonu. Strelicama iznad tabele, ili sa <kbd>F8</kbd> i <kbd>Shift</kbd>+<kbd>F8</kbd>, prelazite na sljedeću i prethodnu grešku. <b class="ui">Kopiraj</b> kopira nalaze, a <b class="ui">Izvezi…</b> ih čuva u <code>.txt</code> ili <code>.csv</code> fajl.</p>
+<figure><img src="slike/06-validacija-izabrana-greska.png" alt=""><figcaption>Slika 7. Izabrana greška je označena u editoru.</figcaption></figure>
+</div>
+
+<div class="step">
+<h3>Korak 3.4 – Ispravite fajl i sačuvajte ga kao novi</h3>
+<ol>
+  <li>Ispravite tekst direktno u editoru. Fajl dobija oznaku <b class="ui">izmijenjeno</b>, a program napominje da treba ponovo validirati (<kbd>F5</kbd>).</li>
+  <li>Kliknite <b class="ui">Validiraj</b> da provjerite ispravku.</li>
+  <li>Kliknite <b class="ui">Sačuvaj kao…</b> (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd>) i izaberite <b>novo</b> ime fajla. Program ne dozvoljava čuvanje preko ulaznog fajla.</li>
+</ol>
+<figure><img src="slike/07-validacija-izmijenjeno.png" alt=""><figcaption>Slika 8. Sadržaj je izmijenjen poslije validacije.</figcaption></figure>
+</div>
+
+<!-- ============================================================ -->
+<h2>4. Čišćenje faktura (SHMP)</h2>
+
+<h3>Pravilo čišćenja</h3>
+<p>FZO prihvata usluge <b>Službe hitne medicinske pomoći (SHMP)</b> (<code>usluga-grupa</code> 100) i usluge drugih službi <b>samo za pacijente koji su pregledani u SHMP</b>. Pregled je usluga <code>usluga-oznaka</code> 183 u grupi 100. Pacijent se prepoznaje po JMB-u (<code>osiguranik-jmb</code>), na bilo kojoj fakturi u fajlu i bez obzira na datum. Svaka faktura dobija jednu kategoriju:</p>
+<table>
+  <tr><th>Kategorija</th><th>Značenje</th><th>Šta se radi</th></tr>
+  <tr><td>Usluga SHMP</td><td>faktura ima bar jednu uslugu iz grupe 100</td><td>ostaje</td></tr>
+  <tr><td>Pregledan u SHMP</td><td>samo usluge drugih službi, ali isti pacijent ima pregled 183 u SHMP</td><td>ostaje</td></tr>
+  <tr><td>Bez pregleda u SHMP</td><td>samo usluge drugih službi, a pacijent nigdje nema pregled u SHMP (ili faktura nema JMB)</td><td>kandidat: Obriši, Preskoči ili Prikaži</td></tr>
+  <tr><td>Prazna faktura</td><td>faktura nema nijednu stavku</td><td>kandidat: Obriši, Preskoči ili Prikaži</td></tr>
+  <tr><td>Sumnjiv blok</td><td>granica fakture nije jasna (npr. nedostaje <code>&lt;/faktura&gt;</code>)</td><td>morate odlučiti sami</td></tr>
+</table>
+<div class="note"><b>Čišćenje nije automatsko.</b> Kad otvorite fajl, program ga samo <b>analizira</b> i pokazuje šta bi se uradilo; ništa se ne mijenja. Očišćen fajl nastaje tek kad kliknete <b class="ui">Sačuvaj očišćeni fajl…</b> (korak 4.8), i to uvijek kao novi fajl.</div>
+
+<div class="step">
+<h3>Korak 4.1 – Pregledajte analizu</h3>
+<ol>
+  <li>Otvorite fajl i izaberite tab <b class="ui">Čišćenje faktura</b> (<kbd>Ctrl</kbd>+<kbd>2</kbd>). Analiza se pokreće sama; ponovo je pokrećete sa <b class="ui">Analiziraj</b> (<kbd>F5</kbd>).</li>
+  <li>Gore je sažetak: <b class="ui">Ukupno faktura</b>, koliko <b class="ui">Ostaje</b>, koliko je <b class="ui">Kandidata</b> za brisanje, koliko <b class="ui">Čeka odluku</b>, broj <b class="ui">Popravki</b> i <b class="ui">Upozorenja</b>.</li>
+  <li>U tabeli je svaka faktura sa statusom, brojem, datumom, JMB-om, grupama, akcijom, kategorijom i razlogom. Klikom na red vidite tekst fakture ispod tabele.</li>
+  <li>Polje za pretragu traži po broju fakture ili JMB-u, a padajući meni filtrira: <b class="ui">Sve</b>, <b class="ui">Samo kandidati</b>, <b class="ui">Samo upozorenja</b>, <b class="ui">Čeka odluku</b>.</li>
+</ol>
+<figure><img src="slike/08-ciscenje-analiza.png" alt=""><figcaption>Slika 9. Rezultat analize (anonimizovani primjer: od 324 fakture ostaje 5).</figcaption></figure>
+</div>
+
+<div class="step">
+<h3>Korak 4.2 – Podešavanja analize</h3>
+<p>Kliknite <b class="ui">Podešavanja analize</b> da otvorite traku sa podešavanjima:</p>
+<ul>
+  <li><b class="ui">Grupa SHMP</b>: šifra grupe usluga SHMP (100);</li>
+  <li><b class="ui">Prazna faktura</b> i <b class="ui">Bez pregleda u SHMP</b>: podrazumijevana akcija za te fakture (Obriši, Preskoči ili Prikaži);</li>
+  <li><b class="ui">Automatske popravke</b>: popravka polomljenih zagrada u tagovima;</li>
+  <li><b class="ui">Podrazumijevano</b>: vraća grupu 100, pregled 183, Obriši i popravke, pa ponovo analizira.</li>
+</ul>
+<p>Promjena akcije važi odmah. Promjena grupe ili popravki traži novu analizu (<kbd>F5</kbd>), a čuvanje je blokirano dok je ne pokrenete.</p>
+<figure><img src="slike/09-ciscenje-podesavanja.png" alt=""><figcaption>Slika 10. Otvorena traka „Podešavanja analize”.</figcaption></figure>
+</div>
+
+<div class="step">
+<h3>Korak 4.3 – Akcija „Prikaži”: odlučite za svaku fakturu</h3>
+<p>Ako za kategoriju izaberete <b class="ui">Prikaži (odluka po fakturi)</b>, te fakture ostaju bez akcije i dobijaju status <b class="ui">Čeka odluku</b>. Izaberite filter <b class="ui">Čeka odluku</b>, pa svakoj fakturi u koloni <b class="ui">Akcija</b> izaberite Obriši, Preskoči ili Uredi. Čuvanje je moguće tek kad sve fakture imaju odluku; link <b class="ui">Prikaži fakturu</b> dole vodi na prvu koja čeka.</p>
+<figure><img src="slike/10-ciscenje-prikazi.png" alt=""><figcaption>Slika 11. Uz „Prikaži” fakture čekaju vašu odluku.</figcaption></figure>
+</div>
+
+<div class="step">
+<h3>Korak 4.4 – Promijenite akciju za jednu ili više faktura</h3>
+<ol>
+  <li>Za jednu fakturu izaberite akciju u koloni <b class="ui">Akcija</b>.</li>
+  <li>Za više faktura označite redove (<kbd>Ctrl</kbd>+klik ili <kbd>Shift</kbd>+klik), pa kliknite <b class="ui">Obriši</b>, <b class="ui">Preskoči</b> ili <b class="ui">Vrati</b> (vraća podrazumijevanu akciju) iznad tabele.</li>
+  <li><b class="ui">Preskoči</b> znači da faktura ostaje u fajlu netaknuta, a u izvještaju se vodi kao preskočena.</li>
+</ol>
+<figure><img src="slike/11-ciscenje-vise-faktura.png" alt=""><figcaption>Slika 12. Akcija „Preskoči” postavljena za dvije označene fakture.</figcaption></figure>
+</div>
+
+<div class="step">
+<h3>Korak 4.5 – Riješite sumnjiv blok</h3>
+<p>Sumnjiv blok je dio fajla u kojem granica fakture nije jasna, npr. faktura bez zatvarajućeg taga koja „guta” sljedeću. Program o njemu ne odlučuje sam: blok je označen crveno (<b class="ui">Čeka odluku</b>), a čuvanje nije moguće dok mu ne izaberete akciju. Pogledajte tekst bloka ispod tabele i izaberite Obriši, Preskoči ili Uredi.</p>
+<figure><img src="slike/12-ciscenje-sumnjiv-blok.png" alt=""><figcaption>Slika 13. Sumnjiv blok čeka odluku.</figcaption></figure>
+</div>
+
+<div class="step">
+<h3>Korak 4.6 – Uredite fakturu ručno</h3>
+<ol>
+  <li>Izaberite akciju <b class="ui">Uredi</b> (ili kliknite <b class="ui">Uredi…</b> iznad teksta fakture).</li>
+  <li>Ispravite tekst fakture u editoru.</li>
+  <li>Kliknite <b class="ui">Primijeni</b>. Program provjerava da je tekst ispravan XML i ponovo klasifikuje fakturu. <b class="ui">Odustani</b> odbacuje izmjenu.</li>
+</ol>
+<p>Ručna izmjena (staro i novo stanje) bilježi se u izvještaju.</p>
+<figure><img src="slike/13-ciscenje-uredi.png" alt=""><figcaption>Slika 14. Ručno uređivanje fakture.</figcaption></figure>
+</div>
+
+<div class="step">
+<h3>Korak 4.7 – Provjerite automatske popravke</h3>
+<p>Program sam popravlja polomljene zagrade (npr. <code>&lt;/faktura</code> bez <code>&gt;</code>). Svaka popravka je u listi <b class="ui">Popravke i upozorenja</b> sa brojem linije; klik na nju vodi na fakturu. Popravke se mogu isključiti u podešavanjima analize.</p>
+<figure><img src="slike/14-ciscenje-popravka.png" alt=""><figcaption>Slika 15. Faktura sa automatskom popravkom.</figcaption></figure>
+</div>
+
+<div class="step">
+<h3>Korak 4.8 – Pregledajte izmjene i sačuvajte očišćen fajl</h3>
+<ol>
+  <li>Po želji kliknite <b class="ui">Pregled izmjena…</b> (<kbd>Ctrl</kbd>+<kbd>D</kbd>) da vidite šta se briše, mijenja ili popravlja, bez čuvanja.</li>
+  <li>Kliknite <b class="ui">Sačuvaj očišćeni fajl…</b> (<kbd>Ctrl</kbd>+<kbd>S</kbd>). Prvo se prikazuje pregled izmjena sa rezultatom provjere prema šemi. Za svaku izmjenu vidite ulaz lijevo i izlaz desno.</li>
+  <li>Kliknite <b class="ui">Sačuvaj…</b> i izaberite ime fajla. Predlaže se <code>&lt;ime&gt;_ociscen.xml</code> pored ulaza.</li>
+  <li>Ako želite da se očišćen fajl odmah provjeri, uključite <b class="ui">Nakon čuvanja validiraj rezultat</b>.</li>
+</ol>
+<figure><img src="slike/15-pregled-izmjena.png" alt=""><figcaption>Slika 16. Pregled izmjena prije čuvanja.</figcaption></figure>
+</div>
+
+<div class="step">
+<h3>Korak 4.9 – Sačuvajte izvještaj</h3>
+<p>Kliknite <b class="ui">Sačuvaj izvještaj…</b> (<kbd>Ctrl</kbd>+<kbd>R</kbd>) i izaberite <code>.txt</code> (za čitanje) ili <code>.csv</code> (za Excel). Izvještaj sadrži svaku obrisanu, preskočenu, uređenu i popravljenu fakturu sa razlogom. Ako izvještaj šaljete dalje, uključite <b class="ui">Maskiraj JMB u izvještaju</b> (npr. <code>0101990******</code>). Oba elementa su u donjoj traci taba.</p>
+<figure><img src="slike/24-izvjestaj.png" alt=""><figcaption>Slika 16a. „Sačuvaj izvještaj…” i „Maskiraj JMB u izvještaju”.</figcaption></figure>
+</div>
+
+<!-- ============================================================ -->
+<h2>5. Podešavanja</h2>
+
+<div class="step">
+<h3>Korak 5.1 – Opšta podešavanja</h3>
+<p>Kliknite <b class="ui">Podešavanja</b> (<kbd>Ctrl</kbd>+<kbd>,</kbd>), stranica <b class="ui">Opšte</b>. Izmjene se čuvaju odmah.</p>
+<ul>
+  <li><b class="ui">Tema</b>: svijetla, tamna ili prema sistemu.</li>
+  <li><b class="ui">Grupa usluga SHMP (usluga-grupa)</b>: 100 = Služba hitne medicinske pomoći.</li>
+  <li><b class="ui">Usluga pregleda u SHMP (usluga-oznaka)</b>: 183 = pregled. Pacijent sa ovom uslugom u grupi SHMP smatra se pregledanim u SHMP.</li>
+</ul>
+<figure><img src="slike/16-podesavanja-opste.png" alt=""><figcaption>Slika 17. Podešavanja → Opšte.</figcaption></figure>
+</div>
+
+<div class="step">
+<h3>Korak 5.2 – Podrazumijevane akcije i popravke</h3>
+<ul>
+  <li><b class="ui">Prazna faktura</b> i <b class="ui">Faktura samo sa uslugama drugih službi, pacijent nije pregledan u SHMP</b>: Obriši, Preskoči ili Prikaži (odluka po fakturi).</li>
+  <li><b class="ui">Automatske popravke zagrada</b>: Uključeno ili isključeno.</li>
+  <li><b class="ui">Vrati podrazumijevano</b>: vraća sva podešavanja čišćenja na početne vrijednosti.</li>
+</ul>
+<figure><img src="slike/17-podesavanja-opste-akcije.png" alt=""><figcaption>Slika 18. Podrazumijevane akcije i automatske popravke.</figcaption></figure>
+</div>
+
+<!-- ============================================================ -->
+<h2>6. Šeme</h2>
+
+<div class="step">
+<h3>Korak 6.1 – Pregled šema</h3>
+<p>U <b class="ui">Podešavanja → Šeme</b> (ili klikom na <b class="ui">Upravljaj šemama…</b> u statusnoj traci) vidite sve šeme. Ugrađena šema je dio programa, uvijek je dostupna i ne može se obrisati. Ako uvezena aktivna šema nedostaje ili je oštećena, program se vraća na ugrađenu i to prikazuje u statusnoj traci.</p>
+<figure><img src="slike/18-seme.png" alt=""><figcaption>Slika 19. Lista šema sa ugrađenom šemom.</figcaption></figure>
+</div>
+
+<div class="step">
+<h3>Korak 6.2 – Uvezite novu verziju šeme</h3>
+<ol>
+  <li>Kliknite <b class="ui">Uvezi šemu…</b> i izaberite <code>.xsd</code> fajl ili <code>.zip</code> paket koji FZO objavljuje na svom sajtu (fajl možete i prevući na prozor).</li>
+  <li>Izaberite uvezenu šemu i kliknite <b class="ui">Razlike prema aktivnoj</b> da vidite šta je novo.</li>
+  <li>Kliknite <b class="ui">Postavi kao aktivnu</b>. Od tada se fakture provjeravaju po njoj.</li>
+</ol>
+<figure><img src="slike/19-seme-uvoz.png" alt=""><figcaption>Slika 20. Uvezena šema i razlike prema aktivnoj.</figcaption></figure>
+</div>
+
+<div class="step">
+<h3>Korak 6.3 – Uvoz sa linka</h3>
+<p>Kliknite <b class="ui">Uvezi sa linka…</b> i nalijepite adresu (<code>https</code>) ZIP paketa sa sajta FZO. Program preuzima paket uz prikaz napretka; <b class="ui">Prekini</b> zaustavlja preuzimanje. Ovo je jedina radnja u kojoj program pristupa internetu.</p>
+<figure><img src="slike/20-seme-link.png" alt=""><figcaption>Slika 21. Preuzimanje šeme sa linka.</figcaption></figure>
+</div>
+
+<!-- ============================================================ -->
+<h2>7. Prečice i „O programu”</h2>
+
+<div class="step">
+<h3>Korak 7.1 – Prozor „O programu”</h3>
+<p>Kliknite <b class="ui">?</b> u traci (ili <kbd>F1</kbd>). Prozor prikazuje verziju programa, spisak svih prečica i licence korišćenih komponenti.</p>
+<figure><img src="slike/22-o-programu.png" alt=""><figcaption>Slika 22. „O programu” sa spiskom prečica.</figcaption></figure>
+</div>
+
+<table>
+  <tr><th>Prečica</th><th>Komanda</th></tr>
+  <tr><td><kbd>Ctrl</kbd>+<kbd>O</kbd></td><td>Otvori XML fajl</td></tr>
+  <tr><td><kbd>Ctrl</kbd>+<kbd>W</kbd></td><td>Zatvori fajl (program ostaje otvoren)</td></tr>
+  <tr><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd></td><td>Sačuvaj kao (novi fajl)</td></tr>
+  <tr><td><kbd>Ctrl</kbd>+<kbd>1</kbd> / <kbd>Ctrl</kbd>+<kbd>2</kbd></td><td>Tab „Validacija” / „Čišćenje faktura”</td></tr>
+  <tr><td><kbd>Ctrl</kbd>+<kbd>,</kbd></td><td>Podešavanja</td></tr>
+  <tr><td><kbd>F1</kbd></td><td>O programu i prečice</td></tr>
+  <tr><td><kbd>F5</kbd></td><td>Validiraj / Analiziraj (u aktivnom tabu)</td></tr>
+  <tr><td><kbd>F8</kbd> / <kbd>Shift</kbd>+<kbd>F8</kbd></td><td>Sljedeća / prethodna greška</td></tr>
+  <tr><td><kbd>Ctrl</kbd>+<kbd>D</kbd></td><td>Pregled izmjena (čišćenje)</td></tr>
+  <tr><td><kbd>Ctrl</kbd>+<kbd>S</kbd></td><td>Sačuvaj očišćeni fajl</td></tr>
+  <tr><td><kbd>Ctrl</kbd>+<kbd>R</kbd></td><td>Sačuvaj izvještaj</td></tr>
+</table>
+
+<!-- ============================================================ -->
+<h2>8. Konzolni alat (za napredne korisnike)</h2>
+
+<div class="step">
+<h3>Korak 8.1 – Čišćenje iz komandne linije</h3>
+<p><code>xmlvalidator-cli.exe</code> radi isto što i program, bez prozora, npr. za obradu više fajlova odjednom. Pravila su ista: ulaz se nikad ne mijenja, a postojeći fajl se prepisuje samo uz <code>--overwrite</code>.</p>
+<ol>
+  <li>Otvorite PowerShell u folderu sa fakturama.</li>
+  <li>Pokrenite <code>xmlvalidator-cli clean fakture.xml --report izvjestaj.txt</code>.</li>
+  <li>Program ispisuje svaku obrisanu fakturu i sažetak, a pravi <code>fakture_ociscen.xml</code> i izvještaj.</li>
+</ol>
+<figure><img src="slike/23-konzolni-alat.png" alt=""><figcaption>Slika 23. Čišćenje u konzoli (primjer sa sintetičkim fajlom).</figcaption></figure>
+</div>
+
+<table>
+  <tr><th>Komanda / opcija</th><th>Značenje</th></tr>
+  <tr><td><code>validate fajl.xml</code></td><td>validacija; <code>--report nalazi.txt</code> čuva nalaze</td></tr>
+  <tr><td><code>clean ulaz.xml [izlaz.xml]</code></td><td>čišćenje; izlaz je podrazumijevano <code>&lt;ime&gt;_ociscen.xml</code></td></tr>
+  <tr><td><code>--nomatch delete|skip|ask</code></td><td>akcija za fakture bez pregleda u SHMP (<code>ask</code> = „Prikaži”)</td></tr>
+  <tr><td><code>--empty delete|skip|ask</code></td><td>akcija za prazne fakture</td></tr>
+  <tr><td><code>--suspicious delete|skip</code></td><td>odluka za sumnjive blokove (bez nje se izlaz ne pravi)</td></tr>
+  <tr><td><code>--group 100</code>, <code>--exam 183|any</code></td><td>grupa SHMP i usluga pregleda (<code>any</code> = bilo koja usluga SHMP)</td></tr>
+  <tr><td><code>--mask-jmb</code>, <code>--overwrite</code></td><td>maskiranje JMB-a u izvještaju; dozvola za prepisivanje izlaza</td></tr>
+  <tr><td><code>help clean</code></td><td>sve opcije sa objašnjenjem</td></tr>
+</table>
+<p>Izlazni kod: 0 = uspjeh, 1 = fajl ima greške ili izlaz nije sačuvan, 2 = pogrešni argumenti, 3 = fajl ne može da se pročita ili upiše.</p>
+
+<div class="warn"><b>Lični podaci:</b> fakture sadrže JMB i zdravstvene podatke. Ne šaljite ulazne fajlove ni izvještaje sa punim JMB-om van ustanove; za dijeljenje koristite opciju „Maskiraj JMB u izvještaju”.</div>
+
+</body>
+</html>
