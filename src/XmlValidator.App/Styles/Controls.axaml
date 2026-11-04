@@ -14,7 +14,6 @@
     Tab „Validacija”: Border.pane/paneHeader, Border.toolbar.tabbar, Border.banner.compact,
             Border.badge (+ accentSubtle/error), TextBlock.summary (+ ozbiljnost), TextBlock.warningText,
             ComboBox.field, GridSplitter.pane, DataGrid.issues (+ TextBlock.cell/number/message/fullMessage), ToolTip.wide,
-            Border.issueDetails (+ StackPanel.details, TextBlock.detailMessage/hint),
             StackPanel.emptyPane, ProgressBar.busySmall, Button.toolbar.compact,
             ae|TextEditor.xml, ui|IssueMarkerMargin
     Tab „Čišćenje faktura”: ToggleButton.toolbar, Border.settingsPanel, Border.stats/stat (+ last/attention/error),
@@ -684,31 +683,6 @@
         <Setter Property="TextWrapping" Value="Wrap" />
     </Style>
 
-    <!-- Detalji izabranog nalaza: kolona desno od tabele, odvojena linijom -->
-    <Style Selector="Border.issueDetails">
-        <Setter Property="Width" Value="{DynamicResource IssueDetailsWidth}" />
-        <Setter Property="Background" Value="{DynamicResource SurfaceAltBrush}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource DividerBrush}" />
-        <Setter Property="BorderThickness" Value="{DynamicResource DividerLeft}" />
-    </Style>
-    <Style Selector="Border.issueDetails StackPanel.details">
-        <Setter Property="Margin" Value="{DynamicResource IssueDetailsPadding}" />
-        <Setter Property="Spacing" Value="{DynamicResource SpaceS}" />
-    </Style>
-    <Style Selector="Border.issueDetails Button.toolbar.compact">
-        <Setter Property="Margin" Value="{DynamicResource IssueDetailsButtonMargin}" />
-        <Setter Property="HorizontalAlignment" Value="Left" />
-    </Style>
-    <Style Selector="Border.issueDetails :is(TextBlock).detailMessage">
-        <Setter Property="TextWrapping" Value="Wrap" />
-    </Style>
-    <Style Selector="Border.issueDetails :is(TextBlock).hint">
-        <Setter Property="Margin" Value="{DynamicResource IssueDetailsPadding}" />
-        <Setter Property="TextWrapping" Value="Wrap" />
-        <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
-        <Setter Property="VerticalAlignment" Value="Center" />
-        <Setter Property="TextAlignment" Value="Center" />
-    </Style>
     <!-- Širi ToolTip za duže objašnjenje (poruka + tehnički opis) -->
     <Style Selector="ToolTip.wide">
         <Setter Property="MaxWidth" Value="{DynamicResource WideToolTipMaxWidth}" />

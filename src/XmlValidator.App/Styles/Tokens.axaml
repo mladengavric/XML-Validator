@@ -272,10 +272,6 @@
     <!-- Odnos editora i liste nalaza (podrazumijevano 60/40) -->
     <GridLength x:Key="EditorPaneHeight">60*</GridLength>
     <GridLength x:Key="IssuesPaneHeight">40*</GridLength>
-    <!-- Detalji izabranog nalaza: kolona desno od tabele nalaza -->
-    <x:Double x:Key="IssueDetailsWidth">320</x:Double>
-    <Thickness x:Key="IssueDetailsPadding">16,12,16,8</Thickness>
-    <Thickness x:Key="IssueDetailsButtonMargin">8,0,8,8</Thickness>
     <x:Int32 x:Key="SummaryMaxLines">2</x:Int32>
 
     <!-- Tab „Čišćenje faktura” -->

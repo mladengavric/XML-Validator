@@ -187,12 +187,7 @@ public sealed partial class ValidationTabViewModel : DocumentTabViewModel, IDisp
     public ObservableCollection<ValidationIssueRow> Issues { get; } = [];
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HasSelectedIssue))]
-    [NotifyCanExecuteChangedFor(nameof(CopySelectedIssueCommand))]
     public partial ValidationIssueRow? SelectedIssue { get; set; }
-
-    /// <summary>Izabran je nalaz (prikazuju se detalji ispod tabele).</summary>
-    public bool HasSelectedIssue => SelectedIssue is not null;
 
     // ---------------------------------------------------------------- šeme
 
@@ -350,38 +345,6 @@ public sealed partial class ValidationTabViewModel : DocumentTabViewModel, IDisp
     }
 
     private bool CanExport() => Result is not null && !IsValidating;
-
-    /// <summary>Kopira poruku izabranog nalaza (sa mjestom i tehničkim opisom) u clipboard.</summary>
-    [RelayCommand(CanExecute = nameof(HasSelectedIssue))]
-    private async Task CopySelectedIssueAsync()
-    {
-        if (SelectedIssue is not { } issue)
-        {
-            return;
-        }
-
-        var text = issue.Message;
-        if (issue.HasPosition)
-        {
-            text = $"Linija {issue.LineText}, kolona {issue.ColumnText}: {text}";
-        }
-
-        if (issue.HasTechnicalMessage)
-        {
-            text += Environment.NewLine + "Tehnički opis: " + issue.TechnicalMessage;
-        }
-
-        try
-        {
-            await _clipboard.SetTextAsync(text);
-            SetSummaryNote("Poruka je kopirana u clipboard.");
-        }
-        catch (Exception ex) when (ex is not OperationCanceledException)
-        {
-            _log.Warning("Kopiranje u clipboard nije uspjelo.", ex);
-            await _dialogs.ShowMessageAsync("Kopiranje nije uspjelo", "Poruka ne može da se kopira u clipboard.", MessageSeverity.Error);
-        }
-    }
 
     /// <summary>Kopira nalaze (sa nazivom šeme) u clipboard.</summary>
     [RelayCommand(CanExecute = nameof(CanExport))]
