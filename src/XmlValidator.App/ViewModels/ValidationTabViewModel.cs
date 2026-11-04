@@ -29,6 +29,11 @@ public sealed record ValidationIssueRow(ValidationIssue Issue)
 
     public string Message => Issue.Message;
 
+    /// <summary>Originalna poruka validatora (engleski), za opis alata; <c>null</c> kad je nema.</summary>
+    public string? TechnicalMessage => Issue.TechnicalMessage;
+
+    public bool HasTechnicalMessage => Issue.TechnicalMessage is not null && Issue.TechnicalMessage != Issue.Message;
+
     public bool HasPosition => Issue.Line > 0;
 }
 

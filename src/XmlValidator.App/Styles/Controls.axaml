@@ -13,7 +13,7 @@
     TabControl: main
     Tab „Validacija”: Border.pane/paneHeader, Border.toolbar.tabbar, Border.banner.compact,
             Border.badge (+ accentSubtle/error), TextBlock.summary (+ ozbiljnost), TextBlock.warningText,
-            ComboBox.field, GridSplitter.pane, DataGrid.issues (+ TextBlock.cell/number/message),
+            ComboBox.field, GridSplitter.pane, DataGrid.issues (+ TextBlock.cell/number/message/fullMessage), ToolTip.wide,
             StackPanel.emptyPane, ProgressBar.busySmall, Button.toolbar.compact,
             ae|TextEditor.xml, ui|IssueMarkerMargin
     Tab „Čišćenje faktura”: ToggleButton.toolbar, Border.settingsPanel, Border.stats/stat (+ last/attention/error),
@@ -618,6 +618,18 @@
         <Setter Property="TextWrapping" Value="Wrap" />
         <Setter Property="MaxLines" Value="{DynamicResource IssueMessageMaxLines}" />
         <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+    </Style>
+    <!-- Cijela poruka nalaza validacije: prelama se u više redova, red tabele raste u visinu -->
+    <Style Selector="DataGrid.issues TextBlock.fullMessage">
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+
+    <!-- Širi ToolTip za duže objašnjenje (poruka + tehnički opis) -->
+    <Style Selector="ToolTip.wide">
+        <Setter Property="MaxWidth" Value="{DynamicResource WideToolTipMaxWidth}" />
+    </Style>
+    <Style Selector="ToolTip.wide TextBlock">
+        <Setter Property="TextWrapping" Value="Wrap" />
     </Style>
 
     <!-- Prazno stanje unutar panela -->

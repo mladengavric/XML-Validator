@@ -18,7 +18,7 @@
     iza "+", koji "O programu" ne prikazuje). Vidi README.md, odjeljak "Verzionisanje".
   -->
   <PropertyGroup>
-    <Version>1.0.0</Version>
+    <Version>1.1.0</Version>
     <Product>XML Validator</Product>
   </PropertyGroup>
 </Project>

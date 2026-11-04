@@ -12,7 +12,9 @@ Uputstvo za korišćenje sa slikama za svaki korak: [`docs/uputstvo/Uputstvo-XML
 ## Šta program radi
 
 - **Validacija** (tab „Validacija”): provjera XML fajla prema aktivnoj XSD šemi. Prikazuju se sve
-  greške (ozbiljnost, linija, kolona, vrsta, poruka); klik na grešku vodi na mjesto u editoru.
+  greške (ozbiljnost, linija, kolona, vrsta, poruka); klik na grešku vodi na mjesto u editoru. Poruke su na srpskom i
+  kažu gdje je problem i šta treba upisati (npr. „Stavka 1 fakture SIN-1: polje „usluga-nivo” je prazno. Upišite cijeli
+  broj od 0 do 65535, ili obrišite cijeli red stavke…”); originalna tehnička poruka je u opisu alata i u izvještaju.
   Sadržaj se može urediti i sačuvati u novi fajl; nalazi se kopiraju ili izvoze u `.txt`/`.csv`.
 - **Čišćenje faktura (SHMP)** (tab „Čišćenje faktura”): analiza faktura po pravilima iz `clean.py`,
   automatske popravke polomljenih zagrada, izbor akcije po fakturi (Obriši / Uredi / Preskoči),

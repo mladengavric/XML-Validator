@@ -80,28 +80,47 @@ public sealed class XmlValidationService
         var namespaceMismatch = false;
         var pending = new List<ValidationIssue>();
 
+        // Validator javlja grešku atributa dok je čitač na samom atributu (mjesto i tip tada nisu dostupni), pa se
+        // nalazi čuvaju dok Read() ne stane na element kojem pripadaju i tek tada dobijaju objašnjenje (Flush).
+        string? currentInvoice = null;
+        var raw = new List<ValidationEventArgs>();
         settings.ValidationEventHandler += (_, e) =>
         {
-            if (namespaceMismatch)
+            if (!namespaceMismatch)
             {
-                return; // šema se ne primjenjuje na dokument u drugom namespace-u
-            }
-
-            var issue = new ValidationIssue(
-                e.Severity == XmlSeverityType.Error ? ValidationSeverity.Error : ValidationSeverity.Warning,
-                e.Exception?.LineNumber ?? 0,
-                e.Exception?.LinePosition ?? 0,
-                e.Message,
-                ValidationIssueKind.Schema);
-            if (rootSeen)
-            {
-                collector.Add(issue);
-            }
-            else
-            {
-                pending.Add(issue);
+                raw.Add(e); // šema se ne primjenjuje na dokument u drugom namespace-u
             }
         };
+
+        void Flush(XmlReader? at)
+        {
+            if (raw.Count == 0)
+            {
+                return;
+            }
+
+            var context = Context(at, currentInvoice);
+            foreach (var e in raw)
+            {
+                var issue = new ValidationIssue(
+                    e.Severity == XmlSeverityType.Error ? ValidationSeverity.Error : ValidationSeverity.Warning,
+                    e.Exception?.LineNumber ?? 0,
+                    e.Exception?.LinePosition ?? 0,
+                    e.Exception is { } exception ? ValidationMessages.FromSchema(exception, context) : e.Message,
+                    ValidationIssueKind.Schema,
+                    e.Message);
+                if (rootSeen)
+                {
+                    collector.Add(issue);
+                }
+                else
+                {
+                    pending.Add(issue);
+                }
+            }
+
+            raw.Clear();
+        }
 
         XmlReader? reader = null;
         try
@@ -116,6 +135,12 @@ public sealed class XmlValidationService
                     cancellationToken.ThrowIfCancellationRequested();
                 }
 
+                if (reader.NodeType == XmlNodeType.Element && reader.LocalName == "faktura")
+                {
+                    currentInvoice = reader.GetAttribute("broj");
+                }
+
+                Flush(reader);
                 if (!rootSeen && reader.NodeType == XmlNodeType.Element)
                 {
                     rootSeen = true;
@@ -140,16 +165,18 @@ public sealed class XmlValidationService
         }
         catch (XmlException ex)
         {
+            Flush(null);
             pending.ForEach(collector.Add);
             pending.Clear();
             collector.Add(new ValidationIssue(
-                ValidationSeverity.Error, ex.LineNumber, ex.LinePosition, ex.Message, ValidationIssueKind.WellFormedness));
+                ValidationSeverity.Error, ex.LineNumber, ex.LinePosition, ValidationMessages.FromXml(ex), ValidationIssueKind.WellFormedness, ex.Message));
         }
         finally
         {
             reader?.Dispose();
         }
 
+        Flush(null);
         pending.ForEach(collector.Add);
         return new ValidationResult(
             collector.Issues,
@@ -159,6 +186,37 @@ public sealed class XmlValidationService
             schema.Name,
             schema.IsFallback,
             schema.FallbackReason);
+    }
+
+    /// <summary>
+    /// Mjesto nalaza iz validirajućeg čitača: element na kojem je čitač (atributi se provjeravaju dok je na elementu),
+    /// broj fakture i redni broj stavke. Čitač se ne pomjera; greška pri čitanju daje prazan kontekst.
+    /// </summary>
+    private static ValidationContext Context(XmlReader? reader, string? currentInvoice)
+    {
+        try
+        {
+            if (reader is null || reader.NodeType is not (XmlNodeType.Element or XmlNodeType.EndElement))
+            {
+                return new ValidationContext(null, currentInvoice, null);
+            }
+
+            var element = reader.LocalName;
+            var isStart = reader.NodeType == XmlNodeType.Element;
+            var type = reader.SchemaInfo?.SchemaElement?.ElementSchemaType ?? reader.SchemaInfo?.SchemaType;
+            return element switch
+            {
+                "faktura" => new ValidationContext(element, isStart ? reader.GetAttribute("broj") : currentInvoice, null, type),
+                "stavka" or "stavka-recept" or "stavka-obavjest" =>
+                    new ValidationContext(element, currentInvoice, isStart ? reader.GetAttribute("redni-broj") : null, type),
+                "fakture-zdravstva" or "opsti-podaci" => new ValidationContext(element, null, null, type),
+                _ => new ValidationContext(element, currentInvoice, null, type),
+            };
+        }
+        catch (Exception ex) when (ex is XmlException or InvalidOperationException)
+        {
+            return new ValidationContext(null, currentInvoice, null);
+        }
     }
 
     private static string NamespaceMessage(string localName, string namespaceUri) =>

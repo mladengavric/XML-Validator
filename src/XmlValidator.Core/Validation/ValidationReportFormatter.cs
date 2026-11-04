@@ -42,6 +42,10 @@ public static class ValidationReportFormatter
             foreach (var issue in result.Issues)
             {
                 Line($"{Severity(issue.Severity)} | {Position(issue)} | {Kind(issue.Kind)} | {issue.Message}");
+                if (issue.TechnicalMessage is { } technical && technical != issue.Message)
+                {
+                    Line($"    tehnički opis: {technical}");
+                }
             }
         }
 
@@ -57,7 +61,7 @@ public static class ValidationReportFormatter
         void Row(params string[] values) => sb.Append(string.Join(";", values.Select(CleaningReportFormatter.Escape))).Append("\r\n");
 
         Row("Fajl", report.FilePath ?? string.Empty, "Šema", SchemaLine(result), "Ishod", result.Summary);
-        Row("Ozbiljnost", "Linija", "Kolona", "Vrsta", "Poruka");
+        Row("Ozbiljnost", "Linija", "Kolona", "Vrsta", "Poruka", "Tehnički opis");
         foreach (var issue in result.Issues)
         {
             Row(
@@ -65,7 +69,8 @@ public static class ValidationReportFormatter
                 issue.Line > 0 ? issue.Line.ToString(CultureInfo.InvariantCulture) : string.Empty,
                 issue.Column > 0 ? issue.Column.ToString(CultureInfo.InvariantCulture) : string.Empty,
                 Kind(issue.Kind),
-                issue.Message);
+                issue.Message,
+                issue.TechnicalMessage ?? string.Empty);
         }
 
         return sb.ToString();

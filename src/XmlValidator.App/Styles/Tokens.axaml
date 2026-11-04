@@ -248,6 +248,8 @@
     <DataGridLength x:Key="IssueNumberColumnWidth">88</DataGridLength>
     <DataGridLength x:Key="IssueKindColumnWidth">150</DataGridLength>
     <x:Int32 x:Key="IssueMessageMaxLines">2</x:Int32>
+    <!-- ToolTip sa dužim objašnjenjem (nalaz validacije + tehnički opis); Fluent podrazumijeva 320 -->
+    <x:Double x:Key="WideToolTipMaxWidth">480</x:Double>
     <x:Double x:Key="DataGridRowSelectedBackgroundOpacity">1</x:Double>
     <x:Double x:Key="DataGridRowSelectedHoveredBackgroundOpacity">1</x:Double>
     <x:Double x:Key="DataGridRowSelectedUnfocusedBackgroundOpacity">1</x:Double>

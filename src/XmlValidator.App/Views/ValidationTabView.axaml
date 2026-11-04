@@ -267,8 +267,18 @@
                                     <DataGridTemplateColumn Header="Poruka" Width="*">
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate x:DataType="vm:ValidationIssueRow">
-                                                <TextBlock Classes="cell message" Text="{Binding Message}"
-                                                           ToolTip.Tip="{Binding Message}" />
+                                                <TextBlock Classes="cell fullMessage" Text="{Binding Message}">
+                                                    <ToolTip.Tip>
+                                                        <ToolTip Classes="wide">
+                                                            <StackPanel Spacing="{StaticResource SpaceS}">
+                                                                <TextBlock Text="{Binding Message}" />
+                                                                <TextBlock Classes="caption muted"
+                                                                           IsVisible="{Binding HasTechnicalMessage}"
+                                                                           Text="{Binding TechnicalMessage, StringFormat='Tehnički opis: {0}'}" />
+                                                            </StackPanel>
+                                                        </ToolTip>
+                                                    </ToolTip.Tip>
+                                                </TextBlock>
                                             </DataTemplate>
                                         </DataGridTemplateColumn.CellTemplate>
                                     </DataGridTemplateColumn>

@@ -21,12 +21,15 @@ public enum ValidationIssueKind
 }
 
 /// <summary>Jedan nalaz validacije. Linija i kolona počinju od 1; 0 znači da nisu poznate.</summary>
+/// <param name="Message">Objašnjenje na srpskom: gdje je problem i šta treba ispraviti.</param>
+/// <param name="TechnicalMessage">Originalna poruka validatora (engleski), za napredne korisnike; <c>null</c> kad je nema.</param>
 public sealed record ValidationIssue(
     ValidationSeverity Severity,
     int Line,
     int Column,
     string Message,
-    ValidationIssueKind Kind);
+    ValidationIssueKind Kind,
+    string? TechnicalMessage = null);
 
 /// <summary>Rezultat validacije.</summary>
 /// <param name="Issues">Nalazi, najviše <see cref="MaxIssues"/>.</param>
