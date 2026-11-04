@@ -8,5 +8,17 @@
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <AnalysisLevel>latest</AnalysisLevel>
     <Deterministic>true</Deterministic>
+    <!-- Release: simboli ugrađeni u sklop (log ima brojeve linija, a pored izvršnog fajla nema .pdb fajlova). -->
+    <DebugType Condition="'$(Configuration)' == 'Release'">embedded</DebugType>
+  </PropertyGroup>
+
+  <!--
+    Verzija programa: jedino mjesto gdje se mijenja (semantičko verzionisanje MAJOR.MINOR.PATCH).
+    Iz nje se prave AssemblyVersion, FileVersion i InformationalVersion (uz kratak hash commita
+    iza "+", koji "O programu" ne prikazuje). Vidi README.md, odjeljak "Verzionisanje".
+  -->
+  <PropertyGroup>
+    <Version>1.0.0</Version>
+    <Product>XML Validator</Product>
   </PropertyGroup>
 </Project>

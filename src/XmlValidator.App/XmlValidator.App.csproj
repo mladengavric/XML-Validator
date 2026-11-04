@@ -7,6 +7,8 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>Assets\app.ico</ApplicationIcon>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    <AssemblyTitle>XML Validator</AssemblyTitle>
+    <Description>Validacija i čišćenje IZIS XML faktura zdravstva</Description>
   </PropertyGroup>
 
   <ItemGroup>
@@ -27,6 +29,13 @@
   <ItemGroup>
     <ProjectReference Include="..\XmlValidator.Core\XmlValidator.Core.csproj" />
   </ItemGroup>
+
+  <!-- Objavljivanje kao jedan fajl: .pdb fajlovi nativnih biblioteka (SkiaSharp, HarfBuzz; ≈ 100 MB) korisniku ne trebaju. -->
+  <Target Name="ExcludeNativeSymbolsFromSingleFilePublish" AfterTargets="ComputeResolvedFilesToPublishList" Condition="'$(PublishSingleFile)' == 'true'">
+    <ItemGroup>
+      <ResolvedFileToPublish Remove="@(ResolvedFileToPublish)" Condition="'%(Extension)' == '.pdb'" />
+    </ItemGroup>
+  </Target>
 
   <ItemGroup>
     <InternalsVisibleTo Include="XmlValidator.App.Tests" />
