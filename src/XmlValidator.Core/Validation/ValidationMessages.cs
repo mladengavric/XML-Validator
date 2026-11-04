@@ -87,6 +87,53 @@ public static partial class ValidationMessages
         ["napomena"] = "napomena",
     };
 
+    /// <summary>Šta se upisuje u polje (akuzativ): „Upišite broj nivoa usluge (…)”.</summary>
+    private static readonly Dictionary<string, string> ValueNouns = new(StringComparer.Ordinal)
+    {
+        ["ustanova-sifra"] = "šifru ustanove",
+        ["vrsta-fakture"] = "broj vrste fakture",
+        ["jif"] = "JIF",
+        ["xml-verzija"] = "verziju XML-a",
+        ["tip"] = "tip fakture",
+        ["broj"] = "broj fakture",
+        ["datum"] = "datum fakture",
+        ["rok-placanja"] = "rok plaćanja",
+        ["valuta"] = "oznaku valute",
+        ["iznos"] = "iznos",
+        ["participacija-placa"] = "oznaku da li se plaća participacija",
+        ["participacija-iznos"] = "iznos participacije",
+        ["projekat-sifra"] = "šifru projekta",
+        ["osiguranik-jmb"] = "JMB osiguranika",
+        ["lijecenje-period-od"] = "datum početka liječenja",
+        ["lijecenje-period-do"] = "datum kraja liječenja",
+        ["lijecenje-prvi-dan"] = "datum prvog dana liječenja",
+        ["dijagnoza-oznaka"] = "šifru dijagnoze",
+        ["ustanova-uputilac-sifra"] = "šifru ustanove uputioca",
+        ["uputnica-tip"] = "tip uputnice",
+        ["izvrsioc-klinika-sifra"] = "šifru klinike izvršioca",
+        ["ljekar-oznaka"] = "oznaku ljekara",
+        ["datum-prijedloga"] = "datum prijedloga",
+        ["uputnica-id"] = "ID uputnice",
+        ["redni-broj"] = "redni broj stavke",
+        ["usluga-nivo"] = "broj nivoa usluge",
+        ["usluga-grupa"] = "broj grupe usluge",
+        ["usluga-oznaka"] = "broj (šifru) usluge",
+        ["kolicina"] = "količinu",
+        ["broj-slucajeva"] = "broj slučajeva",
+        ["datum-preuzimanja"] = "datum preuzimanja",
+        ["ljekar-sifra"] = "šifru ljekara",
+        ["lijek-oznaka"] = "oznaku lijeka",
+        ["lijek-lista-oznaka"] = "listu lijeka",
+        ["recept-serijski-broj"] = "serijski broj recepta",
+        ["recept-datum-izdavanja"] = "datum izdavanja recepta",
+        ["recept-ustanova-sifra"] = "šifru ustanove na receptu",
+        ["recept-ljekar-oznaka"] = "oznaku ljekara na receptu",
+        ["recept-dijagnoza-oznaka"] = "šifru dijagnoze na receptu",
+        ["datum-izdavanja-lijeka"] = "datum izdavanja lijeka",
+        ["racun-datum"] = "datum računa",
+        ["racun-stavka-redni-broj"] = "redni broj stavke računa",
+    };
+
     /// <summary>Opisi poznatih obrazaca (<c>xs:pattern</c>) iz šeme.</summary>
     private static readonly Dictionary<string, string> PatternDescriptions = new(StringComparer.Ordinal)
     {
@@ -112,7 +159,7 @@ public static partial class ValidationMessages
             var isAttribute = invalid.Groups["kind"].Value == "attribute";
             var value = invalid.Groups["value"].Value;
             var simpleType = SimpleTypeOf(exception.SourceSchemaObject, name, context);
-            var expected = Describe(simpleType);
+            var expected = What(name, Describe(simpleType));
             var required = IsRequired(exception.SourceSchemaObject, name, context);
             var field = isAttribute ? Field(name) : $"element <{name}>";
 
@@ -138,8 +185,8 @@ public static partial class ValidationMessages
         if (MissingAttribute().Match(message) is { Success: true } missing)
         {
             var name = missing.Groups["name"].Value;
-            var expected = Describe(SimpleTypeOf(exception.SourceSchemaObject, name, context));
-            return $"{where}: nedostaje obavezno {Field(name)}. Dodajte ga u tag ({name}=\"…\"): {expected}.";
+            var expected = What(name, Describe(SimpleTypeOf(exception.SourceSchemaObject, name, context)));
+            return $"{where}: nedostaje obavezno {Field(name)}. Dodajte ga u tag ({name}=\"…\") i upišite {expected}.";
         }
 
         if (UndeclaredAttribute().Match(message) is { Success: true } undeclared)
@@ -284,6 +331,12 @@ public static partial class ValidationMessages
         var other => $"Element <{other}>",
     };
 
+    /// <summary>„broj nivoa usluge (cijeli broj od 0 do 65535)” ili samo opis kad polje nema poseban naziv.</summary>
+    private static string What(string field, string description) =>
+        ValueNouns.TryGetValue(field, out var noun)
+            ? $"{noun} ({(description.StartsWith("datum ", StringComparison.Ordinal) ? description["datum ".Length..] : description)})"
+            : description;
+
     private static bool IsItem(string? element) => element is "stavka" or "stavka-recept" or "stavka-obavjest";
 
     private static string Field(string name) =>
@@ -370,7 +423,7 @@ public static partial class ValidationMessages
                     or XmlTypeCode.NonNegativeInteger or XmlTypeCode.PositiveInteger => "cijeli broj",
                 XmlTypeCode.Decimal when Facet<XmlSchemaFractionDigitsFacet>() == "0" => "cijeli broj",
                 XmlTypeCode.Decimal or XmlTypeCode.Double or XmlTypeCode.Float => "broj",
-                XmlTypeCode.Date => "datum u obliku GGGG-MM-DD (npr. 2026-01-31)",
+                XmlTypeCode.Date => "datum u obliku GGGG-MM-DD, npr. 2026-01-31",
                 XmlTypeCode.Boolean => "true ili false",
                 _ => "tekst",
             });
@@ -424,7 +477,7 @@ public static partial class ValidationMessages
 
         if (Facet<XmlSchemaFractionDigitsFacet>() is { } fraction && fraction != "0")
         {
-            parts.Add($"najviše {fraction} {(fraction == "1" ? "decimala" : "decimale")} sa decimalnom tačkom (npr. 12.50)");
+            parts.Add($"najviše {fraction} {(fraction == "1" ? "decimala" : "decimale")} sa decimalnom tačkom, npr. 12.50");
         }
 
         if (Facet<XmlSchemaTotalDigitsFacet>() is { } total)

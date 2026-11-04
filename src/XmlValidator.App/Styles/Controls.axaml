@@ -10,10 +10,11 @@
     TextBlock/SelectableTextBlock: display, title, subtitle, strong, muted, caption, mono, accent
     PathIcon: small, large, hero, status (+ info/success/warning/error), accent, muted
     ListBox: nav, list
-    TabControl: main
+    TabControl: main (+ StackPanel.tabHeader u zaglavlju taba)
     Tab „Validacija”: Border.pane/paneHeader, Border.toolbar.tabbar, Border.banner.compact,
             Border.badge (+ accentSubtle/error), TextBlock.summary (+ ozbiljnost), TextBlock.warningText,
             ComboBox.field, GridSplitter.pane, DataGrid.issues (+ TextBlock.cell/number/message/fullMessage), ToolTip.wide,
+            Border.issueDetails (+ StackPanel.details, TextBlock.detailMessage/hint),
             StackPanel.emptyPane, ProgressBar.busySmall, Button.toolbar.compact,
             ae|TextEditor.xml, ui|IssueMarkerMargin
     Tab „Čišćenje faktura”: ToggleButton.toolbar, Border.settingsPanel, Border.stats/stat (+ last/attention/error),
@@ -400,28 +401,83 @@
 
     <!-- ========== Tabovi glavnog prozora ========== -->
 
-    <!-- Traka tabova je na površini (kao traka sa komandama), sadržaj na pozadini prozora. -->
+    <!--
+      Tabovi kao „kartice”: traka tabova je na površini (kao traka sa komandama) i odvojena je od
+      sadržaja linijom. Neizabran tab je zaobljena siva kartica; izabran tab je na boji površine, sa
+      okvirom, akcentnom trakom na vrhu, i prekriva liniju ispod sebe, pa se spaja sa sadržajem
+      (traka taba ispod je takođe na površini). Traka tabova se crta iznad sadržaja (ZIndex) da bi
+      izabran tab mogao da prekrije liniju.
+    -->
     <Style Selector="TabControl.main">
         <Setter Property="Padding" Value="{DynamicResource NoThickness}" />
         <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
     </Style>
     <Style Selector="TabControl.main /template/ ItemsPresenter#PART_ItemsPresenter">
         <Setter Property="Margin" Value="{DynamicResource TabStripPadding}" />
+        <Setter Property="ZIndex" Value="1" />
     </Style>
     <Style Selector="TabControl.main /template/ ContentPresenter#PART_SelectedContentHost">
         <Setter Property="Background" Value="{DynamicResource AppBackgroundBrush}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource DividerBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}" />
         <Setter Property="BorderThickness" Value="{DynamicResource DividerTop}" />
     </Style>
     <Style Selector="TabControl.main TabItem">
         <Setter Property="FontSize" Value="{DynamicResource FontSizeBody}" />
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="MinHeight" Value="{DynamicResource TabHeaderHeight}" />
-        <Setter Property="Padding" Value="{DynamicResource TabHeaderPadding}" />
+        <Setter Property="Margin" Value="{DynamicResource TabItemMargin}" />
         <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
     </Style>
+    <Style Selector="TabControl.main TabItem /template/ Border#PART_LayoutRoot">
+        <Setter Property="Background" Value="{DynamicResource TabBackgroundBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource TabBorderBrush}" />
+        <Setter Property="BorderThickness" Value="{DynamicResource TabBorderThickness}" />
+        <Setter Property="CornerRadius" Value="{DynamicResource TabCornerRadius}" />
+        <Setter Property="Padding" Value="{DynamicResource NoThickness}" />
+        <Setter Property="TextElement.Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+    </Style>
+    <Style Selector="TabControl.main TabItem /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Margin" Value="{DynamicResource TabHeaderPadding}" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="TabControl.main TabItem:pointerover /template/ Border#PART_LayoutRoot">
+        <Setter Property="Background" Value="{DynamicResource SurfaceHoverBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}" />
+        <Setter Property="TextElement.Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+    </Style>
+    <Style Selector="TabControl.main TabItem:pressed /template/ Border#PART_LayoutRoot">
+        <Setter Property="Background" Value="{DynamicResource SurfacePressedBrush}" />
+        <Setter Property="TextElement.Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+    </Style>
     <Style Selector="TabControl.main TabItem:selected">
+        <Setter Property="Margin" Value="{DynamicResource TabItemSelectedMargin}" />
         <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+    </Style>
+    <Style Selector="TabControl.main TabItem:selected /template/ Border#PART_LayoutRoot, TabControl.main TabItem:selected:pointerover /template/ Border#PART_LayoutRoot, TabControl.main TabItem:selected:pressed /template/ Border#PART_LayoutRoot">
+        <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}" />
+        <Setter Property="TextElement.Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+    </Style>
+    <!-- Ikonica u zaglavlju izabranog taba (StackPanel.tabHeader) je u akcentnoj boji -->
+    <Style Selector="TabControl.main TabItem:selected StackPanel.tabHeader > PathIcon">
+        <Setter Property="Foreground" Value="{DynamicResource AccentTextBrush}" />
+    </Style>
+    <!-- Akcentna traka izabranog taba: preko gornje ivice, cijelom širinom taba -->
+    <Style Selector="TabControl.main TabItem /template/ Border#PART_SelectedPipe">
+        <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
+        <Setter Property="VerticalAlignment" Value="Top" />
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
+        <Setter Property="Height" Value="{DynamicResource TabIndicatorHeight}" />
+        <Setter Property="Margin" Value="{DynamicResource TabIndicatorMargin}" />
+        <Setter Property="CornerRadius" Value="{DynamicResource TabIndicatorCornerRadius}" />
+    </Style>
+    <!-- Fokus sa tastature: akcentni okvir i blaga akcentna pozadina -->
+    <Style Selector="TabControl.main TabItem:focus-visible /template/ Border#PART_LayoutRoot">
+        <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+        <Setter Property="TextElement.Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+    </Style>
+    <Style Selector="TabControl.main TabItem:focus-visible:not(:selected) /template/ Border#PART_LayoutRoot">
+        <Setter Property="Background" Value="{DynamicResource AccentSubtleBrush}" />
     </Style>
 
     <!-- ========== Liste ========== -->
@@ -492,10 +548,14 @@
         <Setter Property="Padding" Value="{DynamicResource PaneHeaderPadding}" />
     </Style>
 
-    <!-- Sažetak rezultata: boja prati ozbiljnost, a ikonica i tekst nose značenje -->
+    <!-- Sažetak rezultata: boja prati ozbiljnost, a ikonica i tekst nose značenje.
+         Duži tekst se prelama u najviše dva reda. -->
     <Style Selector="TextBlock.summary">
         <Setter Property="FontSize" Value="{DynamicResource FontSizeSubtitle}" />
         <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+        <Setter Property="MaxLines" Value="{DynamicResource SummaryMaxLines}" />
+        <Setter Property="TextTrimming" Value="CharacterEllipsis" />
     </Style>
     <Style Selector="TextBlock.summary.success">
         <Setter Property="Foreground" Value="{DynamicResource SuccessForegroundBrush}" />
@@ -624,6 +684,31 @@
         <Setter Property="TextWrapping" Value="Wrap" />
     </Style>
 
+    <!-- Detalji izabranog nalaza: kolona desno od tabele, odvojena linijom -->
+    <Style Selector="Border.issueDetails">
+        <Setter Property="Width" Value="{DynamicResource IssueDetailsWidth}" />
+        <Setter Property="Background" Value="{DynamicResource SurfaceAltBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DividerBrush}" />
+        <Setter Property="BorderThickness" Value="{DynamicResource DividerLeft}" />
+    </Style>
+    <Style Selector="Border.issueDetails StackPanel.details">
+        <Setter Property="Margin" Value="{DynamicResource IssueDetailsPadding}" />
+        <Setter Property="Spacing" Value="{DynamicResource SpaceS}" />
+    </Style>
+    <Style Selector="Border.issueDetails Button.toolbar.compact">
+        <Setter Property="Margin" Value="{DynamicResource IssueDetailsButtonMargin}" />
+        <Setter Property="HorizontalAlignment" Value="Left" />
+    </Style>
+    <Style Selector="Border.issueDetails :is(TextBlock).detailMessage">
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+    <Style Selector="Border.issueDetails :is(TextBlock).hint">
+        <Setter Property="Margin" Value="{DynamicResource IssueDetailsPadding}" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+        <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="TextAlignment" Value="Center" />
+    </Style>
     <!-- Širi ToolTip za duže objašnjenje (poruka + tehnički opis) -->
     <Style Selector="ToolTip.wide">
         <Setter Property="MaxWidth" Value="{DynamicResource WideToolTipMaxWidth}" />
@@ -999,6 +1084,9 @@
     <!-- Glavni prozor: tab sa prečicom u opisu -->
     <Style Selector="TabControl.main TabItem:focus-visible">
         <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+    </Style>
+    <Style Selector="TabControl.main TabItem:focus-visible StackPanel.tabHeader > PathIcon">
+        <Setter Property="Foreground" Value="{DynamicResource AccentTextBrush}" />
     </Style>
 
 </Styles>

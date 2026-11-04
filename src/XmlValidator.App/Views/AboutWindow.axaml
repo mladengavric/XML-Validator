@@ -47,7 +47,7 @@
             <!-- Okruženje -->
             <TabItem AutomationProperties.Name="Okruženje">
                 <TabItem.Header>
-                    <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
+                    <StackPanel Classes="tabHeader" Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
                         <PathIcon Data="{StaticResource IconInfo}" />
                         <TextBlock Text="Okruženje" />
                     </StackPanel>
@@ -84,7 +84,7 @@
             <!-- Prečice -->
             <TabItem AutomationProperties.Name="Prečice na tastaturi">
                 <TabItem.Header>
-                    <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
+                    <StackPanel Classes="tabHeader" Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
                         <PathIcon Data="{StaticResource IconKeyboard}" />
                         <TextBlock Text="Prečice" />
                     </StackPanel>
@@ -134,7 +134,7 @@
             <!-- Licence -->
             <TabItem AutomationProperties.Name="Korišćene biblioteke i licence">
                 <TabItem.Header>
-                    <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
+                    <StackPanel Classes="tabHeader" Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
                         <PathIcon Data="{StaticResource IconReport}" />
                         <TextBlock Text="Licence" />
                     </StackPanel>

@@ -171,6 +171,16 @@ public partial class ValidationTabView : UserControl
         if (IssuesGrid.SelectedItem is ValidationIssueRow row)
         {
             IssuesGrid.ScrollIntoView(row, null);
+
+            // Redovi sa prelomljenom porukom imaju različite visine; prvo pomjeranje ide po procjeni visine,
+            // pa se poslije rasporeda ponavlja da bi izabran red sigurno bio vidljiv.
+            Dispatcher.UIThread.Post(() =>
+            {
+                if (ReferenceEquals(IssuesGrid.SelectedItem, row))
+                {
+                    IssuesGrid.ScrollIntoView(row, null);
+                }
+            }, DispatcherPriority.Loaded);
             _viewModel?.GoToIssueCommand.Execute(row);
         }
 

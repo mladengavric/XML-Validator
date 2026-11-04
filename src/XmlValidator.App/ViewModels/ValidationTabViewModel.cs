@@ -187,7 +187,12 @@ public sealed partial class ValidationTabViewModel : DocumentTabViewModel, IDisp
     public ObservableCollection<ValidationIssueRow> Issues { get; } = [];
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasSelectedIssue))]
+    [NotifyCanExecuteChangedFor(nameof(CopySelectedIssueCommand))]
     public partial ValidationIssueRow? SelectedIssue { get; set; }
+
+    /// <summary>Izabran je nalaz (prikazuju se detalji ispod tabele).</summary>
+    public bool HasSelectedIssue => SelectedIssue is not null;
 
     // ---------------------------------------------------------------- šeme
 
@@ -345,6 +350,38 @@ public sealed partial class ValidationTabViewModel : DocumentTabViewModel, IDisp
     }
 
     private bool CanExport() => Result is not null && !IsValidating;
+
+    /// <summary>Kopira poruku izabranog nalaza (sa mjestom i tehničkim opisom) u clipboard.</summary>
+    [RelayCommand(CanExecute = nameof(HasSelectedIssue))]
+    private async Task CopySelectedIssueAsync()
+    {
+        if (SelectedIssue is not { } issue)
+        {
+            return;
+        }
+
+        var text = issue.Message;
+        if (issue.HasPosition)
+        {
+            text = $"Linija {issue.LineText}, kolona {issue.ColumnText}: {text}";
+        }
+
+        if (issue.HasTechnicalMessage)
+        {
+            text += Environment.NewLine + "Tehnički opis: " + issue.TechnicalMessage;
+        }
+
+        try
+        {
+            await _clipboard.SetTextAsync(text);
+            SetSummaryNote("Poruka je kopirana u clipboard.");
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _log.Warning("Kopiranje u clipboard nije uspjelo.", ex);
+            await _dialogs.ShowMessageAsync("Kopiranje nije uspjelo", "Poruka ne može da se kopira u clipboard.", MessageSeverity.Error);
+        }
+    }
 
     /// <summary>Kopira nalaze (sa nazivom šeme) u clipboard.</summary>
     [RelayCommand(CanExecute = nameof(CanExport))]
@@ -541,8 +578,17 @@ public sealed partial class ValidationTabViewModel : DocumentTabViewModel, IDisp
     {
         (0, 0) => ("Fajl je ispravan ✓", MessageSeverity.Success),
         (0, var w) => ($"Fajl je ispravan ✓ (upozorenja: {w})", MessageSeverity.Success),
-        (var e, 0) => ($"Pronađeno {Errors(e)}", MessageSeverity.Error),
-        (var e, var w) => ($"Pronađeno {Errors(e)} i upozorenja: {w}", MessageSeverity.Error),
+        (var e, 0) => ($"Pronađeno {Errors(e)}{Where(result)}", MessageSeverity.Error),
+        (var e, var w) => ($"Pronađeno {Errors(e)}{Where(result)} · upozorenja: {w}", MessageSeverity.Error),
+    };
+
+    /// <summary>„ u 3 fakture”, „ u 3 fakture i 1 van faktura”, „ van faktura” (više grešaka može biti na jednoj fakturi).</summary>
+    internal static string Where(ValidationResult result) => (result.InvoicesWithErrors, result.ErrorsOutsideInvoices) switch
+    {
+        (0, 0) => string.Empty,
+        (0, _) => " van faktura",
+        (var i, 0) => $" {ValidationResult.InInvoices(i)}",
+        (var i, var o) => $" {ValidationResult.InInvoices(i)} i {o} van faktura",
     };
 
     /// <summary>„1 greška”, „2 greške”, „5 grešaka”, „21 greška” (srpska množina).</summary>

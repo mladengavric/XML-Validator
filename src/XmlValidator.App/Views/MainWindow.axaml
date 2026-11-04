@@ -138,7 +138,7 @@
                 <!-- Validacija -->
                 <TabItem AutomationProperties.Name="{Binding Validation.Header}" ToolTip.Tip="Validacija XML fajla prema XSD šemi (Ctrl+1)">
                     <TabItem.Header>
-                        <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
+                        <StackPanel Classes="tabHeader" Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
                             <PathIcon Data="{StaticResource IconValidate}" />
                             <TextBlock Text="{Binding Validation.Header}" />
                         </StackPanel>
@@ -175,7 +175,7 @@
                 <!-- Čišćenje faktura -->
                 <TabItem AutomationProperties.Name="{Binding Cleaning.Header}" ToolTip.Tip="Čišćenje faktura po pravilu SHMP (Ctrl+2)">
                     <TabItem.Header>
-                        <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
+                        <StackPanel Classes="tabHeader" Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
                             <PathIcon Data="{StaticResource IconClean}" />
                             <TextBlock Text="{Binding Cleaning.Header}" />
                         </StackPanel>

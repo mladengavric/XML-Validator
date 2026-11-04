@@ -83,6 +83,8 @@ public sealed class XmlValidationService
         // Validator javlja grešku atributa dok je čitač na samom atributu (mjesto i tip tada nisu dostupni), pa se
         // nalazi čuvaju dok Read() ne stane na element kojem pripadaju i tek tada dobijaju objašnjenje (Flush).
         string? currentInvoice = null;
+        int? invoiceOrdinal = null;
+        var invoicesSeen = 0;
         var raw = new List<ValidationEventArgs>();
         settings.ValidationEventHandler += (_, e) =>
         {
@@ -108,7 +110,8 @@ public sealed class XmlValidationService
                     e.Exception?.LinePosition ?? 0,
                     e.Exception is { } exception ? ValidationMessages.FromSchema(exception, context) : e.Message,
                     ValidationIssueKind.Schema,
-                    e.Message);
+                    e.Message,
+                    invoiceOrdinal);
                 if (rootSeen)
                 {
                     collector.Add(issue);
@@ -135,12 +138,24 @@ public sealed class XmlValidationService
                     cancellationToken.ThrowIfCancellationRequested();
                 }
 
-                if (reader.NodeType == XmlNodeType.Element && reader.LocalName == "faktura")
+                var isInvoiceStart = reader.NodeType == XmlNodeType.Element && reader.LocalName == "faktura";
+                if (isInvoiceStart)
                 {
                     currentInvoice = reader.GetAttribute("broj");
+                    invoiceOrdinal = ++invoicesSeen;
+                }
+                else if (reader.NodeType == XmlNodeType.Element && reader.Depth <= 1)
+                {
+                    invoiceOrdinal = null; // korijen, opsti-podaci ili drugi element van faktura
                 }
 
                 Flush(reader);
+                if ((reader.NodeType == XmlNodeType.EndElement && reader.LocalName == "faktura")
+                    || (isInvoiceStart && reader.IsEmptyElement))
+                {
+                    invoiceOrdinal = null;
+                }
+
                 if (!rootSeen && reader.NodeType == XmlNodeType.Element)
                 {
                     rootSeen = true;
@@ -169,7 +184,8 @@ public sealed class XmlValidationService
             pending.ForEach(collector.Add);
             pending.Clear();
             collector.Add(new ValidationIssue(
-                ValidationSeverity.Error, ex.LineNumber, ex.LinePosition, ValidationMessages.FromXml(ex), ValidationIssueKind.WellFormedness, ex.Message));
+                ValidationSeverity.Error, ex.LineNumber, ex.LinePosition, ValidationMessages.FromXml(ex), ValidationIssueKind.WellFormedness, ex.Message,
+                invoiceOrdinal));
         }
         finally
         {
@@ -185,7 +201,9 @@ public sealed class XmlValidationService
             _maxIssues,
             schema.Name,
             schema.IsFallback,
-            schema.FallbackReason);
+            schema.FallbackReason,
+            collector.InvoicesWithErrors,
+            collector.ErrorsOutsideInvoices);
     }
 
     /// <summary>
@@ -236,11 +254,25 @@ public sealed class XmlValidationService
 
         public int WarningCount { get; private set; }
 
+        private readonly HashSet<int> _invoicesWithErrors = [];
+
+        public int InvoicesWithErrors => _invoicesWithErrors.Count;
+
+        public int ErrorsOutsideInvoices { get; private set; }
+
         public void Add(ValidationIssue issue)
         {
             if (issue.Severity == ValidationSeverity.Error)
             {
                 ErrorCount++;
+                if (issue.InvoiceOrdinal is { } ordinal)
+                {
+                    _invoicesWithErrors.Add(ordinal);
+                }
+                else
+                {
+                    ErrorsOutsideInvoices++;
+                }
             }
             else
             {

@@ -57,7 +57,6 @@
                     <StackPanel Grid.Column="1" VerticalAlignment="Center">
                         <TextBlock x:Name="SummaryText" Classes="summary" Text="{Binding SummaryText}"
                                    ui:SeverityStyle.Severity="{Binding SummarySeverity}"
-                                   TextTrimming="CharacterEllipsis"
                                    ToolTip.Tip="{Binding ValidatedSchemaName, StringFormat='Validirano šemom: {0}'}" />
                         <TextBlock x:Name="StaleNote" Classes="caption warningText" TextTrimming="CharacterEllipsis"
                                    IsVisible="{Binding IsResultStale}"
@@ -226,91 +225,147 @@
                             </Grid>
                         </Border>
 
-                        <Panel>
-                            <DataGrid x:Name="IssuesGrid" Classes="issues"
-                                      ItemsSource="{Binding Issues}"
-                                      SelectedItem="{Binding SelectedIssue}"
-                                      IsVisible="{Binding HasIssues}"
-                                      AutomationProperties.Name="Lista nalaza validacije">
-                                <DataGrid.Columns>
-                                    <DataGridTemplateColumn Header="Ozbiljnost" Width="{StaticResource IssueSeverityColumnWidth}">
-                                        <DataGridTemplateColumn.CellTemplate>
-                                            <DataTemplate x:DataType="vm:ValidationIssueRow">
-                                                <StackPanel Classes="cell" Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
-                                                    <PathIcon Classes="status small" ui:SeverityStyle.Severity="{Binding Severity}" />
-                                                    <TextBlock Text="{Binding SeverityText}" VerticalAlignment="Center" />
-                                                </StackPanel>
-                                            </DataTemplate>
-                                        </DataGridTemplateColumn.CellTemplate>
-                                    </DataGridTemplateColumn>
-                                    <DataGridTemplateColumn Header="Linija" Width="{StaticResource IssueNumberColumnWidth}">
-                                        <DataGridTemplateColumn.CellTemplate>
-                                            <DataTemplate x:DataType="vm:ValidationIssueRow">
-                                                <TextBlock Classes="cell number" Text="{Binding LineText}" />
-                                            </DataTemplate>
-                                        </DataGridTemplateColumn.CellTemplate>
-                                    </DataGridTemplateColumn>
-                                    <DataGridTemplateColumn Header="Kolona" Width="{StaticResource IssueNumberColumnWidth}">
-                                        <DataGridTemplateColumn.CellTemplate>
-                                            <DataTemplate x:DataType="vm:ValidationIssueRow">
-                                                <TextBlock Classes="cell number" Text="{Binding ColumnText}" />
-                                            </DataTemplate>
-                                        </DataGridTemplateColumn.CellTemplate>
-                                    </DataGridTemplateColumn>
-                                    <DataGridTemplateColumn Header="Vrsta" Width="{StaticResource IssueKindColumnWidth}">
-                                        <DataGridTemplateColumn.CellTemplate>
-                                            <DataTemplate x:DataType="vm:ValidationIssueRow">
-                                                <TextBlock Classes="cell" Text="{Binding KindText}" TextTrimming="CharacterEllipsis" />
-                                            </DataTemplate>
-                                        </DataGridTemplateColumn.CellTemplate>
-                                    </DataGridTemplateColumn>
-                                    <DataGridTemplateColumn Header="Poruka" Width="*">
-                                        <DataGridTemplateColumn.CellTemplate>
-                                            <DataTemplate x:DataType="vm:ValidationIssueRow">
-                                                <TextBlock Classes="cell fullMessage" Text="{Binding Message}">
-                                                    <ToolTip.Tip>
-                                                        <ToolTip Classes="wide">
-                                                            <StackPanel Spacing="{StaticResource SpaceS}">
-                                                                <TextBlock Text="{Binding Message}" />
-                                                                <TextBlock Classes="caption muted"
-                                                                           IsVisible="{Binding HasTechnicalMessage}"
-                                                                           Text="{Binding TechnicalMessage, StringFormat='Tehnički opis: {0}'}" />
-                                                            </StackPanel>
-                                                        </ToolTip>
-                                                    </ToolTip.Tip>
-                                                </TextBlock>
-                                            </DataTemplate>
-                                        </DataGridTemplateColumn.CellTemplate>
-                                    </DataGridTemplateColumn>
-                                </DataGrid.Columns>
-                            </DataGrid>
+                        <!-- Tabela nalaza lijevo, detalji izabranog nalaza desno (redoslijed fokusa: tabela, pa detalji) -->
+                        <Grid ColumnDefinitions="*,Auto">
+                            <Panel>
+                                <DataGrid x:Name="IssuesGrid" Classes="issues"
+                                          ItemsSource="{Binding Issues}"
+                                          SelectedItem="{Binding SelectedIssue}"
+                                          IsVisible="{Binding HasIssues}"
+                                          AutomationProperties.Name="Lista nalaza validacije">
+                                    <DataGrid.Columns>
+                                        <DataGridTemplateColumn Header="Ozbiljnost" Width="{StaticResource IssueSeverityColumnWidth}">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate x:DataType="vm:ValidationIssueRow">
+                                                    <StackPanel Classes="cell" Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
+                                                        <PathIcon Classes="status small" ui:SeverityStyle.Severity="{Binding Severity}" />
+                                                        <TextBlock Text="{Binding SeverityText}" VerticalAlignment="Center" />
+                                                    </StackPanel>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
+                                        <DataGridTemplateColumn Header="Linija" Width="{StaticResource IssueNumberColumnWidth}">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate x:DataType="vm:ValidationIssueRow">
+                                                    <TextBlock Classes="cell number" Text="{Binding LineText}" />
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
+                                        <DataGridTemplateColumn Header="Kolona" Width="{StaticResource IssueNumberColumnWidth}">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate x:DataType="vm:ValidationIssueRow">
+                                                    <TextBlock Classes="cell number" Text="{Binding ColumnText}" />
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
+                                        <DataGridTemplateColumn Header="Vrsta" Width="{StaticResource IssueKindColumnWidth}">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate x:DataType="vm:ValidationIssueRow">
+                                                    <TextBlock Classes="cell" Text="{Binding KindText}" TextTrimming="CharacterEllipsis" />
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
+                                        <DataGridTemplateColumn Header="Poruka" Width="*">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate x:DataType="vm:ValidationIssueRow">
+                                                    <TextBlock Classes="cell fullMessage" Text="{Binding Message}">
+                                                        <ToolTip.Tip>
+                                                            <ToolTip Classes="wide">
+                                                                <StackPanel Spacing="{StaticResource SpaceS}">
+                                                                    <TextBlock Text="{Binding Message}" />
+                                                                    <TextBlock Classes="caption muted"
+                                                                               IsVisible="{Binding HasTechnicalMessage}"
+                                                                               Text="{Binding TechnicalMessage, StringFormat='Tehnički opis: {0}'}" />
+                                                                </StackPanel>
+                                                            </ToolTip>
+                                                        </ToolTip.Tip>
+                                                    </TextBlock>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
+                                    </DataGrid.Columns>
+                                </DataGrid>
 
-                            <!-- Prazno stanje: validacija je prošla bez nalaza -->
-                            <StackPanel x:Name="NoIssuesState" Classes="emptyPane">
-                                <StackPanel.IsVisible>
-                                    <MultiBinding Converter="{x:Static BoolConverters.And}">
-                                        <Binding Path="HasResult" />
-                                        <Binding Path="!HasIssues" />
-                                    </MultiBinding>
-                                </StackPanel.IsVisible>
-                                <PathIcon Classes="status success large" HorizontalAlignment="Center" />
-                                <TextBlock Classes="strong" Text="Nema grešaka ni upozorenja." HorizontalAlignment="Center" />
-                                <TextBlock Classes="muted wrap" TextAlignment="Center"
-                                           Text="Fajl odgovara izabranoj šemi. Ako izmijenite sadržaj, pritisnite F5 za novu provjeru." />
-                            </StackPanel>
+                                <!-- Prazno stanje: validacija je prošla bez nalaza -->
+                                <StackPanel x:Name="NoIssuesState" Classes="emptyPane">
+                                    <StackPanel.IsVisible>
+                                        <MultiBinding Converter="{x:Static BoolConverters.And}">
+                                            <Binding Path="HasResult" />
+                                            <Binding Path="!HasIssues" />
+                                        </MultiBinding>
+                                    </StackPanel.IsVisible>
+                                    <PathIcon Classes="status success large" HorizontalAlignment="Center" />
+                                    <TextBlock Classes="strong" Text="Nema grešaka ni upozorenja." HorizontalAlignment="Center" />
+                                    <TextBlock Classes="muted wrap" TextAlignment="Center"
+                                               Text="Fajl odgovara izabranoj šemi. Ako izmijenite sadržaj, pritisnite F5 za novu provjeru." />
+                                </StackPanel>
 
-                            <!-- Prazno stanje: rezultat još ne postoji -->
-                            <StackPanel x:Name="NoResultState" Classes="emptyPane" IsVisible="{Binding !HasResult}">
-                                <PathIcon Classes="muted large" Data="{StaticResource IconList}" HorizontalAlignment="Center"
-                                          IsVisible="{Binding !IsValidating}" />
-                                <ProgressBar Classes="busy" HorizontalAlignment="Center" IsVisible="{Binding IsValidating}"
-                                             AutomationProperties.Name="Validacija u toku" />
-                                <TextBlock Classes="muted wrap" TextAlignment="Center" IsVisible="{Binding IsValidating}"
-                                           Text="Validacija u toku…" />
-                                <TextBlock Classes="muted wrap" TextAlignment="Center" IsVisible="{Binding !IsValidating}"
-                                           Text="Nalazi će se pojaviti ovdje. Pokrenite validaciju dugmetom „Validiraj” ili tasterom F5." />
-                            </StackPanel>
-                        </Panel>
+                                <!-- Prazno stanje: rezultat još ne postoji -->
+                                <StackPanel x:Name="NoResultState" Classes="emptyPane" IsVisible="{Binding !HasResult}">
+                                    <PathIcon Classes="muted large" Data="{StaticResource IconList}" HorizontalAlignment="Center"
+                                              IsVisible="{Binding !IsValidating}" />
+                                    <ProgressBar Classes="busy" HorizontalAlignment="Center" IsVisible="{Binding IsValidating}"
+                                                 AutomationProperties.Name="Validacija u toku" />
+                                    <TextBlock Classes="muted wrap" TextAlignment="Center" IsVisible="{Binding IsValidating}"
+                                               Text="Validacija u toku…" />
+                                    <TextBlock Classes="muted wrap" TextAlignment="Center" IsVisible="{Binding !IsValidating}"
+                                               Text="Nalazi će se pojaviti ovdje. Pokrenite validaciju dugmetom „Validiraj” ili tasterom F5." />
+                                </StackPanel>
+                            </Panel>
+
+                            <!-- ===== Detalji izabranog nalaza ===== -->
+                            <Border x:Name="IssueDetails" Grid.Column="1" Classes="issueDetails" IsVisible="{Binding HasIssues}">
+                                <Panel>
+                                    <TextBlock x:Name="IssueDetailsHint" Classes="hint" IsVisible="{Binding !HasSelectedIssue}"
+                                               Text="Izaberite nalaz da vidite detalje." />
+
+                                    <DockPanel IsVisible="{Binding HasSelectedIssue}">
+                                        <Button x:Name="CopySelectedIssueButton" DockPanel.Dock="Bottom" Classes="toolbar compact"
+                                                Command="{Binding CopySelectedIssueCommand}"
+                                                ToolTip.Tip="Kopiraj poruku izabranog nalaza (sa linijom, kolonom i tehničkim opisom) u clipboard">
+                                            <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
+                                                <PathIcon Data="{StaticResource IconCopy}" />
+                                                <TextBlock Text="Kopiraj poruku" />
+                                            </StackPanel>
+                                        </Button>
+
+                                        <ScrollViewer DataContext="{Binding SelectedIssue}"
+                                                      HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto"
+                                                      AutomationProperties.Name="Detalji izabranog nalaza">
+                                            <StackPanel Classes="details" x:DataType="vm:ValidationIssueRow">
+                                                <Grid ColumnDefinitions="Auto,Auto,Auto,*" ColumnSpacing="{StaticResource SpaceS}">
+                                                    <PathIcon Classes="status small" ui:SeverityStyle.Severity="{Binding Severity}"
+                                                              VerticalAlignment="Center" />
+                                                    <TextBlock Grid.Column="1" Classes="strong" Text="{Binding SeverityText}"
+                                                               VerticalAlignment="Center" />
+                                                    <Border Grid.Column="2" Classes="badge" ToolTip.Tip="Vrsta nalaza">
+                                                        <TextBlock Text="{Binding KindText}" />
+                                                    </Border>
+                                                    <TextBlock x:Name="SelectedIssuePosition" Grid.Column="3" Classes="caption muted"
+                                                               HorizontalAlignment="Right" VerticalAlignment="Center"
+                                                               TextTrimming="CharacterEllipsis" IsVisible="{Binding HasPosition}">
+                                                        <TextBlock.Text>
+                                                            <MultiBinding StringFormat="Linija {0}, kolona {1}">
+                                                                <Binding Path="LineText" />
+                                                                <Binding Path="ColumnText" />
+                                                            </MultiBinding>
+                                                        </TextBlock.Text>
+                                                    </TextBlock>
+                                                    <TextBlock Grid.Column="3" Classes="caption muted" HorizontalAlignment="Right"
+                                                               VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                                                               IsVisible="{Binding !HasPosition}" Text="Bez pozicije u fajlu" />
+                                                </Grid>
+                                                <SelectableTextBlock x:Name="SelectedIssueMessage" Classes="detailMessage"
+                                                                     Text="{Binding Message}" />
+                                                <SelectableTextBlock x:Name="SelectedIssueTechnical" Classes="detailMessage caption muted"
+                                                                     IsVisible="{Binding HasTechnicalMessage}"
+                                                                     Text="{Binding TechnicalMessage, StringFormat='Tehnički opis: {0}'}" />
+                                            </StackPanel>
+                                        </ScrollViewer>
+                                    </DockPanel>
+                                </Panel>
+                            </Border>
+                        </Grid>
                     </DockPanel>
                 </Border>
             </Grid>

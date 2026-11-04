@@ -42,7 +42,7 @@
   <img src="slike/ikona.png" alt="">
   <h1>XML Validator</h1>
   <div class="sub">Uputstvo za korišćenje<br>Validacija i čišćenje IZIS XML faktura zdravstva</div>
-  <div class="meta">Verzija programa 1.1.0 · novembar 2026.<br>Slike prikazuju program u tamnoj temi, nad sintetičkim (izmišljenim) ili anonimizovanim podacima.</div>
+  <div class="meta">Verzija programa 1.2.0 · novembar 2026.<br>Slike prikazuju program u tamnoj temi, nad sintetičkim (izmišljenim) ili anonimizovanim podacima.</div>
 </section>
 
 <section class="toc">
@@ -75,10 +75,10 @@
 <h3>Korak 1.1 – Pokrenite program</h3>
 <ol>
   <li>Kopirajte <code>XmlValidator.exe</code> u bilo koji folder (npr. na radnu površinu). Instalacija nije potrebna, a nije potreban ni instaliran .NET.</li>
-  <li>Pokrenite ga duplim klikom. Prvo pokretanje traje nekoliko sekundi, a svako sljedeće oko dvije.</li>
+  <li>Pokrenite ga duplim klikom. Program se otvara preko cijelog ekrana. Prvo pokretanje traje nekoliko sekundi, a svako sljedeće oko dvije.</li>
   <li>Ako Windows prikaže upozorenje „Windows protected your PC”, kliknite <b class="ui">More info → Run anyway</b> (program nije digitalno potpisan).</li>
 </ol>
-<p>Otvara se početni ekran. Gore je traka sa komandama (<b class="ui">Otvori…</b>, <b class="ui">Sačuvaj kao…</b>, <b class="ui">Zatvori</b>, <b class="ui">Nedavni fajlovi</b>, <b class="ui">Podešavanja</b>, pomoć <b class="ui">?</b>), ispod su tabovi <b class="ui">Validacija</b> i <b class="ui">Čišćenje faktura</b>, a dole statusna traka sa aktivnom šemom.</p>
+<p>Otvara se početni ekran. Gore je traka sa komandama (<b class="ui">Otvori…</b>, <b class="ui">Sačuvaj kao…</b>, <b class="ui">Zatvori</b>, <b class="ui">Nedavni fajlovi</b>, <b class="ui">Podešavanja</b>, pomoć <b class="ui">?</b>), ispod su tabovi <b class="ui">Validacija</b> i <b class="ui">Čišćenje faktura</b> (izabran tab je svijetlija kartica sa plavom trakom na vrhu), a dole statusna traka sa aktivnom šemom.</p>
 <figure><img src="slike/01-pocetni-ekran.png" alt=""><figcaption>Slika 1. Početni ekran prije otvaranja fajla.</figcaption></figure>
 </div>
 
@@ -126,15 +126,15 @@
 
 <div class="step">
 <h3>Korak 3.2 – Pregledajte greške</h3>
-<p>Ako fajl ima grešaka, broj grešaka je prikazan crveno, sporne linije su označene u editoru, a sve greške su u tabeli <b class="ui">Nalazi</b> (ozbiljnost, linija, kolona, vrsta i poruka).</p>
-<p>Poruka kaže <b>gdje</b> je problem (npr. „Stavka 1 fakture SIN-1”), <b>šta</b> nije u redu i <b>šta treba upisati</b>, npr. „polje „usluga-nivo” (nivo usluge) je prazno. Upišite cijeli broj od 0 do 65535, ili obrišite cijeli red stavke ako ta usluga ne treba da bude u fakturi.” Kad zadržite miš iznad poruke, vidi se i originalni tehnički opis greške (na engleskom), koji može zatrebati podršci.</p>
+<p>Ako fajl ima grešaka, crveno piše koliko ih je i na koliko faktura (npr. <b class="ui">Pronađeno 4 greške u 3 fakture</b>; jedna faktura može imati više grešaka, a greške u zaglavlju fajla se navode kao „van faktura”). Sporne linije su označene u editoru, a sve greške su u tabeli <b class="ui">Nalazi</b> (ozbiljnost, linija, kolona, vrsta i poruka).</p>
+<p>Poruka kaže <b>gdje</b> je problem (npr. „Stavka 1 fakture SIN-1”), <b>šta</b> nije u redu i <b>šta treba upisati</b>, npr. „polje „usluga-nivo” (nivo usluge) je prazno. Upišite broj nivoa usluge (cijeli broj od 0 do 65535), ili obrišite cijeli red stavke ako ta usluga ne treba da bude u fakturi.” Kad zadržite miš iznad poruke, vidi se i originalni tehnički opis greške (na engleskom), koji može zatrebati podršci.</p>
 <figure><img src="slike/05-validacija-greske.png" alt=""><figcaption>Slika 6. Fajl sa četiri greške.</figcaption></figure>
 </div>
 
 <div class="step">
 <h3>Korak 3.3 – Idite na mjesto greške</h3>
-<p>Kliknite grešku u tabeli <b class="ui">Nalazi</b>: editor skače na tu liniju i kolonu. Strelicama iznad tabele, ili sa <kbd>F8</kbd> i <kbd>Shift</kbd>+<kbd>F8</kbd>, prelazite na sljedeću i prethodnu grešku. <b class="ui">Kopiraj</b> kopira nalaze, a <b class="ui">Izvezi…</b> ih čuva u <code>.txt</code> ili <code>.csv</code> fajl.</p>
-<figure><img src="slike/06-validacija-izabrana-greska.png" alt=""><figcaption>Slika 7. Izabrana greška je označena u editoru.</figcaption></figure>
+<p>Kliknite grešku u tabeli <b class="ui">Nalazi</b>: editor skače na tu liniju i kolonu, a desno od tabele se prikazuju detalji izabrane greške: ozbiljnost, vrsta, linija i kolona, cijela poruka (može se označiti) i tehnički opis. Dugme <b class="ui">Kopiraj poruku</b> kopira samo tu grešku (sa linijom, kolonom i tehničkim opisom), npr. da je pošaljete kolegi ili podršci. Strelicama iznad tabele, ili sa <kbd>F8</kbd> i <kbd>Shift</kbd>+<kbd>F8</kbd>, prelazite na sljedeću i prethodnu grešku. <b class="ui">Kopiraj</b> kopira nalaze, a <b class="ui">Izvezi…</b> ih čuva u <code>.txt</code> ili <code>.csv</code> fajl.</p>
+<figure><img src="slike/06-validacija-izabrana-greska.png" alt=""><figcaption>Slika 7. Izabrana greška je označena u editoru, a desno su njeni detalji i dugme „Kopiraj poruku”.</figcaption></figure>
 </div>
 
 <div class="step">

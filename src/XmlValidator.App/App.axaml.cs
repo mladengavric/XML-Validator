@@ -1,4 +1,5 @@
 using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Avalonia.Threading;
@@ -32,7 +33,9 @@ public partial class App : Application
             _services.GetRequiredService<IThemeService>().Apply(_services.GetRequiredService<ISettingsService>().Current.Theme);
 
             var viewModel = _services.GetRequiredService<MainWindowViewModel>();
-            desktop.MainWindow = new MainWindow { DataContext = viewModel };
+            // Glavni prozor se otvara preko cijelog ekrana; Width/Height iz XAML-a ostaju veličina pri vraćanju.
+            // Samo ovdje (pravo pokretanje), da bi UI testovi imali stalnu veličinu prozora za snimke.
+            desktop.MainWindow = new MainWindow { DataContext = viewModel, WindowState = WindowState.Maximized };
             desktop.Exit += (_, _) => _services.Dispose();
 
             var startupFile = desktop.Args is { Length: > 0 } args ? args[0] : null;

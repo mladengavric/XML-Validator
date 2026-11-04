@@ -25,12 +25,12 @@ EDGE = Path(r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe")
 
 # slika u uputstvu -> (snimak iz UI testova u tamnoj temi, crveni okviri (x1, y1, x2, y2) u pikselima snimka)
 IMAGES = {
-    "01-pocetni-ekran.png": ("main-empty-dark.png", [(12, 6, 1192, 44), (14, 52, 284, 94), (6, 748, 1194, 779)]),
+    "01-pocetni-ekran.png": ("main-empty-dark.png", [(12, 6, 1192, 44), (12, 55, 308, 94), (6, 748, 1194, 779)]),
     "02-prevlacenje.png": ("main-drop-overlay-dark.png", [(410, 300, 790, 480)]),
     "03-nedavni-fajlovi.png": ("main-recent-menu-dark.png", [(374, 6, 542, 42), (372, 44, 720, 190)]),
     "04-validacija-ispravan.png": ("validation-valid-dark.png", [(14, 102, 131, 141), (146, 104, 332, 141), (720, 104, 1042, 141)]),
-    "05-validacija-greske.png": ("validation-errors-dark.png", [(153, 110, 342, 134), (17, 585, 1183, 729)]),
-    "06-validacija-izabrana-greska.png": ("validation-issue-selected-dark.png", [(17, 682, 1183, 729), (17, 471, 1183, 489), (910, 546, 974, 576)]),
+    "05-validacija-greske.png": ("validation-errors-dark.png", [(153, 110, 428, 134), (17, 557, 863, 729)]),
+    "06-validacija-izabrana-greska.png": ("validation-issue-selected-dark.png", [(17, 665, 859, 728), (17, 443, 1183, 462), (910, 518, 974, 548), (868, 561, 1180, 726)]),
     "07-validacija-izmijenjeno.png": ("validation-modified-dark.png", [(153, 104, 482, 139), (233, 175, 316, 194), (116, 8, 255, 41)]),
     "08-ciscenje-analiza.png": ("cleaning-file-dark.png", [(14, 104, 136, 143), (160, 102, 672, 146), (160, 225, 522, 261)]),
     "09-ciscenje-podesavanja.png": ("cleaning-settings-dark.png", [(978, 104, 1188, 144), (8, 160, 1192, 290)]),
@@ -47,7 +47,7 @@ IMAGES = {
     "19-seme-uvoz.png": ("settings-schemas-import-dark.png", [(766, 22, 918, 62), (206, 181, 395, 220), (399, 181, 607, 220), (208, 394, 916, 572)]),
     "20-seme-link.png": ("settings-schemas-download-dark.png", [(598, 22, 762, 62), (208, 112, 916, 180)]),
     "21-zatvori.png": ("main-validation-file-dark.png", [(260, 6, 352, 42)]),
-    "22-o-programu.png": ("about-shortcuts-dark.png", [(138, 110, 222, 150), (24, 174, 736, 592)]),
+    "22-o-programu.png": ("about-shortcuts-dark.png", [(144, 111, 253, 150), (24, 174, 736, 592)]),
 }
 
 # Isjecanje (lijevo, gore, desno, dolje): donji dio podešavanja prikazuje privremenu putanju test okruženja.
