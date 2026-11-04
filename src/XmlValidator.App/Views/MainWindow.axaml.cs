@@ -10,6 +10,7 @@ namespace XmlValidator.App.Views;
 public partial class MainWindow : Window
 {
     private const int ValidationTabIndex = 0;
+    private const int CleaningTabIndex = 1;
 
     private bool _closeConfirmed;
     private bool _closeQuestionOpen;
@@ -26,18 +27,29 @@ public partial class MainWindow : Window
         // Izbor stavke u meniju nedavnih fajlova zatvara meni.
         RecentPanel.AddHandler(Button.ClickEvent, (_, _) => RecentButton.Flyout?.Hide());
 
-        // F5 validira samo kad je aktivan tab „Validacija” (prečica važi i dok je fokus u editoru).
+        // F5 radi glavnu akciju aktivnog taba (prečica važi i dok je fokus u editoru).
         AddHandler(KeyDownEvent, OnPreviewKeyDown, RoutingStrategies.Tunnel);
     }
 
+    /// <summary>F5: u tabu „Validacija” validira, u tabu „Čišćenje faktura” ponovo analizira.</summary>
     private void OnPreviewKeyDown(object? sender, KeyEventArgs e)
     {
-        if (e.Key == Key.F5 && e.KeyModifiers == KeyModifiers.None
-            && DataContext is MainWindowViewModel { SelectedTabIndex: ValidationTabIndex } viewModel
-            && viewModel.Validation.ValidateCommand.CanExecute(null))
+        if (e.Key != Key.F5 || e.KeyModifiers != KeyModifiers.None || DataContext is not MainWindowViewModel viewModel)
+        {
+            return;
+        }
+
+        var command = viewModel.SelectedTabIndex switch
+        {
+            ValidationTabIndex => viewModel.Validation.ValidateCommand,
+            CleaningTabIndex => viewModel.Cleaning.AnalyzeCommand,
+            _ => null,
+        };
+
+        if (command is not null && command.CanExecute(null))
         {
             e.Handled = true;
-            viewModel.Validation.ValidateCommand.Execute(null);
+            command.Execute(null);
         }
     }
 
@@ -49,7 +61,7 @@ public partial class MainWindow : Window
     {
         base.OnClosing(e);
         if (e.Cancel || _closeConfirmed || DataContext is not MainWindowViewModel viewModel
-            || !viewModel.Validation.HasUnsavedChanges)
+            || !viewModel.HasUnsavedChanges)
         {
             return;
         }

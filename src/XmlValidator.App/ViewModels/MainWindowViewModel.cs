@@ -25,6 +25,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IDisposable
     private readonly SchemaStore _store;
     private readonly ISchemaProvider _schemas;
     private readonly IAppLog _log;
+    private Task<bool> _lastOpenInValidation = Task.FromResult(false);
 
     public MainWindowViewModel(
         ISettingsService settings,
@@ -56,6 +57,9 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IDisposable
         _settings.Changed += OnSettingsChanged;
         _store.Changed += OnSchemaStoreChanged;
         RecentFiles.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasRecentFiles));
+        Validation.PropertyChanged += OnTabPropertyChanged;
+        Cleaning.PropertyChanged += OnTabPropertyChanged;
+        Cleaning.OpenInValidationRequested += OnOpenInValidationRequested;
         LoadRecentFiles();
     }
 
@@ -65,8 +69,11 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IDisposable
 
     /// <summary>Izabran tab: 0 = Validacija, 1 = Čišćenje faktura.</summary>
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(Title))]
+    [NotifyCanExecuteChangedFor(nameof(SaveAsCommand))]
     public partial int SelectedTabIndex { get; set; }
 
+    /// <summary>Posljednji fajl otvoren za oba taba.</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasDocument), nameof(Title))]
     [NotifyCanExecuteChangedFor(nameof(SaveAsCommand))]
@@ -74,8 +81,17 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IDisposable
 
     public bool HasDocument => Document is not null;
 
-    /// <summary>Naslov prozora.</summary>
-    public string Title => Document is null ? AppTitle : $"{Document.FileName} — {AppTitle}";
+    /// <summary>Aktivan tab (0 = Validacija, 1 = Čišćenje faktura).</summary>
+    public DocumentTabViewModel ActiveTab => SelectedTabIndex == 1 ? Cleaning : Validation;
+
+    /// <summary>
+    /// Naslov prozora: fajl aktivnog taba. Tab „Validacija” može imati drugi fajl od taba „Čišćenje faktura”
+    /// (sačuvan očišćen fajl otvoren za validaciju).
+    /// </summary>
+    public string Title => (ActiveTab.Document ?? Document) is { } document ? $"{document.FileName} — {AppTitle}" : AppTitle;
+
+    /// <summary>Neki tab ima izmjene ili odluke koje nisu sačuvane.</summary>
+    public bool HasUnsavedChanges => Validation.HasUnsavedChanges || Cleaning.HasUnsavedChanges;
 
     [ObservableProperty]
     public partial string StatusMessage { get; private set; } = "Spremno.";
@@ -250,19 +266,61 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IDisposable
     /// Pita korisnika da li da odbaci nesačuvane izmjene u editoru (prije otvaranja drugog fajla ili zatvaranja
     /// prozora). Vraća <c>true</c> ako izmjena nema ili ih korisnik odbacuje.
     /// </summary>
-    public async Task<bool> ConfirmDiscardChangesAsync()
+    public Task<bool> ConfirmDiscardChangesAsync() => ConfirmDiscardAsync(Validation.HasUnsavedChanges, Cleaning.HasUnsavedChanges);
+
+    /// <summary>
+    /// Otvara fajl samo u tabu „Validacija” i prebacuje se na njega (npr. sačuvan očišćen fajl); tab
+    /// „Čišćenje faktura” zadržava svoju analizu.
+    /// </summary>
+    public async Task<bool> OpenInValidationTabAsync(string path)
     {
-        if (!Validation.HasUnsavedChanges)
+        ArgumentException.ThrowIfNullOrWhiteSpace(path);
+        if (IsBusy || !await ConfirmDiscardAsync(Validation.HasUnsavedChanges, cleaning: false))
         {
-            return true;
+            return false;
         }
 
-        return await _dialogs.ConfirmAsync(
-            "Izmjene nisu sačuvane",
-            "Sadržaj u editoru je izmijenjen i nije sačuvan (ulazni fajl je netaknut). Da li da odbacim izmjene?",
-            "Odbaci izmjene",
-            "Otkaži",
-            isDangerous: true);
+        var fullPath = Path.GetFullPath(path);
+        var fileName = Path.GetFileName(fullPath);
+        IsBusy = true;
+        try
+        {
+            var content = await File.ReadAllBytesAsync(fullPath);
+            Validation.SetDocument(new OpenedDocument(fullPath, content));
+            SelectedTabIndex = 0;
+            _settings.Update(s => s.WithRecentFile(fullPath));
+            SetStatus($"Očišćen fajl „{fileName}” je otvoren u tabu „Validacija”.", MessageSeverity.Success);
+            return true;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            _log.Warning("Očišćen fajl ne može da se otvori za validaciju.", ex);
+            SetStatus($"Fajl „{fileName}” ne može da se otvori.", MessageSeverity.Error);
+            IsBusy = false;
+            await _dialogs.ShowMessageAsync("Fajl ne može da se otvori", $"Fajl „{fileName}” ne može da se otvori.", MessageSeverity.Error, [ex.Message]);
+            return false;
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    /// <summary>Posljednje otvaranje rezultata u tabu „Validacija”; za testove.</summary>
+    internal Task WhenOpenInValidationCompletedAsync() => _lastOpenInValidation;
+
+    private async Task<bool> ConfirmDiscardAsync(bool validation, bool cleaning)
+    {
+        var message = (validation, cleaning) switch
+        {
+            (false, false) => null,
+            (true, false) => "Sadržaj u editoru je izmijenjen i nije sačuvan (ulazni fajl je netaknut). Da li da odbacim izmjene?",
+            (false, true) => "Odluke o čišćenju (izabrane akcije i ručne izmjene faktura) nisu sačuvane u očišćen fajl (ulazni fajl je netaknut). Da li da ih odbacim?",
+            _ => "Izmjene u editoru i odluke o čišćenju nisu sačuvane (ulazni fajl je netaknut). Da li da ih odbacim?",
+        };
+
+        return message is null
+            || await _dialogs.ConfirmAsync("Izmjene nisu sačuvane", message, "Odbaci izmjene", "Otkaži", isDangerous: true);
     }
 
     internal static bool IsSchemaFile(string path) =>
@@ -290,19 +348,19 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IDisposable
         SetStatus("Lista nedavnih fajlova je obrisana (sami fajlovi nisu dirani).", MessageSeverity.Info);
     }
 
-    private bool CanSaveAs() => Document is not null && !IsBusy;
+    private bool CanSaveAs() => ActiveTab.Document is not null && !IsBusy;
 
     /// <summary>Čuva sadržaj u novi fajl. Ulazni fajl se nikad ne prepisuje.</summary>
     [RelayCommand(CanExecute = nameof(CanSaveAs))]
     private async Task SaveAsAsync()
     {
-        var document = Document;
+        var activeTab = ActiveTab;
+        var document = activeTab.Document;
         if (document is null)
         {
             return;
         }
 
-        var activeTab = SelectedTabIndex == 1 ? (DocumentTabViewModel)Cleaning : Validation;
         if (activeTab.GetSaveProblem() is { } problem)
         {
             SetStatus("Fajl nije sačuvan.", MessageSeverity.Error);
@@ -358,7 +416,26 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IDisposable
     {
         _settings.Changed -= OnSettingsChanged;
         _store.Changed -= OnSchemaStoreChanged;
+        Validation.PropertyChanged -= OnTabPropertyChanged;
+        Cleaning.PropertyChanged -= OnTabPropertyChanged;
+        Cleaning.OpenInValidationRequested -= OnOpenInValidationRequested;
     }
+
+    private void OnTabPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(DocumentTabViewModel.Document))
+        {
+            OnPropertyChanged(nameof(Title));
+            SaveAsCommand.NotifyCanExecuteChanged();
+        }
+        else if (e.PropertyName is nameof(DocumentTabViewModel.HasUnsavedChanges))
+        {
+            OnPropertyChanged(nameof(HasUnsavedChanges));
+        }
+    }
+
+    private void OnOpenInValidationRequested(object? sender, OpenInValidationEventArgs e) =>
+        _ui.Post(() => _lastOpenInValidation = OpenInValidationTabAsync(e.Path));
 
     private string? StartFolder() =>
         Document?.Folder is { Length: > 0 } folder ? folder : _settings.Current.LastFolder;

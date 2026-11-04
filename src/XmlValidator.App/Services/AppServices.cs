@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using XmlValidator.App.ViewModels;
+using XmlValidator.Core.Cleaning;
 using XmlValidator.Core.Schemas;
 using XmlValidator.Core.Validation;
 
@@ -32,6 +33,7 @@ public static class AppServices
         services.AddSingleton<StoreSchemaProvider>();
         services.AddSingleton<ISchemaProvider>(sp => sp.GetRequiredService<StoreSchemaProvider>());
         services.AddSingleton<XmlValidationService>();
+        services.AddSingleton<CleaningService>();
         services.AddSingleton<GlobalExceptionHandler>();
 
         services.AddSingleton<ValidationTabViewModel>();

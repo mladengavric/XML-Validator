@@ -16,6 +16,11 @@
             ComboBox.field, GridSplitter.pane, DataGrid.issues (+ TextBlock.cell/number/message),
             StackPanel.emptyPane, ProgressBar.busySmall, Button.toolbar.compact,
             ae|TextEditor.xml, ui|IssueMarkerMargin
+    Tab „Čišćenje faktura”: ToggleButton.toolbar, Border.settingsPanel, Border.stats/stat (+ last/attention/error),
+            TextBlock.statLabel/statValue, DataGrid.invoices (+ ComboBox.cellAction/.unresolved, Border.partBadge),
+            ListBox.notes (+ TextBlock.noteText), Border.pane.editing, Border.savebar (+ TextBlock.reason),
+            CheckBox.compact, TextBox.search, TextBlock.errorText, ProgressBar.analysis, GridSplitter.paneColumns,
+            Button.icon.small, Border.banner TextBlock.message, ui|FileLineNumberMargin
 -->
 <Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -593,6 +598,10 @@
         <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
         <Setter Property="MinHeight" Value="{DynamicResource ControlHeight}" />
     </Style>
+    <!-- Ćelije u veličini teksta aplikacije (tema DataGrid-a ima veći font) -->
+    <Style Selector="DataGrid.issues DataGridCell">
+        <Setter Property="FontSize" Value="{DynamicResource FontSizeBody}" />
+    </Style>
     <Style Selector="DataGrid.issues DataGridRow, DataGrid.issues DataGridRow:selected">
         <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
     </Style>
@@ -638,6 +647,244 @@
         <Setter Property="ErrorLineBrush" Value="{DynamicResource EditorErrorLineBrush}" />
         <Setter Property="WarningLineBrush" Value="{DynamicResource EditorWarningLineBrush}" />
         <Setter Property="MarkerWidth" Value="{DynamicResource IssueMarginWidth}" />
+    </Style>
+
+    <!-- ========== Tab „Čišćenje faktura” ========== -->
+
+    <!-- Preklopno dugme u traci (npr. „Podešavanja analize”): uključeno stanje je blago akcentno -->
+    <Style Selector="ToggleButton.toolbar">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="{DynamicResource NoThickness}" />
+        <Setter Property="Padding" Value="{DynamicResource ToolbarButtonPadding}" />
+        <Setter Property="CornerRadius" Value="{DynamicResource RadiusM}" />
+        <Setter Property="MinHeight" Value="{DynamicResource ControlHeight}" />
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="ToggleButton.toolbar:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource SurfaceHoverBrush}" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+    </Style>
+    <Style Selector="ToggleButton.toolbar:pressed /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource SurfacePressedBrush}" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+    </Style>
+    <Style Selector="ToggleButton.toolbar:checked /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource AccentSubtleBrush}" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="Foreground" Value="{DynamicResource AccentTextBrush}" />
+    </Style>
+    <Style Selector="ToggleButton.toolbar:checked:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource AccentSubtleBorderBrush}" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="Foreground" Value="{DynamicResource AccentTextBrush}" />
+    </Style>
+
+    <!-- Panel podešavanja analize (ispod trake taba, sklopiv) -->
+    <Style Selector="Border.settingsPanel">
+        <Setter Property="Background" Value="{DynamicResource SurfaceAltBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DividerBrush}" />
+        <Setter Property="BorderThickness" Value="{DynamicResource DividerBottom}" />
+        <Setter Property="Padding" Value="{DynamicResource SettingsPanelPadding}" />
+    </Style>
+    <Style Selector="Border.settingsPanel NumericUpDown">
+        <Setter Property="MinHeight" Value="{DynamicResource ControlHeight}" />
+        <Setter Property="CornerRadius" Value="{DynamicResource RadiusM}" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <!-- Sažetak: traka pločica (oznaka + broj), razdvojenih linijom -->
+    <Style Selector="Border.stats">
+        <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}" />
+        <Setter Property="BorderThickness" Value="{DynamicResource DividerThickness}" />
+        <Setter Property="CornerRadius" Value="{DynamicResource RadiusL}" />
+        <Setter Property="ClipToBounds" Value="True" />
+    </Style>
+    <Style Selector="Border.stat">
+        <Setter Property="Padding" Value="{DynamicResource StatPadding}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DividerBrush}" />
+        <Setter Property="BorderThickness" Value="{DynamicResource DividerRight}" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Border.stat.last">
+        <Setter Property="BorderThickness" Value="{DynamicResource NoThickness}" />
+    </Style>
+    <Style Selector="Border.stat.attention">
+        <Setter Property="Background" Value="{DynamicResource WarningBackgroundBrush}" />
+        <Setter Property="CornerRadius" Value="{DynamicResource RadiusM}" />
+    </Style>
+    <Style Selector="Border.stat.error">
+        <Setter Property="Background" Value="{DynamicResource ErrorBackgroundBrush}" />
+        <Setter Property="CornerRadius" Value="{DynamicResource RadiusM}" />
+    </Style>
+    <Style Selector="TextBlock.statLabel">
+        <Setter Property="FontSize" Value="{DynamicResource FontSizeCaption}" />
+        <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+        <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+    </Style>
+    <Style Selector="TextBlock.statValue">
+        <Setter Property="FontSize" Value="{DynamicResource FontSizeSubtitle}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="Border.stat.attention TextBlock.statValue, Border.stat.attention TextBlock.statLabel">
+        <Setter Property="Foreground" Value="{DynamicResource WarningForegroundBrush}" />
+    </Style>
+    <Style Selector="Border.stat.error TextBlock.statValue, Border.stat.error TextBlock.statLabel">
+        <Setter Property="Foreground" Value="{DynamicResource ErrorForegroundBrush}" />
+    </Style>
+
+    <!-- Tabela faktura: osnova je DataGrid.issues, ćelije su zbijenije jer kolona ima više -->
+    <Style Selector="DataGrid.invoices">
+        <Setter Property="SelectionMode" Value="Extended" />
+    </Style>
+    <Style Selector="DataGrid.invoices DataGridColumnHeader">
+        <Setter Property="Padding" Value="{DynamicResource CompactHeaderPadding}" />
+    </Style>
+    <Style Selector="DataGrid.invoices StackPanel.cell, DataGrid.invoices TextBlock.cell">
+        <Setter Property="Margin" Value="{DynamicResource CompactCellPadding}" />
+    </Style>
+    <Style Selector="DataGrid.invoices TextBlock.cell">
+        <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+    </Style>
+    <Style Selector="DataGrid.invoices TextBlock.right">
+        <Setter Property="HorizontalAlignment" Value="Right" />
+    </Style>
+    <Style Selector="ComboBox.cellAction">
+        <Setter Property="MinHeight" Value="{DynamicResource ControlHeightCompact}" />
+        <Setter Property="Padding" Value="{DynamicResource ComboBoxCompactPadding}" />
+        <Setter Property="Margin" Value="{DynamicResource ThicknessXs}" />
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="CornerRadius" Value="{DynamicResource RadiusM}" />
+    </Style>
+    <!-- Sumnjiv blok bez odluke: crvena ivica i tekst „Izaberite…” (uz ikonicu i tekst u koloni statusa) -->
+    <Style Selector="ComboBox.cellAction.unresolved">
+        <Setter Property="BorderBrush" Value="{DynamicResource ErrorForegroundBrush}" />
+        <Setter Property="BorderThickness" Value="{DynamicResource FocusThickness}" />
+        <Setter Property="PlaceholderForeground" Value="{DynamicResource ErrorForegroundBrush}" />
+    </Style>
+    <Style Selector="ComboBox.cellAction.unresolved:pointerover /template/ Border#Background">
+        <Setter Property="BorderBrush" Value="{DynamicResource ErrorForegroundBrush}" />
+    </Style>
+    <Style Selector="Border.partBadge">
+        <Setter Property="Padding" Value="{DynamicResource BadgePadding}" />
+        <Setter Property="CornerRadius" Value="{DynamicResource RadiusPill}" />
+        <Setter Property="Background" Value="{DynamicResource BadgeNeutralBackgroundBrush}" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Border.partBadge TextBlock">
+        <Setter Property="FontSize" Value="{DynamicResource FontSizeCaption}" />
+        <Setter Property="Foreground" Value="{DynamicResource BadgeNeutralForegroundBrush}" />
+    </Style>
+
+    <Style Selector="TextBox.search">
+        <Setter Property="MinHeight" Value="{DynamicResource ControlHeight}" />
+        <Setter Property="CornerRadius" Value="{DynamicResource RadiusM}" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="TextBox.search PathIcon">
+        <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+        <Setter Property="Width" Value="{DynamicResource IconSizeS}" />
+        <Setter Property="Height" Value="{DynamicResource IconSizeS}" />
+        <Setter Property="Margin" Value="{DynamicResource InlineGapS}" />
+    </Style>
+
+    <Style Selector="Button.icon.small">
+        <Setter Property="Padding" Value="{DynamicResource ThicknessXs}" />
+    </Style>
+    <Style Selector="Border.banner TextBlock.message">
+        <Setter Property="MaxLines" Value="{DynamicResource SaveReasonMaxLines}" />
+        <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+    </Style>
+
+    <Style Selector="TextBlock.errorText">
+        <Setter Property="Foreground" Value="{DynamicResource ErrorForegroundBrush}" />
+    </Style>
+
+    <!-- Lista popravki i upozorenja -->
+    <Style Selector="ListBox.notes">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="{DynamicResource NoThickness}" />
+        <Setter Property="Padding" Value="{DynamicResource NoThickness}" />
+    </Style>
+    <Style Selector="ListBox.notes ListBoxItem">
+        <Setter Property="Padding" Value="{DynamicResource NoteItemPadding}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DividerBrush}" />
+        <Setter Property="BorderThickness" Value="{DynamicResource DividerBottom}" />
+    </Style>
+    <Style Selector="ListBox.notes ListBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource SurfaceHoverBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+    </Style>
+    <Style Selector="ListBox.notes ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource DataGridRowSelectedBackgroundBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+    </Style>
+    <Style Selector="ListBox.notes ListBoxItem:selected:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource DataGridRowSelectedHoveredBackgroundBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+    </Style>
+    <Style Selector="ListBox.notes TextBlock.noteText">
+        <Setter Property="TextWrapping" Value="Wrap" />
+        <Setter Property="MaxLines" Value="{DynamicResource NoteTextMaxLines}" />
+        <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+    </Style>
+
+    <!-- Panel u kojem se uređuje blok: akcentna ivica da bude jasno da je tekst izmjenjiv -->
+    <Style Selector="Border.pane.editing">
+        <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+        <Setter Property="BorderThickness" Value="{DynamicResource FocusThickness}" />
+    </Style>
+
+    <!-- Traka za čuvanje (dno taba) -->
+    <Style Selector="Border.savebar">
+        <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DividerBrush}" />
+        <Setter Property="BorderThickness" Value="{DynamicResource DividerTop}" />
+        <Setter Property="Padding" Value="{DynamicResource SaveBarPadding}" />
+    </Style>
+    <Style Selector="Border.savebar TextBlock.reason">
+        <Setter Property="TextWrapping" Value="Wrap" />
+        <Setter Property="MaxLines" Value="{DynamicResource SaveReasonMaxLines}" />
+        <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="CheckBox.compact">
+        <Setter Property="MinHeight" Value="{DynamicResource CompactCheckHeight}" />
+    </Style>
+
+    <!-- Pregled bloka: brojevi linija ulaznog fajla i označena linija -->
+    <Style Selector="ui|FileLineNumberMargin">
+        <Setter Property="Foreground" Value="{DynamicResource EditorLineNumberBrush}" />
+        <Setter Property="HighlightForeground" Value="{DynamicResource AccentTextBrush}" />
+        <Setter Property="HighlightBrush" Value="{DynamicResource EditorHighlightLineBrush}" />
+        <Setter Property="Margin" Value="{DynamicResource LineNumberGap}" />
+    </Style>
+
+    <Style Selector="ProgressBar.analysis">
+        <Setter Property="Width" Value="{DynamicResource ProgressBarWidth}" />
+        <Setter Property="MinWidth" Value="0" />
+        <Setter Property="Height" Value="{DynamicResource BusyBarHeight}" />
+        <Setter Property="MinHeight" Value="0" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <!-- Uspravna pomična granica (pregled bloka | lista popravki) -->
+    <Style Selector="GridSplitter.paneColumns">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Width" Value="{DynamicResource PaneSplitterSize}" />
+        <Setter Property="MinWidth" Value="{DynamicResource PaneSplitterSize}" />
+        <Setter Property="VerticalAlignment" Value="Stretch" />
+        <Setter Property="Focusable" Value="True" />
+    </Style>
+    <Style Selector="GridSplitter.paneColumns:pointerover, GridSplitter.paneColumns:focus-visible">
+        <Setter Property="Background" Value="{DynamicResource AccentSubtleBrush}" />
     </Style>
 
 </Styles>

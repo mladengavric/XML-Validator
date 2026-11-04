@@ -1,6 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using XmlValidator.App.Services;
-using XmlValidator.Core.Cleaning;
 
 namespace XmlValidator.App.ViewModels;
 
@@ -39,46 +38,4 @@ public abstract partial class DocumentTabViewModel : ViewModelBase
     public virtual void MarkSaved()
     {
     }
-}
-
-/// <summary>Tab „Čišćenje faktura” (sadržaj se dodaje u fazi 5).</summary>
-public sealed partial class CleaningTabViewModel : DocumentTabViewModel, IDisposable
-{
-    private readonly ISettingsService _settings;
-    private readonly IUiDispatcher _ui;
-
-    public CleaningTabViewModel(ISettingsService settings, IUiDispatcher ui)
-    {
-        ArgumentNullException.ThrowIfNull(settings);
-        ArgumentNullException.ThrowIfNull(ui);
-        _settings = settings;
-        _ui = ui;
-        _settings.Changed += OnSettingsChanged;
-        SettingsSummary = BuildSummary(settings.Current);
-    }
-
-    public override string Header => "Čišćenje faktura";
-
-    public override string EmptyStateHint =>
-        "Otvorite XML fajl sa fakturama (Ctrl+O) ili ga prevucite na prozor da biste ga analizirali po pravilu SHMP.";
-
-    /// <summary>Privremena napomena dok analiza ne postoji.</summary>
-    public string PendingFeatureNote => "Analiza i čišćenje faktura dolaze u sljedećoj verziji.";
-
-    /// <summary>Podešavanja čišćenja koja će se primijeniti (iz Podešavanja → Opšte).</summary>
-    [ObservableProperty]
-    public partial string SettingsSummary { get; private set; }
-
-    public void Dispose() => _settings.Changed -= OnSettingsChanged;
-
-    internal static string BuildSummary(AppSettings settings)
-    {
-        static string Action(CandidateAction action) => action == CandidateAction.Skip ? "Preskoči" : "Obriši";
-        return $"Ciljna grupa: {settings.TargetGroup} · Prazna faktura: {Action(settings.EmptyInvoiceAction)} · "
-            + $"Bez ciljne grupe i bez podudaranja JMB-a: {Action(settings.NoGroupNoJmbMatchAction)} · "
-            + $"Automatske popravke: {(settings.RepairBrackets ? "uključene" : "isključene")}";
-    }
-
-    private void OnSettingsChanged(object? sender, EventArgs e) =>
-        _ui.Post(() => SettingsSummary = BuildSummary(_settings.Current));
 }

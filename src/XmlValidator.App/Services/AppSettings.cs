@@ -45,6 +45,9 @@ public sealed record AppSettings
     [JsonConverter(typeof(JsonStringEnumConverter<CandidateAction>))]
     public CandidateAction NoGroupNoJmbMatchAction { get; init; } = CandidateAction.Delete;
 
+    /// <summary>Poslije čuvanja očišćenog fajla otvori ga u tabu „Validacija” (podrazumijevano isključeno).</summary>
+    public bool ValidateAfterSave { get; init; }
+
     /// <summary>Poređenje putanja: na Windowsu bez obzira na velika i mala slova.</summary>
     internal static StringComparer PathComparer { get; } =
         OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
@@ -98,7 +101,8 @@ public sealed record AppSettings
         && TargetGroup == other.TargetGroup
         && RepairBrackets == other.RepairBrackets
         && EmptyInvoiceAction == other.EmptyInvoiceAction
-        && NoGroupNoJmbMatchAction == other.NoGroupNoJmbMatchAction;
+        && NoGroupNoJmbMatchAction == other.NoGroupNoJmbMatchAction
+        && ValidateAfterSave == other.ValidateAfterSave;
 
     public override int GetHashCode() => HashCode.Combine(LastFolder, RecentFiles.Count, Theme, TargetGroup, RepairBrackets);
 }

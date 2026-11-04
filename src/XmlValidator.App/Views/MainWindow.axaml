@@ -1,7 +1,6 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:XmlValidator.App.ViewModels"
-        xmlns:services="using:XmlValidator.App.Services"
         xmlns:ui="using:XmlValidator.App.Controls"
         xmlns:views="using:XmlValidator.App.Views"
         x:Class="XmlValidator.App.Views.MainWindow"
@@ -20,29 +19,6 @@
         <KeyBinding Gesture="Ctrl+Shift+S" Command="{Binding SaveAsCommand}" />
         <KeyBinding Gesture="Ctrl+OemComma" Command="{Binding OpenSettingsCommand}" />
     </Window.KeyBindings>
-
-    <Window.Resources>
-        <!-- Kartica sa podacima o otvorenom fajlu (ista u oba taba) -->
-        <DataTemplate x:Key="DocumentCardTemplate" x:DataType="services:OpenedDocument">
-            <Border Classes="card">
-                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="{StaticResource SpaceL}">
-                    <PathIcon Classes="xl accent" Data="{StaticResource IconXmlFile}" VerticalAlignment="Top" />
-                    <StackPanel Grid.Column="1" Spacing="{StaticResource SpaceXs}">
-                        <SelectableTextBlock Classes="subtitle" Text="{Binding FileName}" TextTrimming="CharacterEllipsis" />
-                        <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto"
-                              ColumnSpacing="{StaticResource SpaceM}" RowSpacing="{StaticResource SpaceXs}"
-                              Margin="{StaticResource StackGapS}">
-                            <TextBlock Classes="muted" Text="Folder" />
-                            <TextBlock Grid.Column="1" Text="{Binding Folder}" TextTrimming="PathSegmentEllipsis"
-                                       ToolTip.Tip="{Binding Path}" />
-                            <TextBlock Grid.Row="1" Classes="muted" Text="Veličina" />
-                            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding SizeText}" />
-                        </Grid>
-                    </StackPanel>
-                </Grid>
-            </Border>
-        </DataTemplate>
-    </Window.Resources>
 
     <Grid>
         <DockPanel>
@@ -243,35 +219,9 @@
                         </StackPanel>
 
                         <!-- Otvoren fajl -->
-                        <ScrollViewer IsVisible="{Binding Cleaning.HasDocument}">
-                            <StackPanel Margin="{StaticResource PagePadding}" MaxWidth="{StaticResource ContentMaxWidth}"
-                                        HorizontalAlignment="Left" Spacing="{StaticResource SpaceL}">
-                                <ContentControl Content="{Binding Cleaning.Document}"
-                                                ContentTemplate="{StaticResource DocumentCardTemplate}" />
-
-                                <Border Classes="card">
-                                    <StackPanel Spacing="{StaticResource SpaceS}">
-                                        <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="{StaticResource SpaceM}">
-                                            <PathIcon Classes="muted" Data="{StaticResource IconSettings}" />
-                                            <TextBlock Grid.Column="1" Classes="subtitle" Text="Podešavanja čišćenja"
-                                                       VerticalAlignment="Center" />
-                                            <Button x:Name="ChangeCleaningSettingsButton" Grid.Column="2" Classes="link"
-                                                    Content="Promijeni…"
-                                                    Command="{Binding OpenSettingsCommand}"
-                                                    ToolTip.Tip="Podešavanja → Opšte (Ctrl+,)" />
-                                        </Grid>
-                                        <TextBlock Classes="muted wrap" Text="{Binding Cleaning.SettingsSummary}" />
-                                    </StackPanel>
-                                </Border>
-
-                                <Border Classes="banner info">
-                                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="{StaticResource SpaceM}">
-                                        <PathIcon Classes="status info" VerticalAlignment="Top" />
-                                        <TextBlock Grid.Column="1" Classes="wrap" Text="{Binding Cleaning.PendingFeatureNote}" />
-                                    </Grid>
-                                </Border>
-                            </StackPanel>
-                        </ScrollViewer>
+                        <Panel IsVisible="{Binding Cleaning.HasDocument}">
+                            <views:CleaningTabView x:Name="CleaningView" DataContext="{Binding Cleaning}" />
+                        </Panel>
                     </Grid>
                 </TabItem>
             </TabControl>

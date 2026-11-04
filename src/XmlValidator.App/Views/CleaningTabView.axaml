@@ -1,0 +1,759 @@
+<!--
+  Tab „Čišćenje faktura” kad je fajl otvoren: traka (Analiziraj/Prekini, napredak, fajl, podešavanja),
+  sklopiv panel podešavanja analize, poruke, sažetak, tabela faktura sa filterom i grupnim akcijama,
+  pregled ili editor bloka, lista popravki i upozorenja i traka za čuvanje.
+  Prazno stanje (nema fajla) je u MainWindow.axaml.
+-->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:XmlValidator.App.ViewModels"
+             xmlns:ui="using:XmlValidator.App.Controls"
+             xmlns:ae="using:AvaloniaEdit"
+             x:Class="XmlValidator.App.Views.CleaningTabView"
+             x:DataType="vm:CleaningTabViewModel">
+
+    <UserControl.KeyBindings>
+        <KeyBinding Gesture="Ctrl+S" Command="{Binding SaveOutputCommand}" />
+    </UserControl.KeyBindings>
+
+    <!-- Redoslijed u XAML-u prati redoslijed na ekranu (i redoslijed fokusa tasterom Tab). -->
+    <Grid RowDefinitions="Auto,Auto,*,Auto">
+
+        <!-- ===== Traka taba ===== -->
+        <Border Classes="toolbar tabbar">
+            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="{StaticResource SpaceXl}">
+
+                <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}" VerticalAlignment="Center">
+                    <Button x:Name="AnalyzeButton" Command="{Binding AnalyzeCommand}"
+                            ToolTip.Tip="Ponovo analiziraj fajl sa trenutnim podešavanjima (F5). Ulazni fajl se samo čita.">
+                        <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
+                            <PathIcon Data="{StaticResource IconRefresh}" />
+                            <TextBlock Text="Analiziraj" />
+                        </StackPanel>
+                    </Button>
+                    <Button x:Name="CancelAnalysisButton" Command="{Binding CancelAnalysisCommand}"
+                            IsVisible="{Binding IsAnalyzing}"
+                            ToolTip.Tip="Prekini analizu u toku">
+                        <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
+                            <PathIcon Data="{StaticResource IconStop}" />
+                            <TextBlock Text="Prekini" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+
+                <!-- Napredak analize, ili fajl i podešavanja kojima je analiza urađena -->
+                <Panel Grid.Column="1" VerticalAlignment="Center">
+                    <StackPanel x:Name="ProgressPanel" Orientation="Horizontal" Spacing="{StaticResource SpaceM}"
+                                IsVisible="{Binding IsAnalyzing}">
+                        <ProgressBar x:Name="AnalysisProgress" Classes="analysis"
+                                     IsIndeterminate="{Binding IsProgressIndeterminate}"
+                                     Value="{Binding ProgressValue}"
+                                     Maximum="{Binding ProgressMaximum}"
+                                     AutomationProperties.Name="Napredak analize" />
+                        <TextBlock Classes="muted" Text="{Binding ProgressText}" VerticalAlignment="Center"
+                                   TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+
+                    <!-- Sažetak analize: pločice (oznaka + broj); ishod po akcijama je u traci za čuvanje -->
+                    <StackPanel x:Name="SummaryStrip" Orientation="Horizontal">
+                        <StackPanel.IsVisible>
+                            <MultiBinding Converter="{x:Static BoolConverters.And}">
+                                <Binding Path="HasAnalysis" />
+                                <Binding Path="!IsAnalyzing" />
+                            </MultiBinding>
+                        </StackPanel.IsVisible>
+                        <Border Classes="stat" ToolTip.Tip="Ukupan broj faktura u fajlu">
+                            <StackPanel>
+                                <TextBlock Classes="statLabel" Text="Ukupno faktura" />
+                                <TextBlock x:Name="TotalValue" Classes="statValue" Text="{Binding Summary.Total}" />
+                            </StackPanel>
+                        </Border>
+                        <Border Classes="stat">
+                            <ToolTip.Tip>
+                                <MultiBinding StringFormat="Fakture koje ostaju u očišćenom fajlu (obrisano: {0}, preskočeno: {1}, uređeno: {2})">
+                                    <Binding Path="Summary.Deleted" />
+                                    <Binding Path="Summary.Skipped" />
+                                    <Binding Path="Summary.Edited" />
+                                </MultiBinding>
+                            </ToolTip.Tip>
+                            <StackPanel>
+                                <TextBlock Classes="statLabel" Text="Ostaje" />
+                                <TextBlock x:Name="RemainingValue" Classes="statValue" Text="{Binding Summary.Remaining}" />
+                            </StackPanel>
+                        </Border>
+                        <Border Classes="stat" ToolTip.Tip="Fakture o kojima odlučuje akcija (Obriši, Preskoči, Uredi)">
+                            <StackPanel>
+                                <TextBlock Classes="statLabel" Text="Kandidata" />
+                                <TextBlock x:Name="CandidatesValue" Classes="statValue" Text="{Binding Summary.Candidates}" />
+                            </StackPanel>
+                        </Border>
+                        <Border x:Name="UnresolvedStat" Classes="stat" Classes.error="{Binding Summary.HasUnresolved}"
+                                ToolTip.Tip="Fakture koje čekaju odluku; dok ih ima, očišćen fajl ne može da se sačuva">
+                            <StackPanel>
+                                <TextBlock Classes="statLabel" Text="Čeka odluku" />
+                                <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceXs}">
+                                    <PathIcon Classes="status error small" VerticalAlignment="Center"
+                                              IsVisible="{Binding Summary.HasUnresolved}" />
+                                    <TextBlock x:Name="UnresolvedValue" Classes="statValue" Text="{Binding Summary.Unresolved}" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                        <Border Classes="stat" ToolTip.Tip="Automatske popravke zagrada (svaka je u listi i u izvještaju)">
+                            <StackPanel>
+                                <TextBlock Classes="statLabel" Text="Popravki" />
+                                <TextBlock x:Name="RepairsValue" Classes="statValue" Text="{Binding Summary.Repairs}" />
+                            </StackPanel>
+                        </Border>
+                        <Border x:Name="WarningsStat" Classes="stat last" Classes.attention="{Binding Summary.HasWarnings}"
+                                ToolTip.Tip="Upozorenja (neprepoznat sadržaj, sumnjivi blokovi, kodiranje…)">
+                            <StackPanel>
+                                <TextBlock Classes="statLabel" Text="Upozorenja" />
+                                <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceXs}">
+                                    <PathIcon Classes="status warning small" VerticalAlignment="Center"
+                                              IsVisible="{Binding Summary.HasWarnings}" />
+                                    <TextBlock x:Name="WarningsValue" Classes="statValue" Text="{Binding Summary.Warnings}" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Panel>
+
+                <ToggleButton x:Name="SettingsToggle" Grid.Column="2" Classes="toolbar" VerticalAlignment="Center"
+                              ToolTip.Tip="Prikaži ili sakrij podešavanja analize: ciljna grupa, podrazumijevane akcije, popravke">
+                    <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
+                        <PathIcon Data="{StaticResource IconSettings}" />
+                        <TextBlock Text="Podešavanja analize" />
+                        <Panel>
+                            <PathIcon Classes="small" Data="{StaticResource IconChevronDown}"
+                                      IsVisible="{Binding !#SettingsToggle.IsChecked}" />
+                            <PathIcon Classes="small" Data="{StaticResource IconChevronUp}"
+                                      IsVisible="{Binding #SettingsToggle.IsChecked}" />
+                        </Panel>
+                    </StackPanel>
+                </ToggleButton>
+            </Grid>
+        </Border>
+
+        <!-- ===== Podešavanja analize (sklopivo) ===== -->
+        <Border x:Name="SettingsPanel" Grid.Row="1" Classes="settingsPanel"
+                IsVisible="{Binding #SettingsToggle.IsChecked}">
+            <Grid ColumnDefinitions="Auto,Auto,Auto,Auto,*,Auto" RowDefinitions="Auto,Auto,Auto"
+                  ColumnSpacing="{StaticResource SpaceXl}" RowSpacing="{StaticResource SpaceS}">
+
+                <StackPanel Spacing="{StaticResource SpaceXs}">
+                    <TextBlock Classes="caption muted" Text="Ciljna grupa" />
+                    <NumericUpDown x:Name="TargetGroupInput" Width="{StaticResource NumericFieldWidth}"
+                                   Value="{Binding TargetGroup}"
+                                   Minimum="0" Maximum="65535" Increment="1" FormatString="0"
+                                   ParsingNumberStyle="Integer"
+                                   AutomationProperties.Name="Ciljna grupa"
+                                   ToolTip.Tip="usluga-grupa koja se zadržava (podrazumijevano 100). Važi od sljedeće analize." />
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Spacing="{StaticResource SpaceXs}">
+                    <TextBlock Classes="caption muted" Text="Prazna faktura" />
+                    <ComboBox x:Name="EmptyInvoiceActionPicker" Classes="field" Width="{StaticResource FilterFieldWidth}"
+                              ItemsSource="{Binding DefaultActionOptions}"
+                              SelectedItem="{Binding EmptyInvoiceAction}"
+                              AutomationProperties.Name="Podrazumijevana akcija za praznu fakturu"
+                              ToolTip.Tip="Podrazumijevana akcija za fakturu bez stavki; važi odmah" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="2" Spacing="{StaticResource SpaceXs}">
+                    <TextBlock Classes="caption muted" Text="Bez ciljne grupe i bez podudaranja JMB-a" />
+                    <ComboBox x:Name="NoMatchActionPicker" Classes="field" Width="{StaticResource FilterFieldWidth}"
+                              ItemsSource="{Binding DefaultActionOptions}"
+                              SelectedItem="{Binding NoGroupNoJmbMatchAction}"
+                              AutomationProperties.Name="Podrazumijevana akcija za fakturu bez ciljne grupe i bez podudaranja JMB-a"
+                              ToolTip.Tip="Podrazumijevana akcija za fakturu koja nema ciljnu grupu, a ni drugu fakturu istog JMB-a sa ciljnom grupom; važi odmah" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="3" Spacing="{StaticResource SpaceXs}">
+                    <TextBlock Classes="caption muted" Text="Automatske popravke" />
+                    <CheckBox x:Name="RepairBracketsCheck" IsChecked="{Binding RepairBrackets}" MinHeight="{StaticResource ControlHeight}"
+                              Content="Popravi zagrade u tagovima"
+                              ToolTip.Tip="Dodaje nedostajuće „&lt;” i „&gt;” u tagovima faktura (svaka popravka je u izvještaju). Važi od sljedeće analize." />
+                </StackPanel>
+
+                <Button x:Name="ScriptCompatibleButton" Grid.Column="5" VerticalAlignment="Bottom"
+                        Command="{Binding ScriptCompatibleCommand}"
+                        ToolTip.Tip="Ciljna grupa 100, popravke uključene i Obriši za obje kategorije, pa nova analiza: rezultat kao skripta clean.py. Pojedinačne odluke se poništavaju.">
+                    <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
+                        <PathIcon Data="{StaticResource IconScript}" />
+                        <TextBlock Text="Kao skripta" />
+                    </StackPanel>
+                </Button>
+
+                <!-- Podešavanja prikazane analize; upozorenje kad su podešavanja promijenjena poslije nje -->
+                <Panel Grid.Row="2" Grid.ColumnSpan="6">
+                    <TextBlock x:Name="AnalyzedWithText" Classes="caption muted" TextTrimming="CharacterEllipsis">
+                        <TextBlock.IsVisible>
+                            <MultiBinding Converter="{x:Static BoolConverters.And}">
+                                <Binding Path="HasAnalysis" />
+                                <Binding Path="!IsAnalysisStale" />
+                            </MultiBinding>
+                        </TextBlock.IsVisible>
+                        <TextBlock.Text>
+                            <MultiBinding StringFormat="Prikazana analiza: {0} · fajl: {1}">
+                                <Binding Path="AnalyzedWith" />
+                                <Binding Path="FormatDescription" />
+                            </MultiBinding>
+                        </TextBlock.Text>
+                    </TextBlock>
+                    <Border x:Name="StaleBanner" Classes="banner warning compact" IsVisible="{Binding IsAnalysisStale}">
+                        <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="{StaticResource SpaceM}">
+                            <PathIcon Classes="status warning" VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="1" Classes="wrap" VerticalAlignment="Center"
+                                       Text="{Binding AnalyzedWith, StringFormat='Promjena važi od sljedeće analize. Prikazan je rezultat za: {0}.'}" />
+                            <Button x:Name="StaleAnalyzeButton" Grid.Column="2" Classes="toolbar compact"
+                                    Command="{Binding AnalyzeCommand}"
+                                    ToolTip.Tip="Analiziraj ponovo sa trenutnim podešavanjima (F5)">
+                                <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
+                                    <PathIcon Data="{StaticResource IconRefresh}" />
+                                    <TextBlock Text="Analiziraj ponovo" />
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+                    </Border>
+                </Panel>
+
+                <StackPanel Grid.Row="1" Grid.ColumnSpan="6" Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
+                    <StackPanel x:Name="TargetGroupErrorPanel" Orientation="Horizontal" Spacing="{StaticResource SpaceXs}"
+                                IsVisible="{Binding HasTargetGroupError}">
+                        <PathIcon Classes="status error small" VerticalAlignment="Center" />
+                        <TextBlock Classes="caption errorText" Text="{Binding TargetGroupError}" VerticalAlignment="Center" />
+                    </StackPanel>
+                    <TextBlock Classes="caption muted" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                               Text="Podrazumijevane akcije važe odmah; ciljna grupa i popravke traže novu analizu (F5)." />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ===== Sadržaj ===== -->
+        <Grid Grid.Row="2" Margin="{StaticResource ThicknessM}" RowDefinitions="Auto,*">
+
+            <!-- Poruke -->
+            <StackPanel Spacing="{StaticResource SpaceS}" Margin="{StaticResource BottomGapM}">
+                <StackPanel.IsVisible>
+                    <MultiBinding Converter="{x:Static BoolConverters.Or}">
+                        <Binding Path="HasAnalysisError" />
+                        <Binding Path="HasMessage" />
+                    </MultiBinding>
+                </StackPanel.IsVisible>
+
+                <Border x:Name="AnalysisErrorBanner" Classes="banner error compact" IsVisible="{Binding HasAnalysisError}">
+                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="{StaticResource SpaceM}">
+                        <PathIcon Classes="status error" VerticalAlignment="Top" />
+                        <StackPanel Grid.Column="1" Spacing="{StaticResource SpaceXs}">
+                            <TextBlock Classes="strong" Text="Fajl ne može da se analizira" />
+                            <TextBlock Classes="wrap" Text="{Binding AnalysisError}" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <Border x:Name="MessageBanner" Classes="banner compact" IsVisible="{Binding HasMessage}"
+                        ui:SeverityStyle.Severity="{Binding Message.Severity, FallbackValue={x:Null}}">
+                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="{StaticResource SpaceM}">
+                        <PathIcon Classes="status" VerticalAlignment="Center"
+                                  ui:SeverityStyle.Severity="{Binding Message.Severity, FallbackValue={x:Null}}" />
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="{StaticResource SpaceXs}">
+                            <TextBlock x:Name="MessageText" Classes="wrap message" Text="{Binding Message.Text}"
+                                       ToolTip.Tip="{Binding Message.Text}" />
+                            <ItemsControl ItemsSource="{Binding Message.Details}"
+                                          IsVisible="{Binding Message.HasDetails, FallbackValue=False}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="x:String">
+                                        <TextBlock Classes="caption muted wrap" Text="{Binding}" />
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                        <Button Grid.Column="2" Classes="icon small" VerticalAlignment="Center"
+                                Command="{Binding DismissMessageCommand}"
+                                ToolTip.Tip="Zatvori poruku"
+                                AutomationProperties.Name="Zatvori poruku">
+                            <PathIcon Classes="small" Data="{StaticResource IconClose}" />
+                        </Button>
+                    </Grid>
+                </Border>
+            </StackPanel>
+
+            <!-- Stanja bez rezultata analize -->
+            <Border Grid.Row="1" Classes="pane" IsVisible="{Binding !HasAnalysis}">
+                <Panel>
+                    <StackPanel x:Name="AnalyzingState" Classes="emptyPane" IsVisible="{Binding IsAnalyzing}">
+                        <ProgressBar Classes="analysis" HorizontalAlignment="Center"
+                                     IsIndeterminate="{Binding IsProgressIndeterminate}"
+                                     Value="{Binding ProgressValue}" Maximum="{Binding ProgressMaximum}"
+                                     AutomationProperties.Name="Napredak analize" />
+                        <TextBlock Classes="strong" HorizontalAlignment="Center" Text="Analiza u toku…" />
+                        <TextBlock Classes="muted wrap" TextAlignment="Center" Text="{Binding ProgressText}" />
+                    </StackPanel>
+                    <StackPanel x:Name="NoAnalysisState" Classes="emptyPane">
+                        <StackPanel.IsVisible>
+                            <MultiBinding Converter="{x:Static BoolConverters.And}">
+                                <Binding Path="!IsAnalyzing" />
+                                <Binding Path="!HasAnalysisError" />
+                            </MultiBinding>
+                        </StackPanel.IsVisible>
+                        <PathIcon Classes="muted large" Data="{StaticResource IconClean}" HorizontalAlignment="Center" />
+                        <TextBlock Classes="strong" HorizontalAlignment="Center" Text="Analiza nije urađena" />
+                        <TextBlock Classes="muted wrap" TextAlignment="Center"
+                                   Text="Kliknite „Analiziraj” ili pritisnite F5. Fakture i predložene akcije će se pojaviti ovdje." />
+                    </StackPanel>
+                    <StackPanel x:Name="AnalysisFailedState" Classes="emptyPane">
+                        <StackPanel.IsVisible>
+                            <MultiBinding Converter="{x:Static BoolConverters.And}">
+                                <Binding Path="!IsAnalyzing" />
+                                <Binding Path="HasAnalysisError" />
+                            </MultiBinding>
+                        </StackPanel.IsVisible>
+                        <PathIcon Classes="status error large" HorizontalAlignment="Center" />
+                        <TextBlock Classes="strong" HorizontalAlignment="Center" Text="Nema rezultata analize" />
+                        <TextBlock Classes="muted wrap" TextAlignment="Center"
+                                   Text="Provjerite fajl u tabu „Validacija” ili otvorite drugi fajl (Ctrl+O)." />
+                    </StackPanel>
+                </Panel>
+            </Border>
+
+            <!-- Tabela faktura i detalji, razdvojeni pomičnom granicom -->
+            <Grid x:Name="Panes" Grid.Row="1" IsVisible="{Binding HasAnalysis}" IsEnabled="{Binding !IsBusy}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="{StaticResource InvoicesPaneHeight}" MinHeight="{StaticResource InvoicesPaneMinHeight}" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="{StaticResource DetailPaneHeight}" MinHeight="{StaticResource DetailPaneMinHeight}" />
+                </Grid.RowDefinitions>
+
+                <!-- ===== Fakture ===== -->
+                <Border Classes="pane">
+                    <DockPanel>
+                        <Border Classes="paneHeader" DockPanel.Dock="Top">
+                            <Grid ColumnDefinitions="Auto,Auto,Auto,*,Auto" ColumnSpacing="{StaticResource SpaceS}">
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock Classes="strong" Text="Fakture" />
+                                    <TextBlock x:Name="RowsCountText" Classes="caption muted" Text="{Binding RowsCountText}" />
+                                </StackPanel>
+                                <ComboBox x:Name="FilterPicker" Grid.Column="1" Classes="field"
+                                          Width="{StaticResource FilterFieldWidth}"
+                                          ItemsSource="{Binding FilterOptions}"
+                                          SelectedItem="{Binding SelectedFilter}"
+                                          AutomationProperties.Name="Filter faktura"
+                                          ToolTip.Tip="Prikaži sve fakture, samo kandidate ili samo fakture sa upozorenjem, popravkom ili odlukom na čekanju" />
+                                <TextBox x:Name="SearchBox" Grid.Column="2" Classes="search"
+                                         Width="{StaticResource SearchFieldWidth}"
+                                         Text="{Binding SearchText}"
+                                         PlaceholderText="Broj fakture ili JMB"
+                                         AutomationProperties.Name="Pretraga po broju fakture ili JMB-u"
+                                         ToolTip.Tip="Pretraga po broju fakture ili JMB-u (Ctrl+F)">
+                                    <TextBox.InnerLeftContent>
+                                        <PathIcon Data="{StaticResource IconSearch}" />
+                                    </TextBox.InnerLeftContent>
+                                </TextBox>
+
+                                <!-- Grupna promjena akcije za izabrane kandidate -->
+                                <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="{StaticResource SpaceXs}"
+                                            VerticalAlignment="Center">
+                                    <TextBlock x:Name="SelectedCountText" Classes="caption muted" VerticalAlignment="Center"
+                                              
+                                               Text="{Binding SelectedCandidateCount, StringFormat='Izabrano kandidata: {0}'}"
+                                               ToolTip.Tip="Ctrl ili Shift + klik bira više faktura; grupna akcija važi samo za kandidate" />
+                                    <Button x:Name="DeleteSelectedButton" Classes="toolbar compact"
+                                            Command="{Binding DeleteSelectedCommand}"
+                                            ToolTip.Tip="Postavi akciju Obriši za izabrane kandidate (briše se samo iz očišćenog fajla)">
+                                        <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceXs}">
+                                            <PathIcon Classes="small" Data="{StaticResource IconDelete}" />
+                                            <TextBlock Text="Obriši" />
+                                        </StackPanel>
+                                    </Button>
+                                    <Button x:Name="SkipSelectedButton" Classes="toolbar compact"
+                                            Command="{Binding SkipSelectedCommand}"
+                                            ToolTip.Tip="Postavi akciju Preskoči za izabrane kandidate (ostaju u fajlu)">
+                                        <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceXs}">
+                                            <PathIcon Classes="small" Data="{StaticResource IconSkip}" />
+                                            <TextBlock Text="Preskoči" />
+                                        </StackPanel>
+                                    </Button>
+                                    <Button x:Name="ResetSelectedButton" Classes="toolbar compact"
+                                            Command="{Binding ResetSelectedCommand}"
+                                            ToolTip.Tip="Vrati podrazumijevanu akciju za izabrane kandidate">
+                                        <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceXs}">
+                                            <PathIcon Classes="small" Data="{StaticResource IconReset}" />
+                                            <TextBlock Text="Vrati" />
+                                        </StackPanel>
+                                    </Button>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <Panel>
+                            <DataGrid x:Name="InvoicesGrid" Classes="issues invoices"
+                                      ItemsSource="{Binding Rows}"
+                                      SelectedItem="{Binding SelectedRow}"
+                                      IsVisible="{Binding !!Rows.Count}"
+                                      AutomationProperties.Name="Tabela faktura">
+                                <DataGrid.Columns>
+                                    <DataGridTemplateColumn Header="Status" Width="{StaticResource InvoiceStatusColumnWidth}"
+                                                            MinWidth="{StaticResource InvoiceStatusColumnMinWidth}">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate x:DataType="vm:InvoiceRowViewModel">
+                                                <StackPanel Classes="cell" Orientation="Horizontal" Spacing="{StaticResource SpaceS}"
+                                                            Background="Transparent" ToolTip.Tip="{Binding Tooltip}">
+                                                    <PathIcon Classes="status small" ui:SeverityStyle.Severity="{Binding StatusSeverity}" />
+                                                    <TextBlock Text="{Binding StatusText}" VerticalAlignment="Center"
+                                                               TextTrimming="CharacterEllipsis" />
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                    <DataGridTemplateColumn Header="Broj" Width="{StaticResource InvoiceNumberColumnWidth}"
+                                                            MinWidth="{StaticResource InvoiceNumberColumnMinWidth}">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate x:DataType="vm:InvoiceRowViewModel">
+                                                <StackPanel Classes="cell" Orientation="Horizontal" Spacing="{StaticResource SpaceXs}">
+                                                    <TextBlock Text="{Binding NumberText}" VerticalAlignment="Center"
+                                                               TextTrimming="CharacterEllipsis" />
+                                                    <Border Classes="partBadge" IsVisible="{Binding HasPart}">
+                                                        <TextBlock Text="{Binding PartText}" />
+                                                    </Border>
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                    <DataGridTemplateColumn Header="Datum" Width="{StaticResource InvoiceDateColumnWidth}"
+                                                            MinWidth="{StaticResource InvoiceDateColumnMinWidth}">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate x:DataType="vm:InvoiceRowViewModel">
+                                                <TextBlock Classes="cell" Text="{Binding DateText}" />
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                    <DataGridTemplateColumn Header="JMB" Width="{StaticResource InvoiceJmbColumnWidth}"
+                                                            MinWidth="{StaticResource InvoiceJmbColumnMinWidth}">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate x:DataType="vm:InvoiceRowViewModel">
+                                                <TextBlock Classes="cell" Text="{Binding JmbText}" ToolTip.Tip="{Binding JmbText}" />
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                    <DataGridTemplateColumn Header="Grupe" Width="{StaticResource InvoiceGroupsColumnWidth}"
+                                                            MinWidth="{StaticResource InvoiceGroupsColumnMinWidth}">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate x:DataType="vm:InvoiceRowViewModel">
+                                                <TextBlock Classes="cell" Text="{Binding GroupsText}" ToolTip.Tip="{Binding GroupsText}" />
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                    <DataGridTemplateColumn Header="Br. stavki" Width="{StaticResource InvoiceItemsColumnWidth}"
+                                                            MinWidth="{StaticResource InvoiceItemsColumnMinWidth}">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate x:DataType="vm:InvoiceRowViewModel">
+                                                <TextBlock Classes="cell right" Text="{Binding ItemCount}" />
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                    <DataGridTemplateColumn Header="Linija" Width="{StaticResource InvoiceLineColumnWidth}"
+                                                            MinWidth="{StaticResource InvoiceLineColumnMinWidth}">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate x:DataType="vm:InvoiceRowViewModel">
+                                                <TextBlock Classes="cell" Text="{Binding LineText}" />
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                    <DataGridTemplateColumn Header="Akcija" Width="{StaticResource InvoiceActionColumnWidth}"
+                                                            MinWidth="{StaticResource InvoiceActionColumnMinWidth}">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate x:DataType="vm:InvoiceRowViewModel">
+                                                <Panel>
+                                                    <ComboBox Classes="cellAction" Classes.unresolved="{Binding IsUnresolved}"
+                                                              IsVisible="{Binding IsCandidate}"
+                                                              ItemsSource="{x:Static vm:InvoiceRowViewModel.ActionOptions}"
+                                                              SelectedItem="{Binding SelectedAction}"
+                                                              PlaceholderText="Izaberite…"
+                                                              AutomationProperties.Name="{Binding NumberText, StringFormat='Akcija za fakturu {0}'}"
+                                                              ToolTip.Tip="Obriši: ne ulazi u očišćen fajl. Preskoči: ostaje neizmijenjena. Uredi: ručna izmjena teksta." />
+                                                    <TextBlock Classes="cell muted" Text="{Binding ActionText}"
+                                                               IsVisible="{Binding !IsCandidate}"
+                                                               ToolTip.Tip="Faktura nije kandidat za brisanje i ostaje u fajlu" />
+                                                </Panel>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                    <DataGridTemplateColumn Header="Kategorija" Width="{StaticResource InvoiceCategoryColumnWidth}"
+                                                            MinWidth="{StaticResource InvoiceStarColumnMinWidth}">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate x:DataType="vm:InvoiceRowViewModel">
+                                                <TextBlock Classes="cell" Text="{Binding CategoryText}" ToolTip.Tip="{Binding CategoryText}" />
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                    <DataGridTemplateColumn Header="Razlog" Width="{StaticResource InvoiceReasonColumnWidth}"
+                                                            MinWidth="{StaticResource InvoiceStarColumnMinWidth}">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate x:DataType="vm:InvoiceRowViewModel">
+                                                <TextBlock Classes="cell muted" Text="{Binding Reason}" ToolTip.Tip="{Binding Tooltip}" />
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
+
+                            <!-- Prazno stanje: nijedna faktura ne odgovara filteru ili pretrazi -->
+                            <StackPanel x:Name="NoRowsState" Classes="emptyPane" IsVisible="{Binding !Rows.Count}">
+                                <PathIcon Classes="muted large" Data="{StaticResource IconFilter}" HorizontalAlignment="Center" />
+                                <TextBlock Classes="strong" HorizontalAlignment="Center" Text="Nema faktura za prikaz" />
+                                <TextBlock Classes="muted wrap" TextAlignment="Center"
+                                           Text="Nijedna faktura ne odgovara filteru ili pretrazi." />
+                                <Button x:Name="ClearFilterButton" Classes="link" HorizontalAlignment="Center"
+                                        Content="Prikaži sve fakture" Command="{Binding ClearFilterCommand}"
+                                        ToolTip.Tip="Filter „Sve” i prazna pretraga" />
+                            </StackPanel>
+                        </Panel>
+                    </DockPanel>
+                </Border>
+
+                <GridSplitter Grid.Row="1" Classes="pane" ResizeDirection="Rows"
+                              AutomationProperties.Name="Granica između tabele faktura i pregleda" />
+
+                <!-- ===== Detalji: pregled ili editor bloka | popravke i upozorenja ===== -->
+                <Grid Grid.Row="2">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="{StaticResource PreviewPaneWidth}" MinWidth="{StaticResource PreviewPaneMinWidth}" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="{StaticResource NotesPaneWidth}" MinWidth="{StaticResource NotesPaneMinWidth}" />
+                    </Grid.ColumnDefinitions>
+
+                    <Border x:Name="DetailPane" Classes="pane" Classes.editing="{Binding IsEditing}">
+                        <Panel>
+                            <!-- Pregled bloka (samo za čitanje) -->
+                            <DockPanel x:Name="PreviewPanel" IsVisible="{Binding !IsEditing}">
+                                <Border Classes="paneHeader" DockPanel.Dock="Top">
+                                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="{StaticResource SpaceS}">
+                                        <PathIcon Classes="muted" Data="{StaticResource IconXmlFile}" VerticalAlignment="Center" />
+                                        <TextBlock x:Name="PreviewTitleText" Grid.Column="1" Classes="strong" VerticalAlignment="Center"
+                                                   Text="{Binding PreviewTitle, TargetNullValue='Pregled fakture'}"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   ToolTip.Tip="{Binding PreviewTitle}" />
+                                        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="{StaticResource SpaceXs}">
+                                            <Button x:Name="RevertEditButton" Classes="toolbar compact"
+                                                    Command="{Binding RevertEditCommand}"
+                                                    IsVisible="{Binding SelectedRow.IsEdited, FallbackValue=False}"
+                                                    ToolTip.Tip="Vrati tekst fakture iz ulaznog fajla (sa automatskim popravkama) i ponovo je klasifikuj">
+                                                <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceXs}">
+                                                    <PathIcon Classes="small" Data="{StaticResource IconUndo}" />
+                                                    <TextBlock Text="Poništi izmjenu" />
+                                                </StackPanel>
+                                            </Button>
+                                            <Button x:Name="StartEditButton" Classes="toolbar compact"
+                                                    Command="{Binding StartEditCommand}"
+                                                    ToolTip.Tip="Ručno izmijeni tekst izabrane fakture (kandidati i već uređene fakture)">
+                                                <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceXs}">
+                                                    <PathIcon Classes="small" Data="{StaticResource IconRename}" />
+                                                    <TextBlock Text="Uredi…" />
+                                                </StackPanel>
+                                            </Button>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                                <Panel>
+                                    <ae:TextEditor x:Name="PreviewEditor" Classes="xml"
+                                                   IsReadOnly="True"
+                                                   ShowLineNumbers="False"
+                                                   IsVisible="{Binding HasPreview}"
+                                                   AutomationProperties.Name="Tekst izabrane fakture" />
+                                    <StackPanel x:Name="NoPreviewState" Classes="emptyPane" IsVisible="{Binding !HasPreview}">
+                                        <PathIcon Classes="muted large" Data="{StaticResource IconXmlFile}" HorizontalAlignment="Center" />
+                                        <TextBlock Classes="muted wrap" TextAlignment="Center"
+                                                   Text="Izaberite fakturu u tabeli ili stavku iz liste popravki da vidite njen tekst." />
+                                    </StackPanel>
+                                </Panel>
+                            </DockPanel>
+
+                            <!-- Uređivanje bloka -->
+                            <DockPanel x:Name="EditPanel" IsVisible="{Binding IsEditing}">
+                                <DockPanel.KeyBindings>
+                                    <KeyBinding Gesture="Ctrl+Enter" Command="{Binding ApplyEditCommand}" />
+                                    <KeyBinding Gesture="Escape" Command="{Binding CancelEditCommand}" />
+                                </DockPanel.KeyBindings>
+                                <Border Classes="paneHeader" DockPanel.Dock="Top">
+                                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="{StaticResource SpaceS}">
+                                        <PathIcon Classes="accent" Data="{StaticResource IconRename}" VerticalAlignment="Center" />
+                                        <TextBlock x:Name="EditTitleText" Grid.Column="1" Classes="strong" VerticalAlignment="Center"
+                                                   Text="{Binding EditTitle}" TextTrimming="CharacterEllipsis"
+                                                   ToolTip.Tip="{Binding EditTitle}" />
+                                        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
+                                            <Button x:Name="CancelEditButton" Classes="toolbar compact"
+                                                    Command="{Binding CancelEditCommand}"
+                                                    ToolTip.Tip="Zatvori editor bez izmjene (Esc)">
+                                                <TextBlock Text="Odustani" />
+                                            </Button>
+                                            <Button x:Name="ApplyEditButton" Classes="primary"
+                                                    Command="{Binding ApplyEditCommand}"
+                                                    ToolTip.Tip="Primijeni izmjenu: faktura se provjerava i ponovo klasifikuje (Ctrl+Enter)">
+                                                <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
+                                                    <PathIcon Data="{StaticResource IconCheck}" />
+                                                    <TextBlock Text="Primijeni" />
+                                                </StackPanel>
+                                            </Button>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                                <Border x:Name="EditErrorBanner" DockPanel.Dock="Top" Classes="banner error compact"
+                                        Margin="{StaticResource ThicknessS}" IsVisible="{Binding HasEditError}">
+                                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="{StaticResource SpaceM}">
+                                        <PathIcon Classes="status error" VerticalAlignment="Top" />
+                                        <StackPanel Grid.Column="1" Spacing="{StaticResource SpaceXs}">
+                                            <TextBlock Classes="strong" Text="Izmjena nije primijenjena" />
+                                            <TextBlock x:Name="EditErrorText" Classes="wrap message" Text="{Binding EditError}"
+                                                       ToolTip.Tip="{Binding EditError}" />
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                                <ae:TextEditor x:Name="EditEditor" Classes="xml"
+                                               ShowLineNumbers="False"
+                                               AutomationProperties.Name="Tekst fakture za uređivanje" />
+                            </DockPanel>
+                        </Panel>
+                    </Border>
+
+                    <GridSplitter Grid.Column="1" Classes="paneColumns" ResizeDirection="Columns"
+                                  AutomationProperties.Name="Granica između pregleda i liste popravki" />
+
+                    <!-- ===== Popravke i upozorenja ===== -->
+                    <Border Grid.Column="2" Classes="pane">
+                        <DockPanel>
+                            <Border Classes="paneHeader" DockPanel.Dock="Top">
+                                <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="{StaticResource SpaceS}">
+                                    <PathIcon Classes="muted" Data="{StaticResource IconList}" VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="1" Classes="strong" Text="Popravke i upozorenja" VerticalAlignment="Center"
+                                               TextTrimming="CharacterEllipsis" />
+                                    <Border Grid.Column="2" Classes="badge" IsVisible="{Binding HasNotes}"
+                                            ToolTip.Tip="Broj stavki u listi">
+                                        <TextBlock x:Name="NotesCountText" Text="{Binding Notes.Count}" />
+                                    </Border>
+                                </Grid>
+                            </Border>
+                            <Panel>
+                                <ListBox x:Name="NotesList" Classes="notes"
+                                         ItemsSource="{Binding Notes}"
+                                         IsVisible="{Binding HasNotes}"
+                                         AutomationProperties.Name="Lista popravki i upozorenja">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate x:DataType="vm:CleaningNoteRow">
+                                            <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto"
+                                                  ColumnSpacing="{StaticResource SpaceS}" ToolTip.Tip="{Binding Text}">
+                                                <PathIcon Grid.RowSpan="2" Classes="status small" VerticalAlignment="Top"
+                                                          ui:SeverityStyle.Severity="{Binding Severity}" />
+                                                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
+                                                    <TextBlock Classes="caption strong" Text="{Binding KindText}" />
+                                                    <TextBlock Classes="caption muted" Text="{Binding LineText, StringFormat='linija {0}'}" />
+                                                </StackPanel>
+                                                <TextBlock Grid.Row="1" Grid.Column="1" Classes="noteText" Text="{Binding Text}" />
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                                <StackPanel x:Name="NoNotesState" Classes="emptyPane" IsVisible="{Binding !HasNotes}">
+                                    <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}" HorizontalAlignment="Center">
+                                        <PathIcon Classes="status success" VerticalAlignment="Center" />
+                                        <TextBlock Classes="strong" Text="Nema popravki ni upozorenja" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                    <TextBlock Classes="muted wrap" TextAlignment="Center"
+                                               Text="Sve fakture su prepoznate bez automatskih izmjena." />
+                                </StackPanel>
+                            </Panel>
+                        </DockPanel>
+                    </Border>
+                </Grid>
+            </Grid>
+        </Grid>
+
+        <!-- ===== Traka za čuvanje ===== -->
+        <Border x:Name="SaveBar" Grid.Row="3" Classes="savebar" IsVisible="{Binding HasAnalysis}">
+            <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="*,Auto" RowSpacing="{StaticResource SpaceS}"
+                  ColumnSpacing="{StaticResource SpaceXl}">
+
+                <!-- Stanje: razlog blokade, rezultat provjere izlaza ili spremno -->
+                <Panel Grid.ColumnSpan="2">
+                    <Grid x:Name="SaveBlockedPanel" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="{StaticResource SpaceS}"
+                          IsVisible="{Binding HasSaveBlockedReason}">
+                        <PathIcon Classes="status error" VerticalAlignment="Center" />
+                        <TextBlock x:Name="SaveBlockedText" Grid.Column="1" Classes="reason strong errorText"
+                                   Text="{Binding SaveBlockedReason}" ToolTip.Tip="{Binding SaveBlockedReason}" />
+                        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="{StaticResource SpaceXs}"
+                                    VerticalAlignment="Center">
+                            <Button x:Name="ShowUnresolvedButton" Classes="link" Content="Prikaži fakturu"
+                                    Command="{Binding GoToFirstUnresolvedCommand}"
+                                    IsVisible="{Binding Summary.HasUnresolved}"
+                                    ToolTip.Tip="Izaberi prvu fakturu koja čeka odluku" />
+                            <Button Classes="link" Content="Analiziraj"
+                                    Command="{Binding AnalyzeCommand}"
+                                    IsVisible="{Binding IsAnalysisStale}"
+                                    ToolTip.Tip="Analiziraj ponovo sa trenutnim podešavanjima (F5)" />
+                        </StackPanel>
+                    </Grid>
+
+                    <Grid x:Name="OutputCheckPanel" ColumnDefinitions="Auto,*" ColumnSpacing="{StaticResource SpaceS}">
+                        <Grid.IsVisible>
+                            <MultiBinding Converter="{x:Static BoolConverters.And}">
+                                <Binding Path="!HasSaveBlockedReason" />
+                                <Binding Path="HasOutputCheck" />
+                            </MultiBinding>
+                        </Grid.IsVisible>
+                        <PathIcon Classes="status" ui:SeverityStyle.Severity="{Binding OutputCheckSeverity}" VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="1" Classes="reason" Text="{Binding OutputCheckText}"
+                                   ToolTip.Tip="{Binding OutputCheckText}" />
+                    </Grid>
+
+                    <Grid x:Name="SaveReadyPanel" ColumnDefinitions="Auto,*" ColumnSpacing="{StaticResource SpaceS}">
+                        <Grid.IsVisible>
+                            <MultiBinding Converter="{x:Static BoolConverters.And}">
+                                <Binding Path="!HasSaveBlockedReason" />
+                                <Binding Path="!HasOutputCheck" />
+                            </MultiBinding>
+                        </Grid.IsVisible>
+                        <PathIcon Classes="status success" VerticalAlignment="Center" />
+                        <TextBlock x:Name="SaveReadyText" Grid.Column="1" Classes="reason">
+                            <TextBlock.Text>
+                                <MultiBinding StringFormat="Spremno za čuvanje. Ostaje faktura: {0} od {1} (obrisano: {2}, preskočeno: {3}, uređeno: {4}). Očišćen fajl se provjerava prema šemi pri čuvanju.">
+                                    <Binding Path="Summary.Remaining" />
+                                    <Binding Path="Summary.Total" />
+                                    <Binding Path="Summary.Deleted" />
+                                    <Binding Path="Summary.Skipped" />
+                                    <Binding Path="Summary.Edited" />
+                                </MultiBinding>
+                            </TextBlock.Text>
+                        </TextBlock>
+                    </Grid>
+                </Panel>
+
+                <!-- Opcije -->
+                <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="{StaticResource SpaceXl}" VerticalAlignment="Center">
+                    <CheckBox x:Name="ValidateAfterSaveCheck" Classes="compact" IsChecked="{Binding ValidateAfterSave}"
+                              Content="Nakon čuvanja validiraj rezultat"
+                              ToolTip.Tip="Sačuvan očišćen fajl se otvara u tabu „Validacija”" />
+                    <CheckBox x:Name="MaskJmbCheck" Classes="compact" IsChecked="{Binding MaskJmb}"
+                              Content="Maskiraj JMB u izvještaju"
+                              ToolTip.Tip="U sačuvanom izvještaju JMB ima samo prvih 7 cifara (npr. 0101990******)" />
+                </StackPanel>
+
+                <!-- Čuvanje -->
+                <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
+                    <Button x:Name="SaveReportButton" Command="{Binding SaveReportCommand}"
+                            ToolTip.Tip="Sačuvaj izvještaj o čišćenju u .txt ili .csv fajl">
+                        <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
+                            <PathIcon Data="{StaticResource IconReport}" />
+                            <TextBlock Text="Sačuvaj izvještaj…" />
+                        </StackPanel>
+                    </Button>
+                    <Button x:Name="SaveOutputButton" Classes="primary" Command="{Binding SaveOutputCommand}"
+                            ToolTip.Tip="Sačuvaj očišćen fajl u novi fajl (Ctrl+S). Ulazni fajl se nikad ne mijenja.">
+                        <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
+                            <PathIcon Data="{StaticResource IconSave}" />
+                            <TextBlock Text="Sačuvaj očišćeni fajl…" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

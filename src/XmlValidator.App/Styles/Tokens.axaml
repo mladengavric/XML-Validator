@@ -67,6 +67,7 @@
             <SolidColorBrush x:Key="EditorLineNumberBrush" Color="#8A929C" />
             <SolidColorBrush x:Key="EditorErrorLineBrush" Color="#16C42B1C" />
             <SolidColorBrush x:Key="EditorWarningLineBrush" Color="#1FD99A00" />
+            <SolidColorBrush x:Key="EditorHighlightLineBrush" Color="#260F62B8" />
             <SolidColorBrush x:Key="SyntaxTagBrush" Color="#1A5BA6" />
             <SolidColorBrush x:Key="SyntaxAttributeNameBrush" Color="#9A3A12" />
             <SolidColorBrush x:Key="SyntaxAttributeValueBrush" Color="#0E7040" />
@@ -129,6 +130,7 @@
             <SolidColorBrush x:Key="EditorLineNumberBrush" Color="#7D848E" />
             <SolidColorBrush x:Key="EditorErrorLineBrush" Color="#26FF6B61" />
             <SolidColorBrush x:Key="EditorWarningLineBrush" Color="#1FF2C14E" />
+            <SolidColorBrush x:Key="EditorHighlightLineBrush" Color="#335AA6F0" />
             <SolidColorBrush x:Key="SyntaxTagBrush" Color="#6CB2F5" />
             <SolidColorBrush x:Key="SyntaxAttributeNameBrush" Color="#F0A47E" />
             <SolidColorBrush x:Key="SyntaxAttributeValueBrush" Color="#86D6A6" />
@@ -252,6 +254,54 @@
     <!-- Odnos editora i liste nalaza (podrazumijevano 65/35) -->
     <GridLength x:Key="EditorPaneHeight">65*</GridLength>
     <GridLength x:Key="IssuesPaneHeight">35*</GridLength>
+
+    <!-- Tab „Čišćenje faktura” -->
+    <Thickness x:Key="CompactCellPadding">8,4</Thickness>
+    <Thickness x:Key="CompactHeaderPadding">8,0,4,0</Thickness>
+    <Thickness x:Key="StatPadding">12,2</Thickness>
+    <Thickness x:Key="ComboBoxCompactPadding">8,2,0,2</Thickness>
+    <Thickness x:Key="SettingsPanelPadding">16,12</Thickness>
+    <Thickness x:Key="NoteItemPadding">12,8</Thickness>
+    <Thickness x:Key="SaveBarPadding">16,10</Thickness>
+    <Thickness x:Key="LineNumberGap">8,0,12,0</Thickness>
+    <x:Double x:Key="SearchFieldWidth">200</x:Double>
+    <x:Double x:Key="FilterFieldWidth">150</x:Double>
+    <x:Double x:Key="ActionFieldWidth">140</x:Double>
+    <x:Double x:Key="ProgressBarWidth">180</x:Double>
+    <x:Double x:Key="CompactCheckHeight">24</x:Double>
+    <x:Double x:Key="InvoicesPaneMinHeight">120</x:Double>
+    <x:Double x:Key="DetailPaneMinHeight">112</x:Double>
+    <x:Double x:Key="PreviewPaneMinWidth">320</x:Double>
+    <x:Double x:Key="NotesPaneMinWidth">240</x:Double>
+    <x:Double x:Key="SaveReasonMaxWidth">640</x:Double>
+    <x:Int32 x:Key="SaveReasonMaxLines">2</x:Int32>
+    <x:Int32 x:Key="NoteTextMaxLines">2</x:Int32>
+    <GridLength x:Key="InvoicesPaneHeight">62*</GridLength>
+    <GridLength x:Key="DetailPaneHeight">38*</GridLength>
+    <!-- Dok se blok uređuje, editor dobija više prostora -->
+    <GridLength x:Key="EditingInvoicesPaneHeight">42*</GridLength>
+    <GridLength x:Key="EditingDetailPaneHeight">58*</GridLength>
+    <GridLength x:Key="PreviewPaneWidth">3*</GridLength>
+    <GridLength x:Key="NotesPaneWidth">2*</GridLength>
+    <DataGridLength x:Key="InvoiceStatusColumnWidth">116</DataGridLength>
+    <DataGridLength x:Key="InvoiceNumberColumnWidth">160</DataGridLength>
+    <DataGridLength x:Key="InvoiceDateColumnWidth">100</DataGridLength>
+    <DataGridLength x:Key="InvoiceJmbColumnWidth">136</DataGridLength>
+    <DataGridLength x:Key="InvoiceGroupsColumnWidth">84</DataGridLength>
+    <DataGridLength x:Key="InvoiceItemsColumnWidth">100</DataGridLength>
+    <DataGridLength x:Key="InvoiceLineColumnWidth">80</DataGridLength>
+    <DataGridLength x:Key="InvoiceCategoryColumnWidth">1*</DataGridLength>
+    <DataGridLength x:Key="InvoiceReasonColumnWidth">2*</DataGridLength>
+    <DataGridLength x:Key="InvoiceActionColumnWidth">128</DataGridLength>
+    <x:Double x:Key="InvoiceStarColumnMinWidth">64</x:Double>
+    <x:Double x:Key="InvoiceStatusColumnMinWidth">116</x:Double>
+    <x:Double x:Key="InvoiceNumberColumnMinWidth">160</x:Double>
+    <x:Double x:Key="InvoiceDateColumnMinWidth">100</x:Double>
+    <x:Double x:Key="InvoiceJmbColumnMinWidth">136</x:Double>
+    <x:Double x:Key="InvoiceGroupsColumnMinWidth">84</x:Double>
+    <x:Double x:Key="InvoiceItemsColumnMinWidth">100</x:Double>
+    <x:Double x:Key="InvoiceLineColumnMinWidth">80</x:Double>
+    <x:Double x:Key="InvoiceActionColumnMinWidth">128</x:Double>
 
     <!-- Veličine prozora -->
     <x:Double x:Key="MainWindowWidth">1200</x:Double>
