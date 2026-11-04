@@ -17,6 +17,7 @@
     <Window.KeyBindings>
         <KeyBinding Gesture="Ctrl+O" Command="{Binding OpenCommand}" />
         <KeyBinding Gesture="Ctrl+Shift+S" Command="{Binding SaveAsCommand}" />
+        <KeyBinding Gesture="Ctrl+W" Command="{Binding CloseFileCommand}" />
         <KeyBinding Gesture="Ctrl+OemComma" Command="{Binding OpenSettingsCommand}" />
         <KeyBinding Gesture="Ctrl+D1" Command="{Binding SelectTabCommand}" CommandParameter="0" />
         <KeyBinding Gesture="Ctrl+D2" Command="{Binding SelectTabCommand}" CommandParameter="1" />
@@ -43,6 +44,13 @@
                             <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
                                 <PathIcon Data="{StaticResource IconSave}" />
                                 <TextBlock Text="Sačuvaj kao…" />
+                            </StackPanel>
+                        </Button>
+                        <Button x:Name="CloseFileButton" Classes="toolbar" Command="{Binding CloseFileCommand}"
+                                ToolTip.Tip="Zatvori fajl (Ctrl+W)">
+                            <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
+                                <PathIcon Data="{StaticResource IconCloseFile}" />
+                                <TextBlock Text="Zatvori" />
                             </StackPanel>
                         </Button>
                         <Border Classes="divider" />

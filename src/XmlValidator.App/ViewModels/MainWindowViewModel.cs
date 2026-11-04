@@ -76,7 +76,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IDisposable
     /// <summary>Posljednji fajl otvoren za oba taba.</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasDocument), nameof(Title))]
-    [NotifyCanExecuteChangedFor(nameof(SaveAsCommand))]
+    [NotifyCanExecuteChangedFor(nameof(SaveAsCommand), nameof(CloseFileCommand))]
     public partial OpenedDocument? Document { get; private set; }
 
     public bool HasDocument => Document is not null;
@@ -112,7 +112,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IDisposable
 
     /// <summary>Učitavanje ili čuvanje je u toku.</summary>
     [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(OpenCommand), nameof(OpenRecentCommand), nameof(SaveAsCommand))]
+    [NotifyCanExecuteChangedFor(nameof(OpenCommand), nameof(OpenRecentCommand), nameof(SaveAsCommand), nameof(CloseFileCommand))]
     public partial bool IsBusy { get; private set; }
 
     public ObservableCollection<RecentFileItem> RecentFiles { get; } = [];
@@ -348,6 +348,27 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IDisposable
         SetStatus("Lista nedavnih fajlova je obrisana (sami fajlovi nisu dirani).", MessageSeverity.Info);
     }
 
+    private bool CanCloseFile() => !IsBusy && (Document is not null || Validation.Document is not null || Cleaning.Document is not null);
+
+    /// <summary>
+    /// „Zatvori fajl” (Ctrl+W): zatvara otvoren fajl u oba taba, bez zatvaranja programa. Nesačuvane izmjene i
+    /// odluke traže potvrdu, kao prije otvaranja drugog fajla; fajl na disku se ne dira.
+    /// </summary>
+    [RelayCommand(CanExecute = nameof(CanCloseFile))]
+    private async Task CloseFileAsync()
+    {
+        if (!await ConfirmDiscardChangesAsync())
+        {
+            return;
+        }
+
+        var name = (Document ?? Validation.Document ?? Cleaning.Document)?.FileName;
+        Validation.SetDocument(null);
+        Cleaning.SetDocument(null);
+        Document = null;
+        SetStatus(name is null ? "Fajl je zatvoren." : $"Fajl „{name}” je zatvoren.", MessageSeverity.Info);
+    }
+
     private bool CanSaveAs() => ActiveTab.Document is not null && !IsBusy;
 
     /// <summary>Čuva sadržaj u novi fajl. Ulazni fajl se nikad ne prepisuje.</summary>
@@ -447,6 +468,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IDisposable
         {
             OnPropertyChanged(nameof(Title));
             SaveAsCommand.NotifyCanExecuteChanged();
+            CloseFileCommand.NotifyCanExecuteChanged();
         }
         else if (e.PropertyName is nameof(DocumentTabViewModel.HasUnsavedChanges))
         {

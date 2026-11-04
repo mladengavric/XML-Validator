@@ -123,7 +123,7 @@
                 </Panel>
 
                 <ToggleButton x:Name="SettingsToggle" Grid.Column="2" Classes="toolbar" VerticalAlignment="Center"
-                              ToolTip.Tip="Prikaži ili sakrij podešavanja analize: ciljna grupa, podrazumijevane akcije, popravke">
+                              ToolTip.Tip="Prikaži ili sakrij podešavanja analize: grupa SHMP, usluga pregleda, podrazumijevane akcije, popravke">
                     <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
                         <PathIcon Data="{StaticResource IconSettings}" />
                         <TextBlock Text="Podešavanja analize" />
@@ -141,35 +141,35 @@
         <!-- ===== Podešavanja analize (sklopivo) ===== -->
         <Border x:Name="SettingsPanel" Grid.Row="1" Classes="settingsPanel"
                 IsVisible="{Binding #SettingsToggle.IsChecked}">
-            <Grid ColumnDefinitions="Auto,Auto,Auto,Auto,*,Auto" RowDefinitions="Auto,Auto,Auto"
+            <Grid ColumnDefinitions="Auto,Auto,Auto,*" RowDefinitions="Auto,Auto,Auto"
                   ColumnSpacing="{StaticResource SpaceXl}" RowSpacing="{StaticResource SpaceS}">
 
                 <StackPanel Spacing="{StaticResource SpaceXs}">
-                    <TextBlock Classes="caption muted" Text="Ciljna grupa" />
+                    <TextBlock Classes="caption muted" Text="Grupa SHMP" />
                     <NumericUpDown x:Name="TargetGroupInput" Width="{StaticResource NumericFieldWidth}"
                                    Value="{Binding TargetGroup}"
                                    Minimum="0" Maximum="65535" Increment="1" FormatString="0"
                                    ParsingNumberStyle="Integer"
-                                   AutomationProperties.Name="Ciljna grupa"
-                                   ToolTip.Tip="usluga-grupa koja se zadržava (podrazumijevano 100). Važi od sljedeće analize." />
+                                   AutomationProperties.Name="Grupa usluga SHMP (usluga-grupa)"
+                                   ToolTip.Tip="Grupa usluga Službe hitne medicinske pomoći (usluga-grupa; 100 = SHMP). Faktura sa uslugom iz ove grupe uvijek ostaje. Važi od sljedeće analize." />
                 </StackPanel>
 
                 <StackPanel Grid.Column="1" Spacing="{StaticResource SpaceXs}">
                     <TextBlock Classes="caption muted" Text="Prazna faktura" />
-                    <ComboBox x:Name="EmptyInvoiceActionPicker" Classes="field" Width="{StaticResource FilterFieldWidth}"
+                    <ComboBox x:Name="EmptyInvoiceActionPicker" Classes="field" Width="{StaticResource FieldWidth}"
                               ItemsSource="{Binding DefaultActionOptions}"
                               SelectedItem="{Binding EmptyInvoiceAction}"
                               AutomationProperties.Name="Podrazumijevana akcija za praznu fakturu"
-                              ToolTip.Tip="Podrazumijevana akcija za fakturu bez stavki; važi odmah" />
+                              ToolTip.Tip="Podrazumijevana akcija za fakturu koja nema nijednu stavku. Prikaži = bez akcije, odlučujete za svaku fakturu. Važi odmah." />
                 </StackPanel>
 
                 <StackPanel Grid.Column="2" Spacing="{StaticResource SpaceXs}">
-                    <TextBlock Classes="caption muted" Text="Bez ciljne grupe i bez podudaranja JMB-a" />
-                    <ComboBox x:Name="NoMatchActionPicker" Classes="field" Width="{StaticResource FilterFieldWidth}"
+                    <TextBlock Classes="caption muted" Text="Bez pregleda u SHMP" />
+                    <ComboBox x:Name="NoMatchActionPicker" Classes="field" Width="{StaticResource FieldWidth}"
                               ItemsSource="{Binding DefaultActionOptions}"
                               SelectedItem="{Binding NoGroupNoJmbMatchAction}"
-                              AutomationProperties.Name="Podrazumijevana akcija za fakturu bez ciljne grupe i bez podudaranja JMB-a"
-                              ToolTip.Tip="Podrazumijevana akcija za fakturu koja nema ciljnu grupu, a ni drugu fakturu istog JMB-a sa ciljnom grupom; važi odmah" />
+                              AutomationProperties.Name="Podrazumijevana akcija za fakturu samo sa uslugama drugih službi, pacijent nije pregledan u SHMP"
+                              ToolTip.Tip="Faktura samo sa uslugama drugih službi, a isti pacijent (JMB) nema pregled u SHMP ni na jednoj fakturi u fajlu. Obriši ili Preskoči važi za sve takve fakture; Prikaži ih ostavlja bez akcije, pa odlučujete pojedinačno. Važi odmah." />
                 </StackPanel>
 
                 <StackPanel Grid.Column="3" Spacing="{StaticResource SpaceXs}">
@@ -179,17 +179,30 @@
                               ToolTip.Tip="Dodaje nedostajuće „&lt;” i „&gt;” u tagovima faktura (svaka popravka je u izvještaju). Važi od sljedeće analize." />
                 </StackPanel>
 
-                <Button x:Name="ScriptCompatibleButton" Grid.Column="5" VerticalAlignment="Bottom"
-                        Command="{Binding ScriptCompatibleCommand}"
-                        ToolTip.Tip="Ciljna grupa 100, popravke uključene i Obriši za obje kategorije, pa nova analiza: rezultat kao skripta clean.py. Pojedinačne odluke se poništavaju.">
-                    <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
-                        <PathIcon Data="{StaticResource IconScript}" />
-                        <TextBlock Text="Kao skripta" />
+                <!-- Napomena o tome kada promjene važe i povratak na podrazumijevana podešavanja -->
+                <Grid Grid.Row="1" Grid.ColumnSpan="4" ColumnDefinitions="*,Auto" ColumnSpacing="{StaticResource SpaceL}">
+                    <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}"
+                                VerticalAlignment="Center">
+                        <StackPanel x:Name="TargetGroupErrorPanel" Orientation="Horizontal" Spacing="{StaticResource SpaceXs}"
+                                    IsVisible="{Binding HasTargetGroupError}">
+                            <PathIcon Classes="status error small" VerticalAlignment="Center" />
+                            <TextBlock Classes="caption errorText" Text="{Binding TargetGroupError}" VerticalAlignment="Center" />
+                        </StackPanel>
+                        <TextBlock Classes="caption muted" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                                   Text="Podrazumijevane akcije važe odmah; grupa, usluga pregleda i popravke traže novu analizu (F5)." />
                     </StackPanel>
-                </Button>
+                    <Button x:Name="UseDefaultsButton" Grid.Column="1" VerticalAlignment="Center"
+                            Command="{Binding UseDefaultsCommand}"
+                            ToolTip.Tip="Grupa SHMP 100, pregled 183, Obriši za prazne fakture i fakture bez pregleda u SHMP, automatske popravke uključene; pa nova analiza.">
+                        <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
+                            <PathIcon Data="{StaticResource IconReset}" />
+                            <TextBlock Text="Podrazumijevano" />
+                        </StackPanel>
+                    </Button>
+                </Grid>
 
                 <!-- Podešavanja prikazane analize; upozorenje kad su podešavanja promijenjena poslije nje -->
-                <Panel Grid.Row="2" Grid.ColumnSpan="6">
+                <Panel Grid.Row="2" Grid.ColumnSpan="4">
                     <TextBlock x:Name="AnalyzedWithText" Classes="caption muted" TextTrimming="CharacterEllipsis">
                         <TextBlock.IsVisible>
                             <MultiBinding Converter="{x:Static BoolConverters.And}">
@@ -220,16 +233,6 @@
                         </Grid>
                     </Border>
                 </Panel>
-
-                <StackPanel Grid.Row="1" Grid.ColumnSpan="6" Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
-                    <StackPanel x:Name="TargetGroupErrorPanel" Orientation="Horizontal" Spacing="{StaticResource SpaceXs}"
-                                IsVisible="{Binding HasTargetGroupError}">
-                        <PathIcon Classes="status error small" VerticalAlignment="Center" />
-                        <TextBlock Classes="caption errorText" Text="{Binding TargetGroupError}" VerticalAlignment="Center" />
-                    </StackPanel>
-                    <TextBlock Classes="caption muted" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
-                               Text="Podrazumijevane akcije važe odmah; ciljna grupa i popravke traže novu analizu (F5)." />
-                </StackPanel>
             </Grid>
         </Border>
 

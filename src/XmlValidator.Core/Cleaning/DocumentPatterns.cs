@@ -51,6 +51,7 @@ internal static partial class DocumentPatterns
         "broj" => BrojAttribute(),
         "datum" => DatumAttribute(),
         "osiguranik-jmb" => JmbAttribute(),
+        "usluga-oznaka" => ServiceAttribute(),
         _ => throw new ArgumentOutOfRangeException(nameof(name), name, null),
     };
 
@@ -62,6 +63,9 @@ internal static partial class DocumentPatterns
 
     [GeneratedRegex("""(?<![\w.:-])osiguranik-jmb\s*=\s*(?:"(?<v>[^"]*)"|'(?<v>[^']*)')""")]
     private static partial Regex JmbAttribute();
+
+    [GeneratedRegex("""(?<![\w.:-])usluga-oznaka\s*=\s*(?:"(?<v>[^"]*)"|'(?<v>[^']*)')""")]
+    private static partial Regex ServiceAttribute();
 }
 
 /// <summary>Pretvaranje pozicije u tekstu u broj linije (od 1). CRLF, LF i CR se računaju kao jedan prelazak.</summary>

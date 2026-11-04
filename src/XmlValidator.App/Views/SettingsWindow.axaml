@@ -78,22 +78,25 @@
 
                 <!-- Čišćenje faktura -->
                 <TextBlock Classes="subtitle" Text="Čišćenje faktura (SHMP)" Margin="{StaticResource SectionGap}" />
+                <TextBlock x:Name="CleaningExplanationText" Classes="muted wrap" Margin="{StaticResource LabelGap}"
+                           Text="FZO prihvata usluge Službe hitne medicinske pomoći (SHMP) i usluge drugih službi samo za pacijente koji su pregledani u SHMP (npr. pacijent pregledan u SHMP i upućen u drugu službu). Faktura sa uslugom SHMP uvijek ostaje. Faktura samo sa uslugama drugih službi ostaje ako isti pacijent (JMB) ima pregled u SHMP na bilo kojoj fakturi u fajlu; ako nema, o njoj se odlučuje ispod." />
                 <TextBlock Classes="muted caption wrap" Margin="{StaticResource LabelGap}"
-                           Text="Podrazumijevane vrijednosti za analizu; akcija se može promijeniti za svaku fakturu posebno." />
+                           Text="Ovo su podrazumijevane vrijednosti za analizu; akcija se može promijeniti za svaku fakturu posebno." />
 
                 <Border Classes="settingRow" Margin="{StaticResource StackGapS}">
                     <StackPanel Spacing="{StaticResource SpaceS}">
                         <Grid ColumnDefinitions="*,Auto" ColumnSpacing="{StaticResource SpaceL}">
                             <StackPanel VerticalAlignment="Center" Spacing="{StaticResource SpaceXs}">
-                                <TextBlock Classes="strong" Text="Ciljna grupa" />
+                                <TextBlock Classes="strong" Text="Grupa usluga SHMP (usluga-grupa)" />
                                 <TextBlock Classes="muted caption wrap"
-                                           Text="Fakture sa bar jednom stavkom iz ove grupe usluga (usluga-grupa) ostaju u fajlu." />
+                                           Text="100 = Služba hitne medicinske pomoći. Faktura sa bar jednom stavkom iz ove grupe uvijek ostaje." />
                             </StackPanel>
                             <NumericUpDown x:Name="TargetGroupInput" Grid.Column="1"
                                            Width="{StaticResource NumericFieldWidth}" VerticalAlignment="Center"
                                            Minimum="0" Maximum="65535" Increment="1" FormatString="0"
+                                           ParsingNumberStyle="Integer"
                                            Value="{Binding TargetGroup}"
-                                           AutomationProperties.Name="Ciljna grupa" />
+                                           AutomationProperties.Name="Grupa usluga SHMP (usluga-grupa)" />
                         </Grid>
                         <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}"
                                     IsVisible="{Binding HasTargetGroupError}">
@@ -105,11 +108,35 @@
                 </Border>
 
                 <Border Classes="settingRow">
+                    <StackPanel Spacing="{StaticResource SpaceS}">
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="{StaticResource SpaceL}">
+                            <StackPanel VerticalAlignment="Center" Spacing="{StaticResource SpaceXs}">
+                                <TextBlock Classes="strong" Text="Usluga pregleda u SHMP (usluga-oznaka)" />
+                                <TextBlock Classes="muted caption wrap"
+                                           Text="183 = pregled u SHMP. Pacijent (JMB) sa ovom uslugom u grupi SHMP smatra se pregledanim u SHMP." />
+                            </StackPanel>
+                            <NumericUpDown x:Name="ExamServiceInput" Grid.Column="1"
+                                           Width="{StaticResource NumericFieldWidth}" VerticalAlignment="Center"
+                                           Minimum="0" Maximum="65535" Increment="1" FormatString="0"
+                                           ParsingNumberStyle="Integer"
+                                           Value="{Binding ExamService}"
+                                           AutomationProperties.Name="Usluga pregleda u SHMP (usluga-oznaka)" />
+                        </Grid>
+                        <StackPanel x:Name="ExamServiceErrorPanel" Orientation="Horizontal" Spacing="{StaticResource SpaceS}"
+                                    IsVisible="{Binding HasExamServiceError}">
+                            <PathIcon Classes="status error small" VerticalAlignment="Center" />
+                            <TextBlock Text="{Binding ExamServiceError}" VerticalAlignment="Center"
+                                       Foreground="{DynamicResource ErrorForegroundBrush}" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <Border Classes="settingRow">
                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="{StaticResource SpaceL}">
                         <StackPanel VerticalAlignment="Center" Spacing="{StaticResource SpaceXs}">
-                            <TextBlock Classes="strong" Text="Prazna faktura" />
+                            <TextBlock Classes="strong" Text="Prazna faktura (nema nijednu stavku)" />
                             <TextBlock Classes="muted caption wrap"
-                                       Text="Faktura bez ijedne stavke (prazna ili polomljena)." />
+                                       Text="Prazna ili polomljena faktura. Prikaži je ostavlja bez akcije, pa odlučujete pojedinačno." />
                         </StackPanel>
                         <ComboBox x:Name="EmptyInvoiceCombo" Grid.Column="1" Width="{StaticResource FieldWidth}"
                                   VerticalAlignment="Center"
@@ -121,14 +148,14 @@
                 <Border Classes="settingRow">
                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="{StaticResource SpaceL}">
                         <StackPanel VerticalAlignment="Center" Spacing="{StaticResource SpaceXs}">
-                            <TextBlock Classes="strong" Text="Bez ciljne grupe i bez podudaranja JMB-a" />
+                            <TextBlock Classes="strong wrap" Text="Faktura samo sa uslugama drugih službi, pacijent nije pregledan u SHMP" />
                             <TextBlock Classes="muted caption wrap"
-                                       Text="Faktura bez ciljne grupe čiji JMB nema nijednu fakturu sa ciljnom grupom (i faktura bez JMB-a)." />
+                                       Text="Obriši ili Preskoči važi za sve takve fakture; Prikaži ih ostavlja bez akcije, pa za svaku odlučujete pojedinačno u tabu „Čišćenje faktura” (čuvanje je moguće tek kad sve imaju odluku)." />
                         </StackPanel>
                         <ComboBox x:Name="NoGroupCombo" Grid.Column="1" Width="{StaticResource FieldWidth}"
                                   VerticalAlignment="Center"
                                   ItemsSource="{Binding ActionOptions}" SelectedItem="{Binding NoGroupNoJmbMatchAction}"
-                                  AutomationProperties.Name="Akcija za fakturu bez ciljne grupe i bez podudaranja JMB-a" />
+                                  AutomationProperties.Name="Akcija za fakturu samo sa uslugama drugih službi, pacijent nije pregledan u SHMP" />
                     </Grid>
                 </Border>
 
@@ -140,7 +167,7 @@
                                        Text="Popravlja oznake faktura kojima nedostaje „&lt;” ili „&gt;”. Svaka popravka se navodi u izvještaju." />
                         </StackPanel>
                         <CheckBox x:Name="RepairBracketsCheck" Grid.Column="1" VerticalAlignment="Center"
-                                  IsChecked="{Binding RepairBrackets}" Content="Uključene"
+                                  IsChecked="{Binding RepairBrackets}" Content="Uključeno"
                                   AutomationProperties.Name="Automatske popravke zagrada"
                                   ToolTip.Tip="Uključi ili isključi automatske popravke zagrada pri analizi" />
                     </Grid>
@@ -148,7 +175,7 @@
 
                 <Button x:Name="ResetDefaultsButton" Margin="{StaticResource StackGapS}"
                         Command="{Binding ResetCleaningDefaultsCommand}"
-                        ToolTip.Tip="Ciljna grupa 100, akcije „Obriši”, popravke uključene (kao skripta clean.py)">
+                        ToolTip.Tip="Grupa SHMP 100, pregled 183, Obriši za prazne fakture i fakture bez pregleda u SHMP, automatske popravke uključene">
                     <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
                         <PathIcon Data="{StaticResource IconReset}" />
                         <TextBlock Text="Vrati podrazumijevano" />

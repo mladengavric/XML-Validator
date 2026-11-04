@@ -16,6 +16,9 @@ public enum InvoiceFilter
 
     /// <summary>Fakture sa upozorenjem, popravkom ili koje čekaju odluku.</summary>
     Warnings,
+
+    /// <summary>Samo fakture koje čekaju odluku (sumnjiv blok, akcija „Prikaži”, Uredi bez primijenjene izmjene).</summary>
+    Unresolved,
 }
 
 /// <summary>Jedan red tabele faktura (snimak stanja iz sesije; osvježava se poslije svake promjene).</summary>
@@ -154,6 +157,7 @@ public sealed partial class InvoiceRowViewModel : ObservableObject
     {
         InvoiceFilter.Candidates => IsCandidate,
         InvoiceFilter.Warnings => NeedsAttention,
+        InvoiceFilter.Unresolved => IsUnresolved,
         _ => true,
     };
 

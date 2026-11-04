@@ -51,7 +51,7 @@ dotnet run --project src/XmlValidator.App
 
 | Putanja | Sadržaj |
 |---|---|
-| `%AppData%\XmlValidator\settings.json` | podešavanja (tema, ciljna grupa, podrazumijevane akcije, nedavni fajlovi) |
+| `%AppData%\XmlValidator\settings.json` | podešavanja (tema, grupa SHMP i usluga pregleda, podrazumijevane akcije, nedavni fajlovi) |
 | `%AppData%\XmlValidator\Schemas\` | uvezene šeme i izbor aktivne šeme |
 | `%AppData%\XmlValidator\logs\` | log (posljednjih 14 dana; bez JMB-ova i sadržaja faktura) |
 
@@ -61,15 +61,18 @@ oštećena, program koristi ugrađenu i to prikazuje u statusnoj traci. Brisanje
 
 ## Pravila čišćenja (SHMP)
 
+FZO prihvata usluge Službe hitne medicinske pomoći (SHMP, `usluga-grupa` 100) i usluge drugih službi samo za
+pacijente koji su pregledani u SHMP (pregled je `usluga-oznaka` 183 u grupi 100; pacijent se prepoznaje po JMB-u).
+
 Fajl se dijeli na zaglavlje, niz blokova `<faktura …>…</faktura>` i podnožje. Svaka faktura se
 svrstava u jednu kategoriju:
 
 | Kategorija | Uslov | Podrazumijevana akcija |
 |---|---|---|
-| Ima ciljnu grupu | bar jedna stavka ima `usluga-grupa` jednaku ciljnoj grupi (podrazumijevano `100`) | ostaje |
-| Isti JMB ima ciljnu grupu | nema ciljnu grupu, ali isti `osiguranik-jmb` ima drugu fakturu sa ciljnom grupom (bilo koji datum) | ostaje |
+| Usluga SHMP | bar jedna stavka ima `usluga-grupa` 100 (podesivo) | ostaje |
+| Pregledan u SHMP | samo usluge drugih službi, ali isti `osiguranik-jmb` ima pregled u SHMP (stavka grupe 100 sa `usluga-oznaka` 183, podesivo) na bilo kojoj fakturi, bilo kog datuma | ostaje |
 | Prazna faktura | nema nijednu `<stavka` | Obriši |
-| Bez grupe i bez podudaranja JMB-a | nema ciljnu grupu i njen JMB nigdje nema ciljnu grupu (i faktura bez JMB-a) | Obriši |
+| Bez pregleda u SHMP | samo usluge drugih službi, a pacijent (JMB) nigdje nema pregled u SHMP (i faktura bez JMB-a) | Obriši |
 | Sumnjiv blok | blok koji se ne može pouzdano razgraničiti (npr. faktura bez zatvarajućeg taga koja „guta” sljedeću) | mora ručna odluka |
 
 - Grupa se poredi po vrijednosti (XSD tip `xs:unsignedShort`): `" 100"` i `"0100"` se računaju kao 100,
@@ -77,8 +80,11 @@ svrstava u jednu kategoriju:
 - Za kandidate se bira akcija **Obriši**, **Preskoči** (blok ostaje netaknut) ili **Uredi** (ručna
   izmjena bloka u editoru, poslije koje se faktura provjerava i ponovo klasifikuje). Podrazumijevana akcija
   se bira po kategoriji, a može se promijeniti za jednu ili više označenih faktura.
-- Dugme **„Kao skripta”** postavlja Obriši za obje kategorije kandidata, što daje isti rezultat kao `clean.py`
-  (uz dokumentovana odstupanja).
+- Podrazumijevana akcija po kategoriji može biti i **Prikaži**: fakture ostaju bez akcije i za svaku se odlučuje
+  pojedinačno (čuvanje je moguće tek kad sve imaju odluku). Dugme **„Podrazumijevano”** vraća grupu 100, pregled 183,
+  Obriši za obje kategorije i popravke.
+- `clean.py` je za isti JMB računao bilo koju uslugu SHMP, ne samo pregled; taj rezultat daje konzolni alat sa
+  `--exam any` (odstupanje O18).
 - **Automatske popravke zagrada:** `</faktura` bez `>`, `<faktura …` bez `>` ispred `<stavka` ili
   `</faktura`, linija `faktura …` bez vodećeg `<` (i uvučena). Svaka popravka se bilježi sa brojem linije;
   popravke se mogu isključiti.
@@ -93,6 +99,7 @@ skripte) u [`docs/odstupanja-od-clean-py.md`](docs/odstupanja-od-clean-py.md).
 |---|---|
 | Ctrl+O | Otvori XML fajl |
 | Ctrl+Shift+S | Sačuvaj kao |
+| Ctrl+W | Zatvori fajl (program ostaje otvoren) |
 | Ctrl+1 / Ctrl+2 | Tab „Validacija” / „Čišćenje faktura” |
 | Ctrl+, | Podešavanja |
 | F1 | O programu (verzija, licence, sve prečice) |
@@ -108,7 +115,7 @@ skripte) u [`docs/odstupanja-od-clean-py.md`](docs/odstupanja-od-clean-py.md).
 
 ```
 xmlvalidator-cli validate fakture.xml --report nalazi.txt
-xmlvalidator-cli clean fakture.xml [izlaz.xml] [--group 100] [--empty delete|skip] [--nomatch delete|skip] [--report izvjestaj.txt]
+xmlvalidator-cli clean fakture.xml [izlaz.xml] [--group 100] [--exam 183|any] [--empty delete|skip|ask] [--nomatch delete|skip|ask] [--report izvjestaj.txt]
 xmlvalidator-cli help clean
 ```
 

@@ -33,20 +33,28 @@ public enum BlockDisposition
 }
 
 /// <summary>Podešavanja čišćenja.</summary>
-/// <param name="TargetGroup">Ciljna grupa (podrazumijevano 100).</param>
+/// <param name="TargetGroup">Grupa usluga Službe hitne medicinske pomoći (SHMP), podrazumijevano 100.</param>
 /// <param name="RepairBrackets">Automatske popravke zagrada.</param>
-/// <param name="EmptyInvoiceAction">Podrazumijevana akcija za <see cref="InvoiceCategory.EmptyInvoice"/>.</param>
-/// <param name="NoGroupNoJmbMatchAction">Podrazumijevana akcija za <see cref="InvoiceCategory.NoGroupNoJmbMatch"/>.</param>
+/// <param name="EmptyInvoiceAction">Podrazumijevana akcija za <see cref="InvoiceCategory.EmptyInvoice"/>; <c>null</c> = „Prikaži” (svaka faktura čeka pojedinačnu odluku).</param>
+/// <param name="NoGroupNoJmbMatchAction">Podrazumijevana akcija za <see cref="InvoiceCategory.NoGroupNoJmbMatch"/>; <c>null</c> = „Prikaži”.</param>
+/// <param name="ExamService">
+/// Usluga pregleda u SHMP (<c>usluga-oznaka</c>, podrazumijevano 183): faktura samo iz drugih službi ostaje ako isti
+/// JMB ima ovu uslugu u ciljnoj grupi. <c>null</c> = bilo koja usluga ciljne grupe (kao <c>clean.py</c>).
+/// </param>
 public sealed record CleaningOptions(
     ushort TargetGroup = ShmpCleaningRule.DefaultTargetGroup,
     bool RepairBrackets = true,
-    CandidateAction EmptyInvoiceAction = CandidateAction.Delete,
-    CandidateAction NoGroupNoJmbMatchAction = CandidateAction.Delete)
+    CandidateAction? EmptyInvoiceAction = CandidateAction.Delete,
+    CandidateAction? NoGroupNoJmbMatchAction = CandidateAction.Delete,
+    ushort? ExamService = ShmpCleaningRule.DefaultExamService)
 {
-    /// <summary>„Kao skripta”: Obriši za obje kategorije kandidata, uz popravke; daje isti rezultat kao <c>clean.py</c>.</summary>
-    public static CleaningOptions ScriptCompatible { get; } = new();
+    /// <summary>
+    /// Isti rezultat kao <c>clean.py</c>: Obriši za obje kategorije kandidata, uz popravke, a za isti JMB se
+    /// računa bilo koja usluga ciljne grupe (bez uslova pregleda).
+    /// </summary>
+    public static CleaningOptions ScriptCompatible { get; } = new(ExamService: null);
 
-    /// <summary>Podrazumijevana akcija za kategoriju; <c>null</c> za sumnjiv blok (mora ručna odluka) i za fakture koje ostaju.</summary>
+    /// <summary>Podrazumijevana akcija za kategoriju; <c>null</c> za sumnjiv blok i „Prikaži” (mora ručna odluka) i za fakture koje ostaju.</summary>
     public CandidateAction? DefaultActionFor(InvoiceCategory category) => category switch
     {
         InvoiceCategory.EmptyInvoice => EmptyInvoiceAction,
@@ -54,4 +62,3 @@ public sealed record CleaningOptions(
         _ => null,
     };
 }
-

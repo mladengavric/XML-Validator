@@ -7,6 +7,7 @@ namespace XmlValidator.Core.Cleaning;
 /// <param name="Date">Atribut <c>datum</c> iz otvarajućeg taga.</param>
 /// <param name="Jmb">Atribut <c>osiguranik-jmb</c> iz otvarajućeg taga (ne iz stavki).</param>
 /// <param name="Groups">Vrijednosti <c>usluga-grupa</c> svih stavki, kako su zapisane.</param>
+/// <param name="Services">Vrijednost <c>usluga-oznaka</c> elementa iz kojeg je pročitana odgovarajuća grupa (isti indeks kao <paramref name="Groups"/>), ili <c>null</c> ako je nema.</param>
 /// <param name="ItemCount">Broj stavki (<c>stavka</c>, <c>stavka-recept</c>, <c>stavka-obavjest</c>).</param>
 /// <param name="ParseError">Poruka parsera ako blok nije ispravan XML fragment (atributi su tada pročitani iz teksta); inače <c>null</c>.</param>
 public sealed record InvoiceData(
@@ -14,6 +15,7 @@ public sealed record InvoiceData(
     string? Date,
     string? Jmb,
     IReadOnlyList<string> Groups,
+    IReadOnlyList<string?> Services,
     int ItemCount,
     string? ParseError)
 {
@@ -74,6 +76,7 @@ public static class InvoiceAttributeReader
 
         string? number = null, date = null, jmb = null;
         var groups = new List<string>();
+        var services = new List<string?>();
         var items = 0;
         var topLevel = 0;
         try
@@ -115,6 +118,7 @@ public static class InvoiceAttributeReader
                         if (reader.GetAttribute("usluga-grupa") is { } group)
                         {
                             groups.Add(group);
+                            services.Add(reader.GetAttribute("usluga-oznaka"));
                         }
 
                         break;
@@ -133,7 +137,7 @@ public static class InvoiceAttributeReader
             return (null, "Tekst ne sadrži element <faktura>.", 0);
         }
 
-        return (new InvoiceData(number, date, jmb, groups, items, ParseError: null), null, topLevel);
+        return (new InvoiceData(number, date, jmb, groups, services, items, ParseError: null), null, topLevel);
     }
 
     private static InvoiceData ReadWithPatterns(string text, string error)
@@ -154,15 +158,32 @@ public static class InvoiceAttributeReader
 
         var openingTag = text[..tagEnd];
         var body = text[tagEnd..];
-        var groups = DocumentPatterns.GroupAttribute().Matches(body).Select(m => DecodeEntities(m.Groups["v"].Value)).ToList();
+        var groupMatches = DocumentPatterns.GroupAttribute().Matches(body);
+        var groups = groupMatches.Select(m => DecodeEntities(m.Groups["v"].Value)).ToList();
+        var services = groupMatches.Select(m => ServiceOfTag(body, m.Index)).ToList();
         var items = DocumentPatterns.ItemOpen().Count(body);
         return new InvoiceData(
             Attribute(openingTag, "broj"),
             Attribute(openingTag, "datum"),
             Attribute(openingTag, "osiguranik-jmb"),
             groups,
+            services,
             items,
             error);
+    }
+
+    /// <summary><c>usluga-oznaka</c> iz istog taga u kojem je atribut na poziciji <paramref name="index"/> (tag: od posljednjeg <c>&lt;</c> do prvog <c>&gt;</c> ili <c>&lt;</c>).</summary>
+    private static string? ServiceOfTag(string text, int index)
+    {
+        var start = text.LastIndexOf('<', index);
+        if (start < 0)
+        {
+            return null;
+        }
+
+        var end = text.IndexOfAny(['<', '>'], start + 1);
+        var tag = end < 0 ? text[start..] : text[start..end];
+        return Attribute(tag, "usluga-oznaka");
     }
 
     private static string? Attribute(string openingTag, string name)

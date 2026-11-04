@@ -128,7 +128,7 @@ public sealed class CleaningSession
     {
         ArgumentNullException.ThrowIfNull(document);
         options ??= new CleaningOptions();
-        rule ??= new ShmpCleaningRule(options.TargetGroup);
+        rule ??= new ShmpCleaningRule(options.TargetGroup, options.ExamService);
         var data = new InvoiceData[document.Blocks.Count];
         for (var i = 0; i < data.Length; i++)
         {
@@ -174,13 +174,13 @@ public sealed class CleaningSession
     }
 
     /// <summary>Mijenja podrazumijevanu akciju za kategoriju (važi za fakture bez izričito izabrane akcije).</summary>
-    public void SetDefaultAction(InvoiceCategory category, CandidateAction action)
+    public void SetDefaultAction(InvoiceCategory category, CandidateAction? action)
     {
         Options = category switch
         {
             InvoiceCategory.EmptyInvoice => Options with { EmptyInvoiceAction = action },
             InvoiceCategory.NoGroupNoJmbMatch => Options with { NoGroupNoJmbMatchAction = action },
-            _ => throw new ArgumentOutOfRangeException(nameof(category), category, "Podrazumijevana akcija postoji samo za prazne fakture i fakture bez grupe i podudaranja JMB-a."),
+            _ => throw new ArgumentOutOfRangeException(nameof(category), category, "Podrazumijevana akcija postoji samo za prazne fakture i fakture bez pregleda u SHMP."),
         };
         Changed();
     }

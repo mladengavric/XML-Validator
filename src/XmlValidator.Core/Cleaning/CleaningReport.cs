@@ -121,10 +121,10 @@ public static class CleaningText
 {
     public static string Category(InvoiceCategory category) => category switch
     {
-        InvoiceCategory.KeepGroup => "Ima ciljnu grupu",
-        InvoiceCategory.KeepSameJmb => "Isti JMB ima ciljnu grupu",
+        InvoiceCategory.KeepGroup => "Usluga SHMP",
+        InvoiceCategory.KeepSameJmb => "Pregledan u SHMP",
         InvoiceCategory.EmptyInvoice => "Prazna faktura",
-        InvoiceCategory.NoGroupNoJmbMatch => "Bez grupe i bez podudaranja JMB-a",
+        InvoiceCategory.NoGroupNoJmbMatch => "Bez pregleda u SHMP",
         _ => "Sumnjiv blok",
     };
 
@@ -135,6 +135,9 @@ public static class CleaningText
         CandidateAction.Edit => "Uredi",
         _ => "—",
     };
+
+    /// <summary>Naziv podrazumijevane akcije za kategoriju; <c>null</c> je „Prikaži” (odluka po fakturi).</summary>
+    public static string DefaultAction(CandidateAction? action) => action is null ? "Prikaži" : Action(action);
 
     public static string Disposition(BlockDisposition disposition) => disposition switch
     {

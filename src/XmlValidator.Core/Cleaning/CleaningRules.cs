@@ -5,16 +5,16 @@ namespace XmlValidator.Core.Cleaning;
 /// <summary>Kategorija fakture (PLAN.md, „Poslovna pravila čišćenja”).</summary>
 public enum InvoiceCategory
 {
-    /// <summary>Ima bar jednu stavku sa ciljnom grupom; ostaje.</summary>
+    /// <summary>Ima bar jednu stavku sa ciljnom grupom (usluga SHMP); ostaje.</summary>
     KeepGroup,
 
-    /// <summary>Nema ciljnu grupu, ali isti JMB ima drugu fakturu sa ciljnom grupom; ostaje.</summary>
+    /// <summary>Nema ciljnu grupu, ali isti JMB ima pregled u SHMP (usluga pregleda u ciljnoj grupi); ostaje.</summary>
     KeepSameJmb,
 
     /// <summary>Nema nijednu stavku; kandidat (podrazumijevano Obriši).</summary>
     EmptyInvoice,
 
-    /// <summary>Nema ciljnu grupu i JMB nigdje nema ciljnu grupu (ili nema JMB); kandidat (podrazumijevano Obriši).</summary>
+    /// <summary>Samo usluge drugih službi, a isti JMB nema pregled u SHMP (ili nema JMB); kandidat (podrazumijevano Obriši).</summary>
     NoGroupNoJmbMatch,
 
     /// <summary>Granica bloka nije pouzdana; mora ručna odluka.</summary>
@@ -104,6 +104,10 @@ public static class ServiceGroup
 
 /// <summary>
 /// Pravilo Službe hitne medicinske pomoći (SHMP), po <c>legacy/clean.py</c> sa ispravkama iz PLAN.md.
+/// FZO prihvata usluge SHMP i usluge drugih službi za pacijenta koji je pregledan u SHMP: faktura sa uslugom
+/// ciljne grupe uvijek ostaje, a faktura samo iz drugih službi ostaje ako isti JMB ima uslugu pregleda
+/// (<see cref="ExamService"/>, podrazumijevano 183) u ciljnoj grupi. <c>clean.py</c> je za isti JMB računao bilo
+/// koju uslugu ciljne grupe (<see cref="ExamService"/> = <c>null</c>).
 /// Ciljna grupa se poredi po vrijednosti (odluka 9); neuobičajen zapis ciljne grupe (odluka 16) i
 /// neispravna vrijednost (odluka 17) daju upozorenje.
 /// </summary>
@@ -111,51 +115,84 @@ public sealed class ShmpCleaningRule : ICleaningRule
 {
     public const ushort DefaultTargetGroup = 100;
 
-    public ShmpCleaningRule(ushort targetGroup = DefaultTargetGroup)
+    /// <summary>Usluga pregleda u SHMP (<c>usluga-oznaka</c>).</summary>
+    public const ushort DefaultExamService = 183;
+
+    public ShmpCleaningRule(ushort targetGroup = DefaultTargetGroup, ushort? examService = DefaultExamService)
     {
         TargetGroup = targetGroup;
+        ExamService = examService;
     }
 
     public ushort TargetGroup { get; }
 
-    public string Name => $"SHMP (ciljna grupa {TargetGroup})";
+    /// <summary>Usluga pregleda koja povezuje fakture istog JMB-a; <c>null</c> = bilo koja usluga ciljne grupe.</summary>
+    public ushort? ExamService { get; }
+
+    public string Name => ExamService is { } exam
+        ? $"SHMP (grupa {TargetGroup}, pregled {exam})"
+        : $"SHMP (grupa {TargetGroup}, bilo koja usluga)";
 
     public IReadOnlyList<InvoiceClassification> Classify(IReadOnlyList<ClassificationInput> invoices)
     {
         ArgumentNullException.ThrowIfNull(invoices);
         var usual = ServiceGroup.UsualNotation(TargetGroup);
+        var examText = ExamService is { } code
+            ? $"pregled u SHMP (usluga {code}, grupa {TargetGroup})"
+            : $"uslugu SHMP (grupa {TargetGroup})";
 
-        // Prvi prolaz: ciljna grupa po fakturi i JMB-ovi sa ciljnom grupom (prva takva faktura po JMB-u;
+        // Prvi prolaz: ciljna grupa po fakturi i JMB-ovi sa pregledom u SHMP (prva takva faktura po JMB-u;
         // pouzdani blokovi imaju prednost pred sumnjivim).
         var hasTarget = new bool[invoices.Count];
         var warnings = new List<string>[invoices.Count];
-        var firstWithTarget = new Dictionary<string, ClassificationInput>(StringComparer.Ordinal);
+        var firstWithExam = new Dictionary<string, ClassificationInput>(StringComparer.Ordinal);
         for (var i = 0; i < invoices.Count; i++)
         {
             var invoice = invoices[i];
+            var data = invoice.Data;
             warnings[i] = [];
-            foreach (var raw in invoice.Data.Groups)
+            var hasExam = false;
+            for (var g = 0; g < data.Groups.Count; g++)
             {
+                var raw = data.Groups[g];
                 if (!ServiceGroup.TryParse(raw, out var value))
                 {
                     warnings[i].Add($"Neispravna vrijednost usluga-grupa „{raw}” (nije cijeli broj 0–65535); stavka se ne računa kao grupa {TargetGroup}.");
                     continue;
                 }
 
-                if (value == TargetGroup)
+                if (value != TargetGroup)
                 {
-                    hasTarget[i] = true;
-                    if (!string.Equals(raw, usual, StringComparison.Ordinal))
+                    continue;
+                }
+
+                hasTarget[i] = true;
+                if (!string.Equals(raw, usual, StringComparison.Ordinal))
+                {
+                    warnings[i].Add($"usluga-grupa „{raw}” ima vrijednost {TargetGroup}, ali nije zapisana kao „{usual}”; računa se kao grupa {TargetGroup} (clean.py je ne bi računao).");
+                }
+
+                if (ExamService is not { } examCode)
+                {
+                    hasExam = true;
+                }
+                else if (g < data.Services.Count && data.Services[g] is { } service)
+                {
+                    if (!ServiceGroup.TryParse(service, out var serviceValue))
                     {
-                        warnings[i].Add($"usluga-grupa „{raw}” ima vrijednost {TargetGroup}, ali nije zapisana kao „{usual}”; računa se kao grupa {TargetGroup} (clean.py je ne bi računao).");
+                        warnings[i].Add($"Neispravna vrijednost usluga-oznaka „{service}” u grupi {TargetGroup}; ne računa se kao pregled {examCode}.");
+                    }
+                    else if (serviceValue == examCode)
+                    {
+                        hasExam = true;
                     }
                 }
             }
 
-            if (hasTarget[i] && invoice.Data.ItemCount > 0 && invoice.Data.EffectiveJmb is { } jmb
-                && (!firstWithTarget.TryGetValue(jmb, out var existing) || (existing.SuspiciousReason is not null && invoice.SuspiciousReason is null)))
+            if (hasExam && data.ItemCount > 0 && data.EffectiveJmb is { } jmb
+                && (!firstWithExam.TryGetValue(jmb, out var existing) || (existing.SuspiciousReason is not null && invoice.SuspiciousReason is null)))
             {
-                firstWithTarget[jmb] = invoice;
+                firstWithExam[jmb] = invoice;
             }
         }
 
@@ -175,11 +212,11 @@ public sealed class ShmpCleaningRule : ICleaningRule
             }
             else if (hasTarget[i])
             {
-                result[i] = new InvoiceClassification(InvoiceCategory.KeepGroup, $"Ima uslugu iz grupe {TargetGroup}.", warnings[i]);
+                result[i] = new InvoiceClassification(InvoiceCategory.KeepGroup, $"Ima uslugu Službe hitne medicinske pomoći (grupa {TargetGroup}).", warnings[i]);
             }
-            else if (data.EffectiveJmb is { } jmb && firstWithTarget.TryGetValue(jmb, out var source))
+            else if (data.EffectiveJmb is { } jmb && firstWithExam.TryGetValue(jmb, out var source))
             {
-                var reason = $"Nema grupu {TargetGroup}, ali isti JMB ima fakturu sa grupom {TargetGroup} ({Describe(source)}).";
+                var reason = $"Samo usluge drugih službi ({OtherGroups(data)}), ali isti pacijent (JMB) ima {examText}: {Describe(source)}.";
                 if (source.SuspiciousReason is not null)
                 {
                     warnings[i].Add($"Faktura ostaje samo zbog sumnjivog bloka na liniji {source.StartLine}; provjerite je poslije odluke o tom bloku.");
@@ -190,14 +227,16 @@ public sealed class ShmpCleaningRule : ICleaningRule
             else
             {
                 var reason = data.EffectiveJmb is null
-                    ? $"Nema grupu {TargetGroup} i nema osiguranik-jmb."
-                    : $"Nema grupu {TargetGroup} i JMB nigdje nema grupu {TargetGroup}.";
+                    ? $"Samo usluge drugih službi ({OtherGroups(data)}), a faktura nema osiguranik-jmb, pa se ne može povezati sa pregledom u SHMP."
+                    : $"Samo usluge drugih službi ({OtherGroups(data)}); pacijent (JMB) nema {examText} ni na jednoj fakturi.";
                 result[i] = new InvoiceClassification(InvoiceCategory.NoGroupNoJmbMatch, reason, warnings[i]);
             }
         }
 
         return result;
     }
+
+    private static string OtherGroups(InvoiceData data) => "grupe " + CleaningText.Groups(data.Groups, data.ItemCount);
 
     private static string Describe(ClassificationInput invoice) =>
         invoice.Data.Number is { Length: > 0 } number

@@ -77,11 +77,15 @@ public sealed partial class GeneralSettingsViewModel : ViewModelBase
         new(ThemePreference.Dark, "Tamna"),
     ];
 
-    /// <summary>Akcije koje mogu biti podrazumijevane (Uredi traži ručnu izmjenu, pa nije ponuđena).</summary>
-    public IReadOnlyList<Option<CandidateAction>> ActionOptions { get; } =
+    /// <summary>
+    /// Akcije koje mogu biti podrazumijevane (Uredi traži ručnu izmjenu, pa nije ponuđena); „Prikaži” (<c>null</c>)
+    /// ostavlja fakture bez akcije, da korisnik odluči za svaku pojedinačno.
+    /// </summary>
+    public IReadOnlyList<Option<CandidateAction?>> ActionOptions { get; } =
     [
         new(CandidateAction.Delete, "Obriši"),
         new(CandidateAction.Skip, "Preskoči"),
+        new(null, "Prikaži (odluka po fakturi)"),
     ];
 
     [ObservableProperty]
@@ -97,11 +101,21 @@ public sealed partial class GeneralSettingsViewModel : ViewModelBase
 
     public bool HasTargetGroupError => TargetGroupError is not null;
 
+    /// <summary>Usluga pregleda u SHMP (usluga-oznaka, 0–65535); <c>decimal?</c> zbog NumericUpDown kontrole.</summary>
     [ObservableProperty]
-    public partial Option<CandidateAction> EmptyInvoiceAction { get; set; }
+    public partial decimal? ExamService { get; set; }
 
     [ObservableProperty]
-    public partial Option<CandidateAction> NoGroupNoJmbMatchAction { get; set; }
+    [NotifyPropertyChangedFor(nameof(HasExamServiceError))]
+    public partial string? ExamServiceError { get; private set; }
+
+    public bool HasExamServiceError => ExamServiceError is not null;
+
+    [ObservableProperty]
+    public partial Option<CandidateAction?> EmptyInvoiceAction { get; set; }
+
+    [ObservableProperty]
+    public partial Option<CandidateAction?> NoGroupNoJmbMatchAction { get; set; }
 
     [ObservableProperty]
     public partial bool RepairBrackets { get; set; }
@@ -112,7 +126,7 @@ public sealed partial class GeneralSettingsViewModel : ViewModelBase
     /// <summary>Problem pri čuvanju podešavanja, ako postoji.</summary>
     public string? SaveProblem => _settings.SaveProblem;
 
-    /// <summary>Vraća podešavanja čišćenja na podrazumijevana (kao <c>clean.py</c>: grupa 100, Obriši, popravke uključene).</summary>
+    /// <summary>Vraća podešavanja čišćenja na podrazumijevana (grupa 100, pregled 183, Obriši, popravke uključene).</summary>
     [RelayCommand]
     private void ResetCleaningDefaults()
     {
@@ -120,6 +134,7 @@ public sealed partial class GeneralSettingsViewModel : ViewModelBase
         Save(s => s with
         {
             TargetGroup = defaults.TargetGroup,
+            ExamService = defaults.ExamService,
             RepairBrackets = defaults.RepairBrackets,
             EmptyInvoiceAction = defaults.EmptyInvoiceAction,
             NoGroupNoJmbMatchAction = defaults.NoGroupNoJmbMatchAction,
@@ -147,7 +162,7 @@ public sealed partial class GeneralSettingsViewModel : ViewModelBase
 
         if (value is null || value < ushort.MinValue || value > ushort.MaxValue || decimal.Truncate(value.Value) != value)
         {
-            TargetGroupError = "Ciljna grupa mora biti cijeli broj od 0 do 65535.";
+            TargetGroupError = "Grupa SHMP mora biti cijeli broj od 0 do 65535.";
             return;
         }
 
@@ -155,7 +170,24 @@ public sealed partial class GeneralSettingsViewModel : ViewModelBase
         Save(s => s with { TargetGroup = (ushort)value.Value });
     }
 
-    partial void OnEmptyInvoiceActionChanged(Option<CandidateAction> value)
+    partial void OnExamServiceChanged(decimal? value)
+    {
+        if (_loading)
+        {
+            return;
+        }
+
+        if (value is null || value < ushort.MinValue || value > ushort.MaxValue || decimal.Truncate(value.Value) != value)
+        {
+            ExamServiceError = "Usluga pregleda mora biti cijeli broj od 0 do 65535.";
+            return;
+        }
+
+        ExamServiceError = null;
+        Save(s => s with { ExamService = (ushort)value.Value });
+    }
+
+    partial void OnEmptyInvoiceActionChanged(Option<CandidateAction?> value)
     {
         if (!_loading && value is not null)
         {
@@ -163,7 +195,7 @@ public sealed partial class GeneralSettingsViewModel : ViewModelBase
         }
     }
 
-    partial void OnNoGroupNoJmbMatchActionChanged(Option<CandidateAction> value)
+    partial void OnNoGroupNoJmbMatchActionChanged(Option<CandidateAction?> value)
     {
         if (!_loading && value is not null)
         {
@@ -193,6 +225,8 @@ public sealed partial class GeneralSettingsViewModel : ViewModelBase
             SelectedTheme = ThemeOptions.First(o => o.Value == settings.Theme);
             TargetGroup = settings.TargetGroup;
             TargetGroupError = null;
+            ExamService = settings.ExamService;
+            ExamServiceError = null;
             EmptyInvoiceAction = ActionOptions.First(o => o.Value == settings.EmptyInvoiceAction);
             NoGroupNoJmbMatchAction = ActionOptions.First(o => o.Value == settings.NoGroupNoJmbMatchAction);
             RepairBrackets = settings.RepairBrackets;

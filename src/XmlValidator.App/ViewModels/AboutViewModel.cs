@@ -31,6 +31,7 @@ public static class KeyboardShortcuts
     [
         new(Global, "Ctrl+O", "Otvori XML fajl"),
         new(Global, "Ctrl+Shift+S", "Sačuvaj kao (novi fajl; ulaz se nikad ne prepisuje)"),
+        new(Global, "Ctrl+W", "Zatvori fajl (program ostaje otvoren)"),
         new(Global, "Ctrl+1", "Tab „Validacija”"),
         new(Global, "Ctrl+2", "Tab „Čišćenje faktura”"),
         new(Global, "Ctrl+,", "Podešavanja"),

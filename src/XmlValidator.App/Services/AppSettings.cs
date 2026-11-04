@@ -31,19 +31,25 @@ public sealed record AppSettings
 
     public ThemePreference Theme { get; init; } = ThemePreference.System;
 
-    /// <summary>Ciljna grupa za čišćenje (SHMP), podrazumijevano 100.</summary>
+    /// <summary>Grupa usluga Službe hitne medicinske pomoći (usluga-grupa), podrazumijevano 100.</summary>
     public ushort TargetGroup { get; init; } = ShmpCleaningRule.DefaultTargetGroup;
+
+    /// <summary>Usluga pregleda u SHMP (usluga-oznaka), podrazumijevano 183.</summary>
+    public ushort ExamService { get; init; } = ShmpCleaningRule.DefaultExamService;
 
     /// <summary>Automatske popravke zagrada.</summary>
     public bool RepairBrackets { get; init; } = true;
 
-    /// <summary>Podrazumijevana akcija za praznu fakturu (Obriši ili Preskoči).</summary>
+    /// <summary>Podrazumijevana akcija za praznu fakturu (Obriši, Preskoči ili <c>null</c> = Prikaži).</summary>
     [JsonConverter(typeof(JsonStringEnumConverter<CandidateAction>))]
-    public CandidateAction EmptyInvoiceAction { get; init; } = CandidateAction.Delete;
+    public CandidateAction? EmptyInvoiceAction { get; init; } = CandidateAction.Delete;
 
-    /// <summary>Podrazumijevana akcija za fakturu bez ciljne grupe i bez podudaranja JMB-a (Obriši ili Preskoči).</summary>
+    /// <summary>
+    /// Podrazumijevana akcija za fakturu samo iz drugih službi čiji pacijent nema pregled u SHMP
+    /// (Obriši, Preskoči ili <c>null</c> = Prikaži: svaka faktura čeka pojedinačnu odluku).
+    /// </summary>
     [JsonConverter(typeof(JsonStringEnumConverter<CandidateAction>))]
-    public CandidateAction NoGroupNoJmbMatchAction { get; init; } = CandidateAction.Delete;
+    public CandidateAction? NoGroupNoJmbMatchAction { get; init; } = CandidateAction.Delete;
 
     /// <summary>Poslije čuvanja očišćenog fajla otvori ga u tabu „Validacija” (podrazumijevano isključeno).</summary>
     public bool ValidateAfterSave { get; init; }
@@ -57,7 +63,7 @@ public sealed record AppSettings
 
     /// <summary>Opcije čišćenja iz podešavanja.</summary>
     public CleaningOptions ToCleaningOptions() =>
-        new(TargetGroup, RepairBrackets, EmptyInvoiceAction, NoGroupNoJmbMatchAction);
+        new(TargetGroup, RepairBrackets, EmptyInvoiceAction, NoGroupNoJmbMatchAction, ExamService);
 
     /// <summary>Dodaje fajl na vrh liste nedavnih (bez duplikata) i pamti njegov folder kao posljednji.</summary>
     public AppSettings WithRecentFile(string path)
@@ -78,12 +84,13 @@ public sealed record AppSettings
     /// <summary>
     /// Ispravlja vrijednosti koje su mogle doći iz ručno izmijenjenog fajla: prazne i duple putanje,
     /// predugačka lista i nepoznata tema se ispravljaju; akcija Uredi kao podrazumijevana (traži ručnu
-    /// izmjenu, pa ne može biti podrazumijevana) i nepoznate akcije se vraćaju na Obriši (vrijednost iz plana).
+    /// izmjenu, pa ne može biti podrazumijevana) i nepoznate akcije se vraćaju na Obriši (vrijednost iz plana);
+    /// <c>null</c> (Prikaži) ostaje.
     /// </summary>
     public AppSettings Normalize()
     {
-        static CandidateAction Action(CandidateAction value) =>
-            value is CandidateAction.Delete or CandidateAction.Skip ? value : CandidateAction.Delete;
+        static CandidateAction? Action(CandidateAction? value) =>
+            value is null or CandidateAction.Delete or CandidateAction.Skip ? value : CandidateAction.Delete;
 
         return this with
         {
@@ -102,6 +109,7 @@ public sealed record AppSettings
         && RecentFiles.SequenceEqual(other.RecentFiles, StringComparer.Ordinal)
         && Theme == other.Theme
         && TargetGroup == other.TargetGroup
+        && ExamService == other.ExamService
         && RepairBrackets == other.RepairBrackets
         && EmptyInvoiceAction == other.EmptyInvoiceAction
         && NoGroupNoJmbMatchAction == other.NoGroupNoJmbMatchAction

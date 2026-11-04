@@ -66,8 +66,11 @@ public sealed partial class CleaningTabViewModel : DocumentTabViewModel, IDispos
         _log = log;
         _time = time ?? TimeProvider.System;
 
+        // Početne vrijednosti samo za nullability; ne smiju se upisati u podešavanja (stvarne dolaze iz LoadSettings).
+        _loadingSettings = true;
         EmptyInvoiceAction = DefaultActionOptions[0];
         NoGroupNoJmbMatchAction = DefaultActionOptions[0];
+        _loadingSettings = false;
         SelectedFilter = FilterOptions[0];
         LoadSettings(settings.Current);
         _settings.Changed += OnSettingsChanged;
@@ -86,11 +89,12 @@ public sealed partial class CleaningTabViewModel : DocumentTabViewModel, IDispos
 
     // ---------------------------------------------------------------- podešavanja
 
-    /// <summary>Podrazumijevane akcije po kategoriji (Uredi nije ponuđena: traži ručnu izmjenu).</summary>
-    public IReadOnlyList<Option<CandidateAction>> DefaultActionOptions { get; } =
+    /// <summary>Podrazumijevane akcije po kategoriji (Uredi nije ponuđena: traži ručnu izmjenu; Prikaži = odluka po fakturi).</summary>
+    public IReadOnlyList<Option<CandidateAction?>> DefaultActionOptions { get; } =
     [
         new(CandidateAction.Delete, "Obriši"),
         new(CandidateAction.Skip, "Preskoči"),
+        new(null, "Prikaži (odluka po fakturi)"),
     ];
 
     /// <summary>Ciljna grupa (0–65535); promjena traži novu analizu.</summary>
@@ -105,11 +109,11 @@ public sealed partial class CleaningTabViewModel : DocumentTabViewModel, IDispos
 
     /// <summary>Podrazumijevana akcija za praznu fakturu; važi odmah, bez nove analize.</summary>
     [ObservableProperty]
-    public partial Option<CandidateAction> EmptyInvoiceAction { get; set; }
+    public partial Option<CandidateAction?> EmptyInvoiceAction { get; set; }
 
-    /// <summary>Podrazumijevana akcija za fakturu bez ciljne grupe i bez podudaranja JMB-a; važi odmah.</summary>
+    /// <summary>Podrazumijevana akcija za fakturu samo iz drugih službi čiji pacijent nema pregled u SHMP; važi odmah.</summary>
     [ObservableProperty]
-    public partial Option<CandidateAction> NoGroupNoJmbMatchAction { get; set; }
+    public partial Option<CandidateAction?> NoGroupNoJmbMatchAction { get; set; }
 
     /// <summary>Automatske popravke zagrada; promjena traži novu analizu.</summary>
     [ObservableProperty]
@@ -127,7 +131,7 @@ public sealed partial class CleaningTabViewModel : DocumentTabViewModel, IDispos
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsBusy), nameof(IsInteractive))]
-    [NotifyCanExecuteChangedFor(nameof(AnalyzeCommand), nameof(CancelAnalysisCommand), nameof(ScriptCompatibleCommand))]
+    [NotifyCanExecuteChangedFor(nameof(AnalyzeCommand), nameof(CancelAnalysisCommand), nameof(UseDefaultsCommand))]
     public partial bool IsAnalyzing { get; private set; }
 
     [ObservableProperty]
@@ -200,6 +204,7 @@ public sealed partial class CleaningTabViewModel : DocumentTabViewModel, IDispos
         new(InvoiceFilter.All, "Sve"),
         new(InvoiceFilter.Candidates, "Samo kandidati"),
         new(InvoiceFilter.Warnings, "Samo upozorenja"),
+        new(InvoiceFilter.Unresolved, "Čeka odluku"),
     ];
 
     [ObservableProperty]
@@ -358,24 +363,26 @@ public sealed partial class CleaningTabViewModel : DocumentTabViewModel, IDispos
     private bool CanUseScriptSettings() => !IsAnalyzing;
 
     /// <summary>
-    /// „Kao skripta”: ciljna grupa 100, popravke uključene, Obriši za obje kategorije kandidata, pa nova
-    /// analiza (pojedinačno izabrane akcije se poništavaju), što daje isti rezultat kao <c>clean.py</c>.
+    /// „Podrazumijevano”: grupa SHMP 100, pregled 183, popravke uključene, Obriši za obje kategorije kandidata,
+    /// pa nova analiza (pojedinačno izabrane akcije se poništavaju). Bivše dugme „Kao skripta”: rezultat je isti
+    /// kao <c>clean.py</c> osim uslova pregleda u SHMP (odluka 121).
     /// </summary>
     [RelayCommand(CanExecute = nameof(CanUseScriptSettings))]
-    private async Task ScriptCompatibleAsync()
+    private async Task UseDefaultsAsync()
     {
         if (!await ConfirmDiscardDecisionsAsync())
         {
             return;
         }
 
-        var script = CleaningOptions.ScriptCompatible;
+        var defaults = new AppSettings();
         _settings.Update(s => s with
         {
-            TargetGroup = script.TargetGroup,
-            RepairBrackets = script.RepairBrackets,
-            EmptyInvoiceAction = script.EmptyInvoiceAction,
-            NoGroupNoJmbMatchAction = script.NoGroupNoJmbMatchAction,
+            TargetGroup = defaults.TargetGroup,
+            ExamService = defaults.ExamService,
+            RepairBrackets = defaults.RepairBrackets,
+            EmptyInvoiceAction = defaults.EmptyInvoiceAction,
+            NoGroupNoJmbMatchAction = defaults.NoGroupNoJmbMatchAction,
         });
 
         if (Document is not null)
@@ -704,7 +711,7 @@ public sealed partial class CleaningTabViewModel : DocumentTabViewModel, IDispos
 
         if (value is null || value < ushort.MinValue || value > ushort.MaxValue || decimal.Truncate(value.Value) != value.Value)
         {
-            TargetGroupError = "Ciljna grupa mora biti cijeli broj od 0 do 65535.";
+            TargetGroupError = "Grupa SHMP mora biti cijeli broj od 0 do 65535.";
             return;
         }
 
@@ -712,7 +719,7 @@ public sealed partial class CleaningTabViewModel : DocumentTabViewModel, IDispos
         _settings.Update(s => s with { TargetGroup = (ushort)value.Value });
     }
 
-    partial void OnEmptyInvoiceActionChanged(Option<CandidateAction> value)
+    partial void OnEmptyInvoiceActionChanged(Option<CandidateAction?> value)
     {
         if (!_loadingSettings && value is not null)
         {
@@ -720,7 +727,7 @@ public sealed partial class CleaningTabViewModel : DocumentTabViewModel, IDispos
         }
     }
 
-    partial void OnNoGroupNoJmbMatchActionChanged(Option<CandidateAction> value)
+    partial void OnNoGroupNoJmbMatchActionChanged(Option<CandidateAction?> value)
     {
         if (!_loadingSettings && value is not null)
         {
@@ -1147,14 +1154,16 @@ public sealed partial class CleaningTabViewModel : DocumentTabViewModel, IDispos
         }
 
         var settings = _settings.Current;
-        IsAnalysisStale = session.Options.TargetGroup != settings.TargetGroup || session.Options.RepairBrackets != settings.RepairBrackets;
+        IsAnalysisStale = session.Options.TargetGroup != settings.TargetGroup
+            || session.Options.ExamService != settings.ExamService
+            || session.Options.RepairBrackets != settings.RepairBrackets;
         var unresolved = session.UnresolvedBlocks;
         SaveBlockedReason =
             IsAnalysisStale
-                ? $"Ciljna grupa ili automatske popravke su promijenjene poslije analize (prikazano: {Describe(session.Options)}). Kliknite „Analiziraj” prije čuvanja."
+                ? $"Pravilo čišćenja ili automatske popravke su promijenjeni poslije analize (prikazano: {Describe(session.Options)}). Kliknite „Analiziraj” prije čuvanja."
             : unresolved.Count > 0
                 ? $"Čuvanje nije moguće: {Invoices(unresolved.Count)} čeka odluku (prva na liniji {unresolved[0].Block.StartLine}). "
-                    + "Sumnjivom bloku izaberite akciju (Obriši, Preskoči ili Uredi), a za akciju Uredi primijenite izmjenu."
+                    + "Izaberite akciju (Obriši, Preskoči ili Uredi) za svaku fakturu koja čeka odluku, a za akciju Uredi primijenite izmjenu."
             : null;
 
         if (_lastResult is { } result && _lastResultVersion == session.Version)
@@ -1355,7 +1364,7 @@ public sealed partial class CleaningTabViewModel : DocumentTabViewModel, IDispos
     {
         AnalyzeCommand.NotifyCanExecuteChanged();
         CancelAnalysisCommand.NotifyCanExecuteChanged();
-        ScriptCompatibleCommand.NotifyCanExecuteChanged();
+        UseDefaultsCommand.NotifyCanExecuteChanged();
         DeleteSelectedCommand.NotifyCanExecuteChanged();
         SkipSelectedCommand.NotifyCanExecuteChanged();
         ResetSelectedCommand.NotifyCanExecuteChanged();
@@ -1386,7 +1395,8 @@ public sealed partial class CleaningTabViewModel : DocumentTabViewModel, IDispos
     private static bool HasDecisions(CleaningSession session) => session.Blocks.Any(b => b.UserAction is not null || b.IsEdited);
 
     internal static string Describe(CleaningOptions options) =>
-        $"ciljna grupa {options.TargetGroup}, automatske popravke {(options.RepairBrackets ? "uključene" : "isključene")}";
+        $"grupa SHMP {options.TargetGroup}, pregled {(options.ExamService is { } exam ? exam.ToString(CultureInfo.InvariantCulture) : "bilo koja usluga")}, "
+        + $"automatske popravke {(options.RepairBrackets ? "uključene" : "isključene")}";
 
     /// <summary>„1 faktura”, „2 fakture”, „5 faktura” (srpska množina).</summary>
     internal static string Invoices(int count)

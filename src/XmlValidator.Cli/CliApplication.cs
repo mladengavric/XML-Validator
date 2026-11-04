@@ -47,7 +47,7 @@ public sealed class CliApplication
 
     private static readonly OptionSpec[] CleanOptions =
     [
-        new("group", true), new("empty", true), new("nomatch", true), new("suspicious", true), new("no-repairs", false),
+        new("group", true), new("exam", true), new("empty", true), new("nomatch", true), new("suspicious", true), new("no-repairs", false),
         new("report", true), new("mask-jmb", false), new("overwrite", false), new("allow-invalid", false),
         new("builtin-schema", false), new("help", false), new("h", false),
     ];
@@ -282,10 +282,11 @@ public sealed class CliApplication
             await _err.WriteLineAsync("Izlaz nije napravljen: sljedeći blokovi traže odluku.").ConfigureAwait(false);
             foreach (var block in session.UnresolvedBlocks)
             {
-                await _err.WriteLineAsync($"  {Describe(block)}: {block.Classification.Reason}").ConfigureAwait(false);
+                await _err.WriteLineAsync($"  {Describe(block)}: {CleaningText.Category(block.Classification.Category)}: {block.Classification.Reason}").ConfigureAwait(false);
             }
 
-            await _err.WriteLineAsync("Odluku za sumnjive blokove dajte opcijom --suspicious skip|delete, ili ih riješite u aplikaciji (akcija Uredi).").ConfigureAwait(false);
+            await _err.WriteLineAsync(
+                "Odluku dajte opcijama --suspicious, --empty ili --nomatch (delete|skip), ili fakture riješite u aplikaciji (akcija Uredi).").ConfigureAwait(false);
             var pending = CleaningReport.Create(session, result: null, input, outputPath: null, _time);
             await WriteSummaryAsync(pending).ConfigureAwait(false);
             return await WriteCleaningReportAsync(pending, reportPath, input, overwrite, exportOptions, cancellationToken).ConfigureAwait(false)
@@ -335,19 +336,35 @@ public sealed class CliApplication
         if (args.Value("group") is { } groupText
             && !ushort.TryParse(groupText, NumberStyles.None, CultureInfo.InvariantCulture, out group))
         {
-            error = $"Neispravna ciljna grupa „{groupText}”: očekuje se cijeli broj od 0 do 65535.";
+            error = $"Neispravna grupa SHMP „{groupText}”: očekuje se cijeli broj od 0 do 65535.";
             return false;
         }
 
-        if (!TryParseAction(args, "empty", options.EmptyInvoiceAction, out var empty, out error)
-            || !TryParseAction(args, "nomatch", options.NoGroupNoJmbMatchAction, out var noMatch, out error))
+        var exam = options.ExamService;
+        switch (args.Value("exam"))
+        {
+            case null:
+                break;
+            case "any":
+                exam = null;
+                break;
+            case var examText when ushort.TryParse(examText, NumberStyles.None, CultureInfo.InvariantCulture, out var code):
+                exam = code;
+                break;
+            case var examText:
+                error = $"Neispravna usluga pregleda „{examText}”: očekuje se cijeli broj od 0 do 65535 ili any.";
+                return false;
+        }
+
+        if (!TryParseAction(args, "empty", options.EmptyInvoiceAction, allowAsk: true, out var empty, out error)
+            || !TryParseAction(args, "nomatch", options.NoGroupNoJmbMatchAction, allowAsk: true, out var noMatch, out error))
         {
             return false;
         }
 
         if (args.Has("suspicious"))
         {
-            if (!TryParseAction(args, "suspicious", CandidateAction.Skip, out var s, out error))
+            if (!TryParseAction(args, "suspicious", CandidateAction.Skip, allowAsk: false, out var s, out error))
             {
                 return false;
             }
@@ -355,11 +372,12 @@ public sealed class CliApplication
             suspicious = s;
         }
 
-        options = new CleaningOptions(group, RepairBrackets: !args.Has("no-repairs"), empty, noMatch);
+        options = new CleaningOptions(group, RepairBrackets: !args.Has("no-repairs"), empty, noMatch, exam);
         return true;
     }
 
-    private static bool TryParseAction(CliArguments args, string name, CandidateAction fallback, out CandidateAction action, out string? error)
+    /// <summary><c>delete</c>, <c>skip</c> ili (gdje je dozvoljeno) <c>ask</c>: bez podrazumijevane akcije, faktura čeka odluku.</summary>
+    private static bool TryParseAction(CliArguments args, string name, CandidateAction? fallback, bool allowAsk, out CandidateAction? action, out string? error)
     {
         error = null;
         action = fallback;
@@ -373,8 +391,11 @@ public sealed class CliApplication
             case "skip":
                 action = CandidateAction.Skip;
                 return true;
+            case "ask" when allowAsk:
+                action = null;
+                return true;
             case var other:
-                error = $"Neispravna vrijednost „{other}” za --{name}: dozvoljeno je delete ili skip.";
+                error = $"Neispravna vrijednost „{other}” za --{name}: dozvoljeno je delete{(allowAsk ? ", skip ili ask" : " ili skip")}.";
                 return false;
         }
     }
@@ -622,10 +643,13 @@ public sealed class CliApplication
         <ime>_ociscen.xml pored ulaza. Svaka obrisana, preskočena i popravljena faktura se ispisuje.
 
         Opcije:
-          --group <broj>              ciljna grupa (podrazumijevano 100)
-          --empty delete|skip         akcija za praznu fakturu (podrazumijevano delete)
-          --nomatch delete|skip       akcija za fakturu bez ciljne grupe i bez podudaranja JMB-a
-                                      (podrazumijevano delete)
+          --group <broj>              grupa usluga SHMP (usluga-grupa, podrazumijevano 100)
+          --exam <broj>|any           usluga pregleda u SHMP (usluga-oznaka, podrazumijevano 183);
+                                      any = bilo koja usluga SHMP (kao clean.py)
+          --empty delete|skip|ask     akcija za praznu fakturu (podrazumijevano delete)
+          --nomatch delete|skip|ask   akcija za fakturu samo iz drugih službi čiji pacijent (JMB)
+                                      nema pregled u SHMP (podrazumijevano delete)
+                                      ask = bez akcije: fakture čekaju odluku, izlaz se ne pravi
           --suspicious delete|skip    odluka za sumnjive blokove; bez nje se izlaz ne pravi
           --no-repairs                bez automatskih popravki zagrada
           --report <fajl>             izvještaj u .txt ili .csv (po ekstenziji)
@@ -634,7 +658,8 @@ public sealed class CliApplication
           --builtin-schema            provjera izlaza ugrađenom šemom umjesto aktivnom
           --overwrite                 prepiši postojeći izlaz i izvještaj (ulaz nikad)
 
-        Bez opcija akcija rezultat je isti kao „Kao skripta” (clean.py), uz dokumentovana odstupanja.
+        Faktura sa uslugom SHMP uvijek ostaje; faktura samo iz drugih službi ostaje ako isti pacijent
+        (JMB) ima pregled u SHMP. Rezultat clean.py daju opcije --exam any (uz podrazumijevane akcije).
         Izlazni kod: 0 = sačuvan, 1 = nije sačuvan (čeka odluku ili ne prolazi provjeru),
         2 = argumenti, 3 = fajl.
         """ + Environment.NewLine;

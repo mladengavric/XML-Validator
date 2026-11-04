@@ -26,7 +26,7 @@
         <!-- ===== Zaglavlje ===== -->
         <Border Classes="windowHeader">
             <Grid ColumnDefinitions="Auto,*" ColumnSpacing="{StaticResource SpaceL}">
-                <Image x:Name="AppIcon" Source="/Assets/app.ico" VerticalAlignment="Top"
+                <Image x:Name="AppIcon" Source="/Assets/app-256.png" VerticalAlignment="Top"
                        Width="{StaticResource AppIconSize}" Height="{StaticResource AppIconSize}"
                        AutomationProperties.Name="Ikonica programa" />
                 <StackPanel Grid.Column="1" Spacing="{StaticResource SpaceXs}">
