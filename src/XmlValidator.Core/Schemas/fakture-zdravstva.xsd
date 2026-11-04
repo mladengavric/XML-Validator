@@ -1,0 +1,552 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" attributeFormDefault="unqualified" elementFormDefault="qualified" 
+           targetNamespace="http://www.zdravstvo-srpske.org/rp/xml-sheme/fakture-zdravstva">
+
+  
+  
+  <xs:element name="fakture-zdravstva">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="opsti-podaci" >
+          <xs:complexType>
+            <xs:attribute name="ustanova-sifra" use="required" >
+              <xs:simpleType>
+                <xs:restriction base="xs:string">
+                  <xs:pattern value="[0-9][0-9][0-9][0-9][0-9]"/>
+                </xs:restriction>
+              </xs:simpleType>
+            </xs:attribute>
+            <xs:attribute name="ustanova-naziv" use="required" >
+              <xs:simpleType>
+                <xs:restriction base="xs:string">
+                  <xs:maxLength value="100" />
+                  <xs:whiteSpace value="replace"/>
+                </xs:restriction>
+              </xs:simpleType>
+            </xs:attribute>
+            <xs:attribute name="vrsta-fakture" use="required" >
+              <xs:simpleType>
+                <xs:restriction base="xs:unsignedByte">
+                  <xs:minInclusive value="1"/>
+                  <xs:maxInclusive value="14"/>
+                </xs:restriction>
+              </xs:simpleType>
+            </xs:attribute>
+            <xs:attribute name ="jif" use="required">
+              <xs:simpleType>
+                <xs:restriction base="xs:string">
+                  <xs:minLength value="18"/>
+				  <xs:maxLength value="18"/>
+                  <xs:pattern value="[0-9]+" />
+                </xs:restriction>
+              </xs:simpleType>
+            </xs:attribute>
+            <xs:attribute name="xml-verzija" use="required" >
+              <xs:simpleType>
+                <xs:restriction base="xs:string">
+                  <xs:pattern value="[1]" />
+                </xs:restriction>
+              </xs:simpleType>
+            </xs:attribute>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="faktura" maxOccurs="unbounded">
+          <xs:complexType>
+            <xs:choice>
+              <xs:element name="stavka" maxOccurs="unbounded">
+                <xs:complexType>
+                  <xs:attribute name="redni-broj" type="xs:unsignedShort" use="required" />
+                  <xs:attribute name="usluga-nivo" type="xs:unsignedShort" use="required" />
+                  <xs:attribute name="usluga-grupa" type="xs:unsignedShort" use="required" />
+                  <xs:attribute name="usluga-oznaka" type="xs:unsignedShort" use="optional" />
+                  <xs:attribute name="usluga-naziv" use="optional" >
+                    <xs:simpleType>
+                      <xs:restriction base="xs:string">
+                        <xs:maxLength value="195" />
+                        <xs:whiteSpace value="replace"/>
+                      </xs:restriction>
+                    </xs:simpleType>
+                  </xs:attribute>
+                  <xs:attribute name="opis" use="optional" >
+                    <xs:simpleType>
+                      <xs:restriction base="xs:string">
+                        <xs:maxLength value="200" />
+                        <xs:whiteSpace value="collapse"/>
+                      </xs:restriction>
+                    </xs:simpleType>
+                  </xs:attribute>
+                  <xs:attribute name="kolicina" use="required" >
+                    <xs:simpleType>
+                      <xs:restriction base="xs:decimal">
+                        <xs:minExclusive value="0"/>
+                        <xs:fractionDigits value="2" />
+                        <xs:totalDigits value="7" />
+                      </xs:restriction>
+                    </xs:simpleType>
+                  </xs:attribute>
+                  <xs:attribute name="iznos" use="required" >
+                    <xs:simpleType>
+                      <xs:restriction base="xs:decimal">
+                        <xs:minInclusive value="0"/>
+                        <xs:fractionDigits value="2" />
+                        <xs:totalDigits value="13" />
+                      </xs:restriction>
+                    </xs:simpleType>
+                  </xs:attribute>
+                  <xs:attribute name="participacija-placa" use="required" >
+                    <xs:simpleType>
+                      <xs:restriction base="xs:string" >
+                        <xs:pattern value="[DN]" />
+                      </xs:restriction>
+                    </xs:simpleType>
+                  </xs:attribute>
+                  <xs:attribute name="participacija-iznos" use="required" >
+                    <xs:simpleType>
+                      <xs:restriction base="xs:decimal">
+                        <xs:fractionDigits value="2"/>
+                        <xs:minInclusive value="0" />
+                        <xs:totalDigits value="13" />
+                      </xs:restriction>
+                    </xs:simpleType>
+                  </xs:attribute>
+                  <xs:attribute name="broj-slucajeva" type="xs:unsignedShort" use="optional" />
+                  <xs:attribute name="rjesenje" use="optional" >
+                    <xs:simpleType>
+                      <xs:restriction base="xs:string">
+                        <xs:maxLength value="30" />
+                      </xs:restriction>
+                    </xs:simpleType>
+                  </xs:attribute>
+				  <xs:attribute name="datum-preuzimanja" use="optional" >
+					<xs:simpleType>
+					  <xs:restriction base="xs:date">
+						<xs:minInclusive value="2014-01-01"/>
+						<xs:maxInclusive value="2026-12-31"/>
+					  </xs:restriction>
+					</xs:simpleType>
+				  </xs:attribute>
+		    <xs:attribute name="ljekar-sifra" use="optional" >
+                    <xs:simpleType>
+                      <xs:restriction base="xs:string" >
+                        <xs:length value="5" />
+                      </xs:restriction>
+                    </xs:simpleType>
+                  </xs:attribute>
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="stavka-recept"  maxOccurs="10001">
+                <xs:complexType>
+                  <xs:attribute name="redni-broj" type="xs:unsignedShort" use="required" />
+                  <xs:attribute name="lijek-oznaka" use="required">
+                    <xs:simpleType>
+                      <xs:restriction base="xs:string">
+                        <xs:maxLength value="5" />
+			<xs:pattern value="[0-9]+" />
+                      </xs:restriction>
+                    </xs:simpleType>
+                  </xs:attribute>
+                  <xs:attribute name="lijek-lista-oznaka" use="required" >
+                    <xs:simpleType>
+                      <xs:restriction base="xs:string" >
+                        <xs:enumeration value="A"/>
+                        <xs:enumeration value="A1"/>
+                        <xs:enumeration value="B"/>
+                        <xs:enumeration value="X"/>
+                      </xs:restriction>
+                    </xs:simpleType>
+                  </xs:attribute>
+                  <xs:attribute name="lijek-indikacija-oznaka" use="optional" >
+                    <xs:simpleType>
+                      <xs:restriction base="xs:string">
+                        <xs:maxLength value="2" />
+                        <xs:pattern value="[a-zA-Z0-9]+" />
+                      </xs:restriction>
+                    </xs:simpleType>
+                  </xs:attribute>
+                  <xs:attribute name="kolicina" use="required" >
+                    <xs:simpleType>
+                      <xs:restriction base="xs:decimal">
+                        <xs:minExclusive value="0"/>
+                        <xs:fractionDigits value="2" />
+                        <xs:totalDigits value="7" />
+                      </xs:restriction>
+                    </xs:simpleType>
+                  </xs:attribute>
+                  <xs:attribute name="iznos" use="required" >
+                    <xs:simpleType>
+                      <xs:restriction base="xs:decimal">
+                        <xs:minInclusive value="0"/>
+                        <xs:fractionDigits value="2" />
+                        <xs:totalDigits value="13" />
+                      </xs:restriction>
+                    </xs:simpleType>
+                  </xs:attribute>
+                  <xs:attribute name="participacija-placa" use="required" >
+                    <xs:simpleType>
+                      <xs:restriction base="xs:string" >
+                        <xs:pattern value="[DN]" />
+                      </xs:restriction>
+                    </xs:simpleType>
+                  </xs:attribute>
+                  <xs:attribute name="participacija-iznos" use="required" >
+                    <xs:simpleType>
+                      <xs:restriction base="xs:decimal">
+                        <xs:fractionDigits value="2"/>
+                        <xs:minInclusive value="0" />
+                        <xs:totalDigits value="13" />
+                      </xs:restriction>
+                    </xs:simpleType>
+                  </xs:attribute>
+                  <xs:attribute name="osiguranik-jmb" use="required" >
+                    <xs:simpleType>
+                      <xs:restriction base="xs:string">
+                        <xs:pattern value="[0-9]{13}" />
+                      </xs:restriction>
+                    </xs:simpleType>
+                  </xs:attribute>
+                  <xs:attribute name="osiguranik-ime-prezime" use="required" >
+                    <xs:simpleType>
+                      <xs:restriction base="xs:string">
+                        <xs:maxLength value="100" />
+                        <xs:whiteSpace value="replace"/>
+                      </xs:restriction>
+                    </xs:simpleType>
+                  </xs:attribute>
+                  <xs:attribute name="recept-serijski-broj" type="xs:unsignedInt" use="required" />
+                  <xs:attribute name="recept-datum-izdavanja" use="required" >
+					<xs:simpleType>
+					  <xs:restriction base="xs:date">
+						<xs:minInclusive value="2011-01-01"/>
+						<xs:maxInclusive value="2026-12-31"/>
+					  </xs:restriction>
+					</xs:simpleType>
+					</xs:attribute>
+                  <xs:attribute name="recept-ustanova-sifra" use="required" >
+                    <xs:simpleType>
+                      <xs:restriction base="xs:string">
+                        <xs:length value="5" />
+                      </xs:restriction>
+                    </xs:simpleType>
+                  </xs:attribute>
+                  <xs:attribute name="recept-ljekar-oznaka" use="required" >
+                    <xs:simpleType>
+                      <xs:restriction base="xs:string" >
+                        <xs:length value="5" />
+                      </xs:restriction>
+                    </xs:simpleType>
+                  </xs:attribute>
+                  <xs:attribute name="recept-ljekar-ime-prezime" use="required" >
+                    <xs:simpleType>
+                      <xs:restriction base="xs:string">
+                        <xs:maxLength value="100" />
+                        <xs:whiteSpace value="replace"/>
+                      </xs:restriction>
+                    </xs:simpleType>
+                  </xs:attribute>
+                  <xs:attribute name="recept-dijagnoza-oznaka" use="required" >
+                    <xs:simpleType>
+                      <xs:restriction base="xs:string">
+                        <xs:pattern value="[A-Z]([0-9])+([.])*([0-9]+)" />
+                        <xs:maxLength value="5"  />
+                      </xs:restriction>
+                    </xs:simpleType>
+                  </xs:attribute>
+                  <xs:attribute name="datum-izdavanja-lijeka" use="required" >
+					<xs:simpleType>
+					  <xs:restriction base="xs:date">
+						<xs:minInclusive value="2011-01-01"/>
+						<xs:maxInclusive value="2026-12-31"/>
+					  </xs:restriction>
+					</xs:simpleType>
+					</xs:attribute>
+                  <xs:attribute name="lijek-zdrustanova" use="optional" >
+                    <xs:simpleType>
+                      <xs:restriction base="xs:string">
+                        <xs:minLength value="4" />
+                        <xs:maxLength value="5" />
+                      </xs:restriction>
+                    </xs:simpleType>
+                  </xs:attribute>
+		  <xs:attribute name="ihe-oznaka" use="optional" >
+                    <xs:simpleType>
+                      <xs:restriction base="xs:string">
+                        <xs:maxLength value="50" />
+                      </xs:restriction>
+                    </xs:simpleType>
+                  </xs:attribute>
+		  <xs:attribute name="signatura" use="optional" >
+                    <xs:simpleType>
+                      <xs:restriction base="xs:string">
+                        <xs:maxLength value="200" />
+                      </xs:restriction>
+                    </xs:simpleType>
+                  </xs:attribute>
+				  <xs:attribute name="id_prodajnog_mjesta" use="optional" >
+                    <xs:simpleType>
+                      <xs:restriction base="xs:string">
+                        <xs:maxLength value="5" />
+                      </xs:restriction>
+                    </xs:simpleType>
+                  </xs:attribute>
+				  <xs:attribute name="id_osiguranika" use="optional" >
+                    <xs:simpleType>
+                      <xs:restriction base="xs:decimal">
+                        <xs:minInclusive value="0"/>
+                        <xs:fractionDigits value="0" />
+                        <xs:totalDigits value="19" />
+                      </xs:restriction>
+                    </xs:simpleType>
+                  </xs:attribute>
+                  </xs:complexType>  
+              </xs:element>
+              <xs:element name="stavka-obavjest"  maxOccurs="unbounded">
+                <xs:complexType>
+                  <xs:attribute name="redni-broj" type="xs:unsignedShort" use="required" />
+                  <xs:attribute name="racun-broj" use="optional" >
+                    <xs:simpleType>
+                      <xs:restriction base="xs:string">
+                        <xs:maxLength value="30" />
+                      </xs:restriction>
+                    </xs:simpleType>
+                  </xs:attribute>
+                  <xs:attribute name="racun-datum" use="optional" >
+					<xs:simpleType>
+					  <xs:restriction base="xs:date">
+						<xs:minInclusive value="2011-01-01"/>
+						<xs:maxInclusive value="2026-12-31"/>
+					  </xs:restriction>
+					</xs:simpleType>
+					</xs:attribute>
+                  <xs:attribute name="racun-stavka-redni-broj" type="xs:unsignedShort" use="optional" />
+                  <xs:attribute name="kolicina" use="required" >
+                    <xs:simpleType>
+                      <xs:restriction base="xs:decimal">
+                        <xs:minExclusive value="0"/>
+                        <xs:fractionDigits value="2" />
+                        <xs:totalDigits value="7" />
+                      </xs:restriction>
+                    </xs:simpleType>
+                  </xs:attribute>
+                  <xs:attribute name="iznos" use="required" >
+                    <xs:simpleType>
+                      <xs:restriction base="xs:decimal">
+                        <xs:maxExclusive value="0"/>
+                        <xs:fractionDigits value="2" />
+                        <xs:totalDigits value="13" />
+                      </xs:restriction>
+                    </xs:simpleType>
+                  </xs:attribute>
+                  <xs:attribute name="napomena" use="required" >
+                    <xs:simpleType>
+                      <xs:restriction base="xs:string">
+                        <xs:maxLength value="200" />
+                        <xs:whiteSpace value="collapse"/>
+                      </xs:restriction>
+                    </xs:simpleType>
+                  </xs:attribute>
+                </xs:complexType>
+              </xs:element>
+            </xs:choice>
+            
+            <xs:attribute name="tip" use="required" >
+              <xs:simpleType>
+                <xs:restriction base="xs:string">
+                  <xs:pattern value="[RTO]" />
+                </xs:restriction>
+              </xs:simpleType>
+            </xs:attribute>
+            <xs:attribute name="broj" use="required" >
+              <xs:simpleType>
+                <xs:restriction base="xs:string">
+                  <xs:maxLength value="30" />
+				  <xs:pattern value="(\s*[^\s]\s*)+"></xs:pattern>
+                </xs:restriction>
+              </xs:simpleType>
+            </xs:attribute>
+            <xs:attribute name="datum" use="required" >
+			<xs:simpleType>
+			  <xs:restriction base="xs:date">
+				<xs:minInclusive value="2011-01-01"/>
+				<xs:maxInclusive value="2026-12-31"/>
+			  </xs:restriction>
+			</xs:simpleType>
+			</xs:attribute>
+            <xs:attribute name="rok-placanja" type="xs:date" use="required" />
+            <xs:attribute name="valuta" use="required" >
+              <xs:simpleType>
+                <xs:restriction base="xs:string">
+                  <xs:length value="3"/>
+                </xs:restriction>
+              </xs:simpleType>
+            </xs:attribute>
+            <xs:attribute name="iznos" use="required" >
+              <xs:simpleType>
+                <xs:restriction base="xs:decimal">
+                  <xs:fractionDigits value="2" />
+                  <xs:totalDigits value="13" />
+                </xs:restriction>
+              </xs:simpleType>
+            </xs:attribute>
+            <xs:attribute name="participacija-placa" use="required" >
+              <xs:simpleType>
+                <xs:restriction base="xs:string" >
+                  <xs:pattern value="[DN]" />
+                </xs:restriction>
+              </xs:simpleType>
+            </xs:attribute>
+            <xs:attribute name="participacija-iznos" use="required" >
+              <xs:simpleType>
+                <xs:restriction base="xs:decimal">
+                  <xs:fractionDigits value="2"/>
+                  <xs:minInclusive value="0" />
+                  <xs:totalDigits value="13" />
+                </xs:restriction>
+              </xs:simpleType>
+            </xs:attribute>
+            <xs:attribute name="ugovor-broj" use="optional" >
+              <xs:simpleType>
+                <xs:restriction base="xs:string">
+                  <xs:maxLength value="30" />
+                </xs:restriction>
+              </xs:simpleType>
+            </xs:attribute>
+            <xs:attribute name="projekat-sifra" use="optional" >
+              <xs:simpleType>
+                <xs:restriction base="xs:unsignedShort">
+                  <xs:minInclusive value="1"/>
+                  <xs:maxInclusive value="27" />
+                </xs:restriction>
+              </xs:simpleType>
+            </xs:attribute>
+            <xs:attribute name="osiguranik-jmb" use="optional" >
+              <xs:simpleType>
+                <xs:restriction base="xs:string">
+                  <xs:pattern value="[0-9]{13}" />
+                </xs:restriction>
+              </xs:simpleType>
+            </xs:attribute>
+            <xs:attribute name="osiguranik-ime-prezime" use="optional" >
+              <xs:simpleType>
+                <xs:restriction base="xs:string">
+                  <xs:maxLength value="100" />
+                  <xs:whiteSpace value="replace"/>
+                </xs:restriction>
+              </xs:simpleType>
+            </xs:attribute>
+            <xs:attribute name="lijecenje-period-od" use="optional" >
+			<xs:simpleType>
+			  <xs:restriction base="xs:date">
+				<xs:minInclusive value="2011-01-01"/>
+				<xs:maxInclusive value="2026-12-31"/>
+			  </xs:restriction>
+			</xs:simpleType>
+			</xs:attribute>
+            <xs:attribute name="lijecenje-period-do" use="optional" >
+			<xs:simpleType>
+			  <xs:restriction base="xs:date">
+				<xs:minInclusive value="2011-01-01"/>
+				<xs:maxInclusive value="2026-12-31"/>
+			  </xs:restriction>
+			</xs:simpleType>
+			</xs:attribute>
+            <xs:attribute name="lijecenje-prvi-dan" use="optional" >
+			<xs:simpleType>
+			  <xs:restriction base="xs:date">
+				<xs:minInclusive value="2011-01-01"/>
+				<xs:maxInclusive value="2026-12-31"/>
+			  </xs:restriction>
+			</xs:simpleType>
+			</xs:attribute>
+            <xs:attribute name="dijagnoza-oznaka" use="optional" >
+              <xs:simpleType>
+                <xs:restriction base="xs:string">
+                  <xs:pattern value="[A-Z]([0-9])+([.])*([0-9]+)" />
+                  <xs:maxLength value="5"  />
+                </xs:restriction>
+              </xs:simpleType>
+            </xs:attribute>
+            <xs:attribute name="ustanova-uputilac-sifra" use="optional" >
+              <xs:simpleType>
+                <xs:restriction base="xs:string">
+                  <xs:length value="5" />
+				  <xs:pattern value="[0-9][0-9][0-9][0-9][0-9]"/>
+                </xs:restriction>
+              </xs:simpleType>
+            </xs:attribute>
+            <xs:attribute name="ustanova-uputilac-naziv" use="optional" >
+              <xs:simpleType>
+                <xs:restriction base="xs:string">
+                  <xs:maxLength value="100" />
+                  <xs:whiteSpace value="replace"/>
+                </xs:restriction>
+              </xs:simpleType>
+            </xs:attribute>
+			 <xs:attribute name="uputnica-tip" use="optional" >
+			 <xs:simpleType>
+              <xs:restriction base="xs:string">
+                  <xs:pattern value="[SBD]" />
+                </xs:restriction>
+			</xs:simpleType>
+            </xs:attribute>
+            <xs:attribute name="izvrsioc-klinika-sifra" type="xs:unsignedShort" use="optional" />
+            <xs:attribute name="izvrsioc-klinika-naziv" use="optional" >
+              <xs:simpleType>
+                <xs:restriction base="xs:string">
+                  <xs:maxLength value="100" />
+                  <xs:whiteSpace value="replace"/>
+                </xs:restriction>
+              </xs:simpleType>
+            </xs:attribute>
+            <xs:attribute name="ljekar-oznaka" use="optional" >
+              <xs:simpleType>
+                <xs:restriction base="xs:string" >
+                  <xs:length value="5" />
+                </xs:restriction>
+              </xs:simpleType>
+            </xs:attribute>
+            <xs:attribute name="ljekar-ime-prezime" use="optional" >
+              <xs:simpleType>
+                <xs:restriction base="xs:string">
+                  <xs:maxLength value="100" />
+                  <xs:whiteSpace value="replace"/>
+                </xs:restriction>
+              </xs:simpleType>
+            </xs:attribute>
+            <xs:attribute name="rjesenje-broj" use="optional" >
+              <xs:simpleType>
+                <xs:restriction base="xs:string">
+                  <xs:maxLength value="30" />
+                </xs:restriction>
+              </xs:simpleType>
+            </xs:attribute>
+	   <xs:attribute name="ljekar-prijedlog" use="optional" >
+              <xs:simpleType>
+                <xs:restriction base="xs:string" >
+                  <xs:length value="5" />
+                </xs:restriction>
+              </xs:simpleType>
+            </xs:attribute>
+ 	    <xs:attribute name="ustanova-prijedlog" use="optional" >
+              <xs:simpleType>
+                <xs:restriction base="xs:string">
+                  <xs:length value="5" />
+		   <xs:pattern value="[0-9][0-9][0-9][0-9][0-9]"/>
+                </xs:restriction>
+              </xs:simpleType>
+            </xs:attribute>
+	   <xs:attribute name="datum-prijedloga" use="optional" >
+		<xs:simpleType>
+		  <xs:restriction base="xs:date">
+			<xs:minInclusive value="2011-01-01"/>
+			<xs:maxInclusive value="2026-12-31"/>
+		   </xs:restriction>
+		</xs:simpleType>
+	     </xs:attribute>
+	   <xs:attribute name="uputnica-id" type="xs:unsignedLong" use="optional" />
+	   <xs:attribute name="regresna-faktura" type="xs:boolean" use="optional" />
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>
