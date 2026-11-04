@@ -1,0 +1,85 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:XmlValidator.App.ViewModels"
+        xmlns:ui="using:XmlValidator.App.Controls"
+        x:Class="XmlValidator.App.Views.DialogWindow"
+        x:DataType="vm:DialogViewModel"
+        Title="{Binding Title}"
+        Icon="/Assets/app.ico"
+        SizeToContent="Height"
+        Width="{StaticResource DialogWidth}"
+        MinWidth="{StaticResource DialogMinWidth}"
+        MaxWidth="{StaticResource DialogMaxWidth}"
+        CanResize="False"
+        ShowInTaskbar="False"
+        WindowStartupLocation="CenterOwner">
+
+    <Window.KeyBindings>
+        <KeyBinding Gesture="Escape" Command="{Binding CancelCommand}" />
+    </Window.KeyBindings>
+
+    <DockPanel>
+        <!-- Dugmad -->
+        <Border DockPanel.Dock="Bottom" Classes="footer">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="{StaticResource SpaceS}">
+                <!-- Kod opasne akcije Enter ne potvrđuje (IsDefault isključen), a fokus je na „Otkaži”. -->
+                <Button x:Name="ConfirmButton"
+                        Classes.primary="{Binding !IsDangerous}"
+                        Classes.danger="{Binding IsDangerous}"
+                        IsDefault="{Binding !IsDangerous}"
+                        Content="{Binding ConfirmText}"
+                        Command="{Binding ConfirmCommand}" />
+                <Button x:Name="CancelButton" IsVisible="{Binding HasCancel}"
+                        Content="{Binding CancelText}"
+                        Command="{Binding CancelCommand}" />
+            </StackPanel>
+        </Border>
+
+        <!-- Sadržaj -->
+        <Grid Margin="{StaticResource DialogPadding}" ColumnDefinitions="Auto,*" ColumnSpacing="{StaticResource SpaceL}">
+            <PathIcon x:Name="SeverityIcon" Classes="status xl" ui:SeverityStyle.Severity="{Binding Severity}"
+                      VerticalAlignment="Top" />
+            <StackPanel Grid.Column="1" Spacing="{StaticResource SpaceM}">
+                <TextBlock Classes="subtitle wrap" Text="{Binding Title}" />
+                <SelectableTextBlock x:Name="MessageText" Classes="wrap" Text="{Binding Message}" />
+
+                <!-- Izbor jedne opcije -->
+                <ListBox x:Name="OptionsList" Classes="list" IsVisible="{Binding HasOptions}"
+                         MaxHeight="{StaticResource OptionsMaxHeight}"
+                         ItemsSource="{Binding Options}" SelectedItem="{Binding SelectedOption}"
+                         AutomationProperties.Name="Ponuđene opcije">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate x:DataType="x:String">
+                            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="{StaticResource SpaceM}">
+                                <PathIcon Classes="muted small" Data="{StaticResource IconFile}" />
+                                <TextBlock Grid.Column="1" Text="{Binding}" TextTrimming="CharacterEllipsis"
+                                           VerticalAlignment="Center" />
+                            </Grid>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+
+                <!-- Unos teksta -->
+                <TextBox x:Name="InputBox" IsVisible="{Binding IsPrompt}" Text="{Binding InputText}"
+                         AutomationProperties.Name="{Binding Message}" />
+
+                <!-- Detalji -->
+                <Border Classes="card" Padding="{StaticResource ThicknessM}" IsVisible="{Binding HasDetails}">
+                    <StackPanel Spacing="{StaticResource SpaceXs}">
+                        <TextBlock Classes="caption muted strong" Text="Detalji" />
+                        <ScrollViewer MaxHeight="{StaticResource DetailsMaxHeight}" HorizontalScrollBarVisibility="Disabled">
+                            <ItemsControl x:Name="DetailsList" ItemsSource="{Binding Details}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="x:String">
+                                        <SelectableTextBlock Classes="caption wrap" Text="{Binding}"
+                                                             Margin="{StaticResource LabelGap}" />
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </Grid>
+    </DockPanel>
+</Window>

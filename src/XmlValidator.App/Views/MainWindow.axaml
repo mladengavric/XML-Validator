@@ -1,0 +1,301 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:XmlValidator.App.ViewModels"
+        xmlns:services="using:XmlValidator.App.Services"
+        xmlns:ui="using:XmlValidator.App.Controls"
+        x:Class="XmlValidator.App.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Title="{Binding Title}"
+        Icon="/Assets/app.ico"
+        Width="{StaticResource MainWindowWidth}"
+        Height="{StaticResource MainWindowHeight}"
+        MinWidth="{StaticResource MainWindowMinWidth}"
+        MinHeight="{StaticResource MainWindowMinHeight}"
+        WindowStartupLocation="CenterScreen"
+        DragDrop.AllowDrop="True">
+
+    <Window.KeyBindings>
+        <KeyBinding Gesture="Ctrl+O" Command="{Binding OpenCommand}" />
+        <KeyBinding Gesture="Ctrl+Shift+S" Command="{Binding SaveAsCommand}" />
+        <KeyBinding Gesture="Ctrl+OemComma" Command="{Binding OpenSettingsCommand}" />
+    </Window.KeyBindings>
+
+    <Window.Resources>
+        <!-- Kartica sa podacima o otvorenom fajlu (ista u oba taba) -->
+        <DataTemplate x:Key="DocumentCardTemplate" x:DataType="services:OpenedDocument">
+            <Border Classes="card">
+                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="{StaticResource SpaceL}">
+                    <PathIcon Classes="xl accent" Data="{StaticResource IconXmlFile}" VerticalAlignment="Top" />
+                    <StackPanel Grid.Column="1" Spacing="{StaticResource SpaceXs}">
+                        <SelectableTextBlock Classes="subtitle" Text="{Binding FileName}" TextTrimming="CharacterEllipsis" />
+                        <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto"
+                              ColumnSpacing="{StaticResource SpaceM}" RowSpacing="{StaticResource SpaceXs}"
+                              Margin="{StaticResource StackGapS}">
+                            <TextBlock Classes="muted" Text="Folder" />
+                            <TextBlock Grid.Column="1" Text="{Binding Folder}" TextTrimming="PathSegmentEllipsis"
+                                       ToolTip.Tip="{Binding Path}" />
+                            <TextBlock Grid.Row="1" Classes="muted" Text="Veličina" />
+                            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding SizeText}" />
+                        </Grid>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </DataTemplate>
+    </Window.Resources>
+
+    <Grid>
+        <DockPanel>
+
+            <!-- ===== Traka sa komandama ===== -->
+            <Border Classes="toolbar" DockPanel.Dock="Top">
+                <Grid ColumnDefinitions="Auto,*,Auto">
+                    <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceXs}">
+                        <Button x:Name="OpenButton" Classes="toolbar" Command="{Binding OpenCommand}"
+                                ToolTip.Tip="Otvori XML fajl (Ctrl+O)">
+                            <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
+                                <PathIcon Data="{StaticResource IconOpen}" />
+                                <TextBlock Text="Otvori…" />
+                            </StackPanel>
+                        </Button>
+                        <Button x:Name="SaveAsButton" Classes="toolbar" Command="{Binding SaveAsCommand}"
+                                ToolTip.Tip="Sačuvaj sadržaj u novi fajl (Ctrl+Shift+S). Ulazni fajl se nikad ne prepisuje.">
+                            <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
+                                <PathIcon Data="{StaticResource IconSave}" />
+                                <TextBlock Text="Sačuvaj kao…" />
+                            </StackPanel>
+                        </Button>
+                        <Border Classes="divider" />
+                        <DropDownButton x:Name="RecentButton" Classes="toolbar"
+                                        ToolTip.Tip="Nedavno otvoreni fajlovi">
+                            <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
+                                <PathIcon Data="{StaticResource IconRecent}" />
+                                <TextBlock Text="Nedavni fajlovi" />
+                            </StackPanel>
+                            <DropDownButton.Flyout>
+                                <Flyout Placement="BottomEdgeAlignedLeft">
+                                    <StackPanel x:Name="RecentPanel" MaxWidth="{StaticResource RecentMenuMaxWidth}"
+                                                Spacing="{StaticResource SpaceXs}">
+                                        <TextBlock Classes="caption muted strong" Text="NEDAVNI FAJLOVI"
+                                                   Margin="{StaticResource ThicknessXs}" />
+
+                                        <!-- Prazno stanje -->
+                                        <StackPanel IsVisible="{Binding !HasRecentFiles}" Spacing="{StaticResource SpaceXs}"
+                                                    Margin="{StaticResource ThicknessS}">
+                                            <TextBlock Classes="strong" Text="Nema nedavnih fajlova" />
+                                            <TextBlock Classes="muted caption wrap"
+                                                       Text="Fajlovi koje otvorite pojaviće se ovdje." />
+                                        </StackPanel>
+
+                                        <ItemsControl ItemsSource="{Binding RecentFiles}" IsVisible="{Binding HasRecentFiles}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate x:DataType="vm:RecentFileItem">
+                                                    <Button Classes="toolbar" HorizontalAlignment="Stretch"
+                                                            HorizontalContentAlignment="Left"
+                                                            Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).OpenRecentCommand}"
+                                                            CommandParameter="{Binding}"
+                                                            ToolTip.Tip="{Binding Path}"
+                                                            AutomationProperties.Name="{Binding FileName}">
+                                                        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="{StaticResource SpaceM}">
+                                                            <PathIcon Classes="muted" Data="{StaticResource IconFile}" />
+                                                            <StackPanel Grid.Column="1">
+                                                                <TextBlock Text="{Binding FileName}" TextTrimming="CharacterEllipsis" />
+                                                                <TextBlock Classes="caption muted" Text="{Binding Folder}"
+                                                                           TextTrimming="PathSegmentEllipsis" />
+                                                            </StackPanel>
+                                                        </Grid>
+                                                    </Button>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+
+                                        <Separator IsVisible="{Binding HasRecentFiles}" />
+                                        <Button Classes="toolbar" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
+                                                IsVisible="{Binding HasRecentFiles}"
+                                                Command="{Binding ClearRecentFilesCommand}"
+                                                ToolTip.Tip="Briše samo listu; sami fajlovi ostaju netaknuti.">
+                                            <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceM}">
+                                                <PathIcon Classes="muted" Data="{StaticResource IconDelete}" />
+                                                <TextBlock Text="Obriši listu" />
+                                            </StackPanel>
+                                        </Button>
+                                    </StackPanel>
+                                </Flyout>
+                            </DropDownButton.Flyout>
+                        </DropDownButton>
+                    </StackPanel>
+
+                    <Button x:Name="SettingsButton" Grid.Column="2" Classes="toolbar"
+                            Command="{Binding OpenSettingsCommand}"
+                            ToolTip.Tip="Podešavanja: tema, čišćenje faktura i šeme (Ctrl+,)">
+                        <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
+                            <PathIcon Data="{StaticResource IconSettings}" />
+                            <TextBlock Text="Podešavanja" />
+                        </StackPanel>
+                    </Button>
+                </Grid>
+            </Border>
+
+            <!-- ===== Statusna traka ===== -->
+            <Border Classes="statusbar" DockPanel.Dock="Bottom">
+                <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="{StaticResource SpaceS}">
+                    <PathIcon Classes="status small" ui:SeverityStyle.Severity="{Binding StatusSeverity}"
+                              VerticalAlignment="Center" />
+                    <TextBlock x:Name="StatusText" Grid.Column="1" Text="{Binding StatusMessage}"
+                               VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                               ToolTip.Tip="{Binding StatusMessage}" />
+
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
+                        <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}" IsVisible="{Binding IsBusy}">
+                            <ProgressBar Classes="busy" AutomationProperties.Name="Rad u toku" />
+                            <TextBlock Classes="muted" Text="Radim…" VerticalAlignment="Center" />
+                        </StackPanel>
+                        <Border Classes="divider" IsVisible="{Binding IsBusy}" />
+
+                        <PathIcon Classes="small muted" Data="{StaticResource IconSchema}" VerticalAlignment="Center" />
+                        <TextBlock Classes="muted" Text="Šema:" VerticalAlignment="Center" />
+                        <TextBlock x:Name="SchemaNameText" Classes="strong" Text="{Binding ActiveSchemaName}"
+                                   VerticalAlignment="Center" />
+                        <StackPanel x:Name="SchemaWarningPanel" Orientation="Horizontal" Spacing="{StaticResource SpaceXs}"
+                                    IsVisible="{Binding HasSchemaWarning}"
+                                    ToolTip.Tip="{Binding SchemaWarning}"
+                                    Background="Transparent">
+                            <PathIcon Classes="status warning small" VerticalAlignment="Center" />
+                            <TextBlock Text="izabrana šema ne može da se koristi" VerticalAlignment="Center"
+                                       Foreground="{DynamicResource WarningForegroundBrush}" />
+                        </StackPanel>
+                        <Border Classes="divider" />
+                        <Button x:Name="ManageSchemasButton" Classes="link" Content="Upravljaj šemama…"
+                                Command="{Binding ManageSchemasCommand}"
+                                ToolTip.Tip="Podešavanja → Šeme: uvoz, izbor aktivne šeme, razlike" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- ===== Tabovi ===== -->
+            <TabControl x:Name="Tabs" Classes="main" SelectedIndex="{Binding SelectedTabIndex}">
+
+                <!-- Validacija -->
+                <TabItem AutomationProperties.Name="{Binding Validation.Header}">
+                    <TabItem.Header>
+                        <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
+                            <PathIcon Data="{StaticResource IconValidate}" />
+                            <TextBlock Text="{Binding Validation.Header}" />
+                        </StackPanel>
+                    </TabItem.Header>
+                    <Grid>
+                        <!-- Prazno stanje -->
+                        <StackPanel IsVisible="{Binding !Validation.HasDocument}"
+                                    HorizontalAlignment="Center" VerticalAlignment="Center"
+                                    MaxWidth="{StaticResource EmptyStateMaxWidth}"
+                                    Spacing="{StaticResource SpaceM}">
+                            <Border Classes="heroIcon">
+                                <PathIcon Data="{StaticResource IconValidate}" />
+                            </Border>
+                            <TextBlock Classes="title" Text="{Binding Validation.EmptyStateTitle}"
+                                       HorizontalAlignment="Center" Margin="{StaticResource StackGapS}" />
+                            <TextBlock Classes="muted wrap" Text="{Binding Validation.EmptyStateHint}"
+                                       TextAlignment="Center" />
+                            <Button Classes="primary" HorizontalAlignment="Center" Margin="{StaticResource StackGapS}"
+                                    Command="{Binding OpenCommand}" ToolTip.Tip="Otvori XML fajl (Ctrl+O)">
+                                <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
+                                    <PathIcon Data="{StaticResource IconOpen}" />
+                                    <TextBlock Text="Otvori fajl…" />
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+
+                        <!-- Otvoren fajl -->
+                        <ScrollViewer IsVisible="{Binding Validation.HasDocument}">
+                            <StackPanel Margin="{StaticResource PagePadding}" MaxWidth="{StaticResource ContentMaxWidth}"
+                                        HorizontalAlignment="Left" Spacing="{StaticResource SpaceL}">
+                                <ContentControl Content="{Binding Validation.Document}"
+                                                ContentTemplate="{StaticResource DocumentCardTemplate}" />
+                                <Border Classes="banner info">
+                                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="{StaticResource SpaceM}">
+                                        <PathIcon Classes="status info" VerticalAlignment="Top" />
+                                        <TextBlock Grid.Column="1" Classes="wrap" Text="{Binding Validation.PendingFeatureNote}" />
+                                    </Grid>
+                                </Border>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </Grid>
+                </TabItem>
+
+                <!-- Čišćenje faktura -->
+                <TabItem AutomationProperties.Name="{Binding Cleaning.Header}">
+                    <TabItem.Header>
+                        <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
+                            <PathIcon Data="{StaticResource IconClean}" />
+                            <TextBlock Text="{Binding Cleaning.Header}" />
+                        </StackPanel>
+                    </TabItem.Header>
+                    <Grid>
+                        <!-- Prazno stanje -->
+                        <StackPanel IsVisible="{Binding !Cleaning.HasDocument}"
+                                    HorizontalAlignment="Center" VerticalAlignment="Center"
+                                    MaxWidth="{StaticResource EmptyStateMaxWidth}"
+                                    Spacing="{StaticResource SpaceM}">
+                            <Border Classes="heroIcon">
+                                <PathIcon Data="{StaticResource IconClean}" />
+                            </Border>
+                            <TextBlock Classes="title" Text="{Binding Cleaning.EmptyStateTitle}"
+                                       HorizontalAlignment="Center" Margin="{StaticResource StackGapS}" />
+                            <TextBlock Classes="muted wrap" Text="{Binding Cleaning.EmptyStateHint}"
+                                       TextAlignment="Center" />
+                            <Button Classes="primary" HorizontalAlignment="Center" Margin="{StaticResource StackGapS}"
+                                    Command="{Binding OpenCommand}" ToolTip.Tip="Otvori XML fajl (Ctrl+O)">
+                                <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
+                                    <PathIcon Data="{StaticResource IconOpen}" />
+                                    <TextBlock Text="Otvori fajl…" />
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+
+                        <!-- Otvoren fajl -->
+                        <ScrollViewer IsVisible="{Binding Cleaning.HasDocument}">
+                            <StackPanel Margin="{StaticResource PagePadding}" MaxWidth="{StaticResource ContentMaxWidth}"
+                                        HorizontalAlignment="Left" Spacing="{StaticResource SpaceL}">
+                                <ContentControl Content="{Binding Cleaning.Document}"
+                                                ContentTemplate="{StaticResource DocumentCardTemplate}" />
+
+                                <Border Classes="card">
+                                    <StackPanel Spacing="{StaticResource SpaceS}">
+                                        <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="{StaticResource SpaceM}">
+                                            <PathIcon Classes="muted" Data="{StaticResource IconSettings}" />
+                                            <TextBlock Grid.Column="1" Classes="subtitle" Text="Podešavanja čišćenja"
+                                                       VerticalAlignment="Center" />
+                                            <Button x:Name="ChangeCleaningSettingsButton" Grid.Column="2" Classes="link"
+                                                    Content="Promijeni…"
+                                                    Command="{Binding OpenSettingsCommand}"
+                                                    ToolTip.Tip="Podešavanja → Opšte (Ctrl+,)" />
+                                        </Grid>
+                                        <TextBlock Classes="muted wrap" Text="{Binding Cleaning.SettingsSummary}" />
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Classes="banner info">
+                                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="{StaticResource SpaceM}">
+                                        <PathIcon Classes="status info" VerticalAlignment="Top" />
+                                        <TextBlock Grid.Column="1" Classes="wrap" Text="{Binding Cleaning.PendingFeatureNote}" />
+                                    </Grid>
+                                </Border>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </Grid>
+                </TabItem>
+            </TabControl>
+        </DockPanel>
+
+        <!-- ===== Nagovještaj tokom prevlačenja fajla ===== -->
+        <Border x:Name="DropOverlay" Classes="dropOverlay" IsVisible="False" IsHitTestVisible="False">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="{StaticResource SpaceM}">
+                <Border Classes="heroIcon">
+                    <PathIcon Data="{StaticResource IconImport}" />
+                </Border>
+                <TextBlock Classes="title" Text="Pustite fajl da ga otvorite" HorizontalAlignment="Center" />
+                <TextBlock Classes="muted" HorizontalAlignment="Center"
+                           Text="XML fajl se otvara; .xsd ili .zip fajl pokreće uvoz šeme." />
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>

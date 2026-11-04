@@ -1,8 +1,10 @@
 <Solution>
   <Folder Name="/src/">
+    <Project Path="src/XmlValidator.App/XmlValidator.App.csproj" />
     <Project Path="src/XmlValidator.Core/XmlValidator.Core.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/XmlValidator.App.Tests/XmlValidator.App.Tests.csproj" />
     <Project Path="tests/XmlValidator.Core.Tests/XmlValidator.Core.Tests.csproj" />
   </Folder>
 </Solution>

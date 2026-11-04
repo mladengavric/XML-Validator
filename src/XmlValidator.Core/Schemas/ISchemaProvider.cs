@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Xml.Schema;
 
 namespace XmlValidator.Core.Schemas;
@@ -96,30 +97,16 @@ public sealed class StoreSchemaProvider : ISchemaProvider
             return _builtIn.Value;
         }
 
-        var info = _store.Find(id);
-        if (info is null)
+        var loaded = _store.LoadCompiled(id);
+        if (!loaded.Succeeded)
         {
-            return Fallback($"Aktivna šema '{id}' nije pronađena.");
+            var reason = loaded.Info is null
+                ? $"Aktivna šema '{id}' nije pronađena."
+                : "Aktivna " + char.ToLower(loaded.Problem![0], CultureInfo.InvariantCulture) + loaded.Problem[1..];
+            return Fallback(reason);
         }
 
-        var files = _store.TryLoadFiles(info, out var loadProblem);
-        if (files is null)
-        {
-            return Fallback($"Aktivna šema „{info.Name}” je oštećena: {loadProblem}.");
-        }
-
-        if (!string.Equals(SchemaHash.ComputeSetHash(files), info.Sha256, StringComparison.OrdinalIgnoreCase))
-        {
-            return Fallback($"Aktivna šema „{info.Name}” je oštećena: fajlovi su izmijenjeni poslije uvoza (hash se ne poklapa).");
-        }
-
-        var compilation = SchemaCompiler.Compile(files, info.MainSchemaFile);
-        if (!compilation.Succeeded)
-        {
-            return Fallback($"Aktivna šema „{info.Name}” ne može da se kompajlira: {compilation.Errors[0]}");
-        }
-
-        return new ActiveSchema(compilation.SchemaSet!, info, IsFallback: false, FallbackReason: null);
+        return new ActiveSchema(loaded.SchemaSet!, loaded.Info!, IsFallback: false, FallbackReason: null);
     }
 
     private ActiveSchema Fallback(string reason) =>

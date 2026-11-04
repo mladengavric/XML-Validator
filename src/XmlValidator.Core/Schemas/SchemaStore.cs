@@ -160,6 +160,42 @@ public sealed class SchemaStore
         return Task.Run(() => Import(path, options ?? new SchemaImportOptions(), cancellationToken), cancellationToken);
     }
 
+    /// <summary>
+    /// Učitava i kompajlira šemu sa zadatim id-em (npr. za poređenje sa aktivnom). Provjerava da fajlovi
+    /// postoje i da im se hash poklapa sa onim iz uvoza. Ništa se ne čita sa mreže.
+    /// </summary>
+    /// <returns>Kompajliran skup ili razlog zašto šema nije upotrebljiva.</returns>
+    public SchemaLoadResult LoadCompiled(string id)
+    {
+        ArgumentNullException.ThrowIfNull(id);
+        if (id == BuiltInId)
+        {
+            return new SchemaLoadResult(BuiltIn, BuiltInSchemaProvider.CompileBuiltIn(isFallback: false, reason: null).SchemaSet, null);
+        }
+
+        var info = Find(id);
+        if (info is null)
+        {
+            return new SchemaLoadResult(null, null, $"Šema '{id}' nije pronađena.");
+        }
+
+        var files = TryLoadFiles(info, out var loadProblem);
+        if (files is null)
+        {
+            return new SchemaLoadResult(info, null, $"Šema „{info.Name}” je oštećena: {loadProblem}.");
+        }
+
+        if (!string.Equals(SchemaHash.ComputeSetHash(files), info.Sha256, StringComparison.OrdinalIgnoreCase))
+        {
+            return new SchemaLoadResult(info, null, $"Šema „{info.Name}” je oštećena: fajlovi su izmijenjeni poslije uvoza (hash se ne poklapa).");
+        }
+
+        var compilation = SchemaCompiler.Compile(files, info.MainSchemaFile);
+        return compilation.Succeeded
+            ? new SchemaLoadResult(info, compilation.SchemaSet, null)
+            : new SchemaLoadResult(info, null, $"Šema „{info.Name}” ne može da se kompajlira: {compilation.Errors[0]}");
+    }
+
     internal (string Id, string? Problem) ReadActiveSelection()
     {
         var path = Path.Combine(RootPath, ActiveFileName);
@@ -533,4 +569,13 @@ public sealed class SchemaStore
         string? Version,
         string MainSchemaFile,
         List<string> Files);
+}
+
+/// <summary>Rezultat učitavanja šeme iz skladišta.</summary>
+/// <param name="Info">Metapodaci (ako je šema pronađena).</param>
+/// <param name="SchemaSet">Kompajliran skup; <c>null</c> ako šema nije upotrebljiva.</param>
+/// <param name="Problem">Razlog (srpski) kad <paramref name="SchemaSet"/> nije dostupan.</param>
+public sealed record SchemaLoadResult(SchemaInfo? Info, System.Xml.Schema.XmlSchemaSet? SchemaSet, string? Problem)
+{
+    public bool Succeeded => SchemaSet is not null;
 }

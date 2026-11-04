@@ -1,0 +1,471 @@
+<!--
+  Stilovi kontrola po klasama. Redoslijed je bitan: u Avaloniji kasniji stil pobjeđuje,
+  pa osnovni stilovi idu prvi, a klase (primary, danger, toolbar...) poslije njih.
+
+  Klase:
+    Button: (osnovno = sekundarno), primary, danger, toolbar, link, icon
+    DropDownButton: toolbar
+    Border: card, settingRow, toolbar, statusbar, banner (+ info/success/warning/error),
+            badge (+ accent/neutral/warning), heroIcon, dropOverlay, footer, divider
+    TextBlock/SelectableTextBlock: display, title, subtitle, strong, muted, caption, mono, accent
+    PathIcon: small, large, hero, status (+ info/success/warning/error), accent, muted
+    ListBox: nav, list
+    TabControl: main
+-->
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Design.PreviewWith>
+        <Border Padding="24">
+            <StackPanel Spacing="8">
+                <Button Classes="primary" Content="Primarno" />
+                <Button Content="Sekundarno" />
+                <Button Classes="danger" Content="Obriši" />
+            </StackPanel>
+        </Border>
+    </Design.PreviewWith>
+
+    <!-- ========== Osnova ========== -->
+
+    <Style Selector="Window">
+        <Setter Property="Background" Value="{DynamicResource AppBackgroundBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+        <Setter Property="FontSize" Value="{DynamicResource FontSizeBody}" />
+    </Style>
+
+    <!-- ========== Tekst ========== -->
+
+    <Style Selector=":is(TextBlock).display">
+        <Setter Property="FontSize" Value="{DynamicResource FontSizeDisplay}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector=":is(TextBlock).title">
+        <Setter Property="FontSize" Value="{DynamicResource FontSizeTitle}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector=":is(TextBlock).subtitle">
+        <Setter Property="FontSize" Value="{DynamicResource FontSizeSubtitle}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector=":is(TextBlock).strong">
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector=":is(TextBlock).muted">
+        <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+    </Style>
+    <Style Selector=":is(TextBlock).caption">
+        <Setter Property="FontSize" Value="{DynamicResource FontSizeCaption}" />
+    </Style>
+    <Style Selector=":is(TextBlock).mono">
+        <Setter Property="FontFamily" Value="{DynamicResource MonospaceFontFamily}" />
+    </Style>
+    <Style Selector=":is(TextBlock).accent">
+        <Setter Property="Foreground" Value="{DynamicResource AccentTextBrush}" />
+    </Style>
+    <Style Selector=":is(TextBlock).wrap">
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+
+    <!-- ========== Ikonice ========== -->
+
+    <Style Selector="PathIcon">
+        <Setter Property="Width" Value="{DynamicResource IconSizeM}" />
+        <Setter Property="Height" Value="{DynamicResource IconSizeM}" />
+    </Style>
+    <Style Selector="PathIcon.small">
+        <Setter Property="Width" Value="{DynamicResource IconSizeS}" />
+        <Setter Property="Height" Value="{DynamicResource IconSizeS}" />
+    </Style>
+    <Style Selector="PathIcon.large">
+        <Setter Property="Width" Value="{DynamicResource IconSizeL}" />
+        <Setter Property="Height" Value="{DynamicResource IconSizeL}" />
+    </Style>
+    <Style Selector="PathIcon.xl">
+        <Setter Property="Width" Value="{DynamicResource IconSizeXl}" />
+        <Setter Property="Height" Value="{DynamicResource IconSizeXl}" />
+    </Style>
+    <Style Selector="PathIcon.hero">
+        <Setter Property="Width" Value="{DynamicResource IconSizeHero}" />
+        <Setter Property="Height" Value="{DynamicResource IconSizeHero}" />
+    </Style>
+    <Style Selector="PathIcon.accent">
+        <Setter Property="Foreground" Value="{DynamicResource AccentTextBrush}" />
+    </Style>
+    <Style Selector="PathIcon.muted">
+        <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+    </Style>
+
+    <!-- Statusne ikonice: oblik i boja po ozbiljnosti (oblik nosi značenje i bez boje) -->
+    <Style Selector="PathIcon.status.info">
+        <Setter Property="Data" Value="{DynamicResource IconInfo}" />
+        <Setter Property="Foreground" Value="{DynamicResource InfoForegroundBrush}" />
+    </Style>
+    <Style Selector="PathIcon.status.success">
+        <Setter Property="Data" Value="{DynamicResource IconSuccess}" />
+        <Setter Property="Foreground" Value="{DynamicResource SuccessForegroundBrush}" />
+    </Style>
+    <Style Selector="PathIcon.status.warning">
+        <Setter Property="Data" Value="{DynamicResource IconWarning}" />
+        <Setter Property="Foreground" Value="{DynamicResource WarningForegroundBrush}" />
+    </Style>
+    <Style Selector="PathIcon.status.error">
+        <Setter Property="Data" Value="{DynamicResource IconError}" />
+        <Setter Property="Foreground" Value="{DynamicResource ErrorForegroundBrush}" />
+    </Style>
+
+    <!-- ========== Dugmad ========== -->
+
+    <!-- Osnovno (sekundarno) dugme -->
+    <Style Selector="Button">
+        <Setter Property="Padding" Value="{DynamicResource ButtonPadding}" />
+        <Setter Property="MinHeight" Value="{DynamicResource ControlHeight}" />
+        <Setter Property="CornerRadius" Value="{DynamicResource RadiusM}" />
+        <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}" />
+        <Setter Property="BorderThickness" Value="{DynamicResource DividerThickness}" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Button:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource SurfaceHoverBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+    </Style>
+    <Style Selector="Button:pressed /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource SurfacePressedBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+    </Style>
+    <Style Selector="Button:disabled /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource SurfaceAltBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DividerBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource TextDisabledBrush}" />
+    </Style>
+
+    <!-- Primarno: glavna akcija na ekranu -->
+    <Style Selector="Button.primary">
+        <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource OnAccentBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="Button.primary:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource AccentHoverBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource AccentHoverBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource OnAccentBrush}" />
+    </Style>
+    <Style Selector="Button.primary:pressed /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource AccentPressedBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource AccentPressedBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource OnAccentBrush}" />
+    </Style>
+    <Style Selector="Button.primary:disabled /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource SurfaceHoverBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource SurfaceHoverBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource TextDisabledBrush}" />
+    </Style>
+
+    <!-- Opasno: brisanje, prepisivanje (uvijek uz potvrdu) -->
+    <Style Selector="Button.danger">
+        <Setter Property="Background" Value="{DynamicResource DangerBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource OnDangerBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DangerBrush}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="Button.danger:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource DangerHoverBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DangerHoverBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource OnDangerBrush}" />
+    </Style>
+    <Style Selector="Button.danger:pressed /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource DangerPressedBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DangerPressedBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource OnDangerBrush}" />
+    </Style>
+    <Style Selector="Button.danger:disabled /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource SurfaceAltBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DividerBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource TextDisabledBrush}" />
+    </Style>
+
+    <!-- Opasno, ali tiše (u listi akcija): crveni tekst, bez punjenja -->
+    <Style Selector="Button.dangerOutline">
+        <Setter Property="Foreground" Value="{DynamicResource DangerTextBrush}" />
+    </Style>
+    <Style Selector="Button.dangerOutline:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource ErrorBackgroundBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource ErrorBorderBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DangerTextBrush}" />
+    </Style>
+    <Style Selector="Button.dangerOutline:pressed /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource ErrorBorderBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource ErrorBorderBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DangerTextBrush}" />
+    </Style>
+
+    <!-- Dugme u traci sa komandama: bez okvira, ikonica + tekst -->
+    <Style Selector="Button.toolbar, DropDownButton.toolbar">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="{DynamicResource NoThickness}" />
+        <Setter Property="Padding" Value="{DynamicResource ToolbarButtonPadding}" />
+        <Setter Property="CornerRadius" Value="{DynamicResource RadiusM}" />
+        <Setter Property="MinHeight" Value="{DynamicResource ControlHeight}" />
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Button.toolbar:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource SurfaceHoverBrush}" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+    </Style>
+    <Style Selector="Button.toolbar:pressed /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource SurfacePressedBrush}" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+    </Style>
+    <Style Selector="Button.toolbar:disabled /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="Foreground" Value="{DynamicResource TextDisabledBrush}" />
+    </Style>
+    <Style Selector="Button.toolbar:disabled PathIcon">
+        <Setter Property="Foreground" Value="{DynamicResource TextDisabledBrush}" />
+    </Style>
+
+    <!-- Dugme kao link (sekundarna navigacija, npr. „Upravljaj šemama…”) -->
+    <Style Selector="Button.link">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="{DynamicResource NoThickness}" />
+        <Setter Property="Padding" Value="{DynamicResource ThicknessXs}" />
+        <Setter Property="MinHeight" Value="0" />
+        <Setter Property="Foreground" Value="{DynamicResource AccentTextBrush}" />
+        <Setter Property="Cursor" Value="Hand" />
+    </Style>
+    <Style Selector="Button.link:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource AccentSubtleBrush}" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="Foreground" Value="{DynamicResource AccentTextBrush}" />
+    </Style>
+    <Style Selector="Button.link:pressed /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource AccentSubtleBorderBrush}" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="Foreground" Value="{DynamicResource AccentTextBrush}" />
+    </Style>
+
+    <!-- Malo dugme samo sa ikonicom (zatvaranje poruke, panela) -->
+    <Style Selector="Button.icon">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="{DynamicResource NoThickness}" />
+        <Setter Property="Padding" Value="{DynamicResource ThicknessS}" />
+        <Setter Property="MinHeight" Value="0" />
+        <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+    </Style>
+    <Style Selector="Button.icon:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource SurfaceHoverBrush}" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+    </Style>
+
+    <!-- ========== Površine ========== -->
+
+    <Style Selector="Border.card">
+        <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}" />
+        <Setter Property="BorderThickness" Value="{DynamicResource DividerThickness}" />
+        <Setter Property="CornerRadius" Value="{DynamicResource RadiusL}" />
+        <Setter Property="Padding" Value="{DynamicResource CardPadding}" />
+    </Style>
+
+    <!-- Red podešavanja: opis lijevo, kontrola desno -->
+    <Style Selector="Border.settingRow">
+        <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}" />
+        <Setter Property="BorderThickness" Value="{DynamicResource DividerThickness}" />
+        <Setter Property="CornerRadius" Value="{DynamicResource RadiusM}" />
+        <Setter Property="Padding" Value="{DynamicResource ThicknessL}" />
+    </Style>
+
+    <Style Selector="Border.toolbar">
+        <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
+        <Setter Property="Padding" Value="{DynamicResource ToolbarPadding}" />
+    </Style>
+
+    <Style Selector="Border.statusbar">
+        <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DividerBrush}" />
+        <Setter Property="BorderThickness" Value="{DynamicResource DividerTop}" />
+        <Setter Property="Padding" Value="{DynamicResource StatusBarPadding}" />
+        <Setter Property="MinHeight" Value="{DynamicResource ControlHeight}" />
+    </Style>
+
+    <Style Selector="Border.footer">
+        <Setter Property="Background" Value="{DynamicResource SurfaceAltBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DividerBrush}" />
+        <Setter Property="BorderThickness" Value="{DynamicResource DividerTop}" />
+        <Setter Property="Padding" Value="{DynamicResource DialogFooterPadding}" />
+    </Style>
+
+    <Style Selector="Border.divider">
+        <Setter Property="Background" Value="{DynamicResource DividerBrush}" />
+        <Setter Property="Width" Value="1" />
+        <Setter Property="Margin" Value="{DynamicResource ThicknessXs}" />
+    </Style>
+
+    <!-- Okvir velike ikonice praznog stanja -->
+    <Style Selector="Border.heroIcon">
+        <Setter Property="Background" Value="{DynamicResource AccentSubtleBrush}" />
+        <Setter Property="Width" Value="{DynamicResource HeroFrameSize}" />
+        <Setter Property="Height" Value="{DynamicResource HeroFrameSize}" />
+        <Setter Property="CornerRadius" Value="{DynamicResource RadiusHero}" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Border.heroIcon > PathIcon">
+        <Setter Property="Foreground" Value="{DynamicResource AccentTextBrush}" />
+        <Setter Property="Width" Value="{DynamicResource IconSizeHero}" />
+        <Setter Property="Height" Value="{DynamicResource IconSizeHero}" />
+    </Style>
+
+    <!-- Nagovještaj tokom prevlačenja fajla -->
+    <Style Selector="Border.dropOverlay">
+        <Setter Property="Background" Value="{DynamicResource OverlayBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+        <Setter Property="BorderThickness" Value="{DynamicResource FocusThickness}" />
+        <Setter Property="CornerRadius" Value="{DynamicResource RadiusL}" />
+        <Setter Property="Margin" Value="{DynamicResource ThicknessM}" />
+    </Style>
+
+    <!-- ========== Poruke (banner) po ozbiljnosti ========== -->
+
+    <Style Selector="Border.banner">
+        <Setter Property="Padding" Value="{DynamicResource BannerPadding}" />
+        <Setter Property="CornerRadius" Value="{DynamicResource RadiusM}" />
+        <Setter Property="BorderThickness" Value="{DynamicResource DividerThickness}" />
+        <Setter Property="Background" Value="{DynamicResource InfoBackgroundBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource InfoBorderBrush}" />
+    </Style>
+    <Style Selector="Border.banner.success">
+        <Setter Property="Background" Value="{DynamicResource SuccessBackgroundBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource SuccessBorderBrush}" />
+    </Style>
+    <Style Selector="Border.banner.warning">
+        <Setter Property="Background" Value="{DynamicResource WarningBackgroundBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource WarningBorderBrush}" />
+    </Style>
+    <Style Selector="Border.banner.error">
+        <Setter Property="Background" Value="{DynamicResource ErrorBackgroundBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource ErrorBorderBrush}" />
+    </Style>
+
+    <!-- ========== Oznake (badge) ========== -->
+
+    <Style Selector="Border.badge">
+        <Setter Property="Padding" Value="{DynamicResource BadgePadding}" />
+        <Setter Property="CornerRadius" Value="{DynamicResource RadiusPill}" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Background" Value="{DynamicResource BadgeNeutralBackgroundBrush}" />
+    </Style>
+    <Style Selector="Border.badge TextBlock">
+        <Setter Property="FontSize" Value="{DynamicResource FontSizeCaption}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{DynamicResource BadgeNeutralForegroundBrush}" />
+    </Style>
+    <Style Selector="Border.badge.accent">
+        <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
+    </Style>
+    <Style Selector="Border.badge.accent TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource OnAccentBrush}" />
+    </Style>
+    <Style Selector="Border.badge.warning">
+        <Setter Property="Background" Value="{DynamicResource WarningBackgroundBrush}" />
+    </Style>
+    <Style Selector="Border.badge.warning TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource WarningForegroundBrush}" />
+    </Style>
+
+    <!-- ========== Tabovi glavnog prozora ========== -->
+
+    <!-- Traka tabova je na površini (kao traka sa komandama), sadržaj na pozadini prozora. -->
+    <Style Selector="TabControl.main">
+        <Setter Property="Padding" Value="{DynamicResource NoThickness}" />
+        <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
+    </Style>
+    <Style Selector="TabControl.main /template/ ItemsPresenter#PART_ItemsPresenter">
+        <Setter Property="Margin" Value="{DynamicResource TabStripPadding}" />
+    </Style>
+    <Style Selector="TabControl.main /template/ ContentPresenter#PART_SelectedContentHost">
+        <Setter Property="Background" Value="{DynamicResource AppBackgroundBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DividerBrush}" />
+        <Setter Property="BorderThickness" Value="{DynamicResource DividerTop}" />
+    </Style>
+    <Style Selector="TabControl.main TabItem">
+        <Setter Property="FontSize" Value="{DynamicResource FontSizeBody}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="MinHeight" Value="{DynamicResource TabHeaderHeight}" />
+        <Setter Property="Padding" Value="{DynamicResource TabHeaderPadding}" />
+        <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+    </Style>
+    <Style Selector="TabControl.main TabItem:selected">
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+    </Style>
+
+    <!-- ========== Liste ========== -->
+
+    <!-- Navigacija u Podešavanjima -->
+    <Style Selector="ListBox.nav">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="{DynamicResource NoThickness}" />
+        <Setter Property="Padding" Value="{DynamicResource ThicknessS}" />
+    </Style>
+    <Style Selector="ListBox.nav ListBoxItem">
+        <Setter Property="Padding" Value="{DynamicResource ListItemPadding}" />
+        <Setter Property="CornerRadius" Value="{DynamicResource RadiusM}" />
+        <Setter Property="Margin" Value="{DynamicResource ThicknessXs}" />
+    </Style>
+
+    <!-- Lista sa karticama stavki (npr. šeme) -->
+    <Style Selector="ListBox.list">
+        <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}" />
+        <Setter Property="BorderThickness" Value="{DynamicResource DividerThickness}" />
+        <Setter Property="CornerRadius" Value="{DynamicResource RadiusL}" />
+        <Setter Property="Padding" Value="{DynamicResource ThicknessXs}" />
+    </Style>
+    <Style Selector="ListBox.list ListBoxItem">
+        <Setter Property="Padding" Value="{DynamicResource ListItemPadding}" />
+        <Setter Property="CornerRadius" Value="{DynamicResource RadiusM}" />
+    </Style>
+
+    <!-- Zajedničko za obje liste: izbor u akcentnoj boji -->
+    <Style Selector="ListBox.nav ListBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter, ListBox.list ListBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource SurfaceHoverBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+    </Style>
+    <Style Selector="ListBox.nav ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter, ListBox.list ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource AccentSubtleBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+    </Style>
+    <Style Selector="ListBox.nav ListBoxItem:selected:pointerover /template/ ContentPresenter#PART_ContentPresenter, ListBox.list ListBoxItem:selected:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource AccentSubtleBorderBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+    </Style>
+    <Style Selector="ListBox.nav ListBoxItem:selected:pressed /template/ ContentPresenter#PART_ContentPresenter, ListBox.list ListBoxItem:selected:pressed /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource AccentSubtleBorderBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+    </Style>
+    <Style Selector="ListBox.nav ListBoxItem:selected PathIcon">
+        <Setter Property="Foreground" Value="{DynamicResource AccentTextBrush}" />
+    </Style>
+
+    <!-- ========== Indikator rada ========== -->
+
+    <Style Selector="ProgressBar.busy">
+        <Setter Property="Width" Value="{DynamicResource BusyBarWidth}" />
+        <Setter Property="MinWidth" Value="0" />
+        <Setter Property="Height" Value="{DynamicResource BusyBarHeight}" />
+        <Setter Property="MinHeight" Value="0" />
+        <Setter Property="IsIndeterminate" Value="True" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+</Styles>

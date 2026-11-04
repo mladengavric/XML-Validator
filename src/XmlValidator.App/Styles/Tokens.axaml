@@ -1,0 +1,213 @@
+<!--
+  Dizajn tokeni: boje (svijetla i tamna tema), razmaci, radijusi, fontovi i veličine.
+  U prozorima i kontrolama se koriste samo ovi resursi (DynamicResource/StaticResource) i
+  klase stilova iz Controls.axaml, nikad ručno upisane boje i veličine.
+-->
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Akcentna boja po temi; koristi je i Fluent paleta (App.axaml) za fokus, izbor i kontrole. -->
+    <Color x:Key="AccentColorLight">#0F62B8</Color>
+    <Color x:Key="AccentColorDark">#5AA6F0</Color>
+
+    <ResourceDictionary.ThemeDictionaries>
+
+        <!-- Svijetla tema -->
+        <ResourceDictionary x:Key="Light">
+            <!-- Površine -->
+            <SolidColorBrush x:Key="AppBackgroundBrush" Color="#F3F4F6" />
+            <SolidColorBrush x:Key="SurfaceBrush" Color="#FFFFFF" />
+            <SolidColorBrush x:Key="SurfaceAltBrush" Color="#FAFBFC" />
+            <SolidColorBrush x:Key="SurfaceHoverBrush" Color="#EBEDF0" />
+            <SolidColorBrush x:Key="SurfacePressedBrush" Color="#E1E4E8" />
+            <SolidColorBrush x:Key="DividerBrush" Color="#E1E4E8" />
+            <SolidColorBrush x:Key="CardBorderBrush" Color="#DDE1E6" />
+            <SolidColorBrush x:Key="OverlayBrush" Color="#F2F3F4F6" />
+
+            <!-- Tekst -->
+            <SolidColorBrush x:Key="TextPrimaryBrush" Color="#1B1F24" />
+            <SolidColorBrush x:Key="TextSecondaryBrush" Color="#545D69" />
+            <SolidColorBrush x:Key="TextDisabledBrush" Color="#9AA1AA" />
+
+            <!-- Akcentna boja (jedna, za glavnu akciju, izbor i fokus) -->
+            <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColorLight}" />
+            <SolidColorBrush x:Key="AccentHoverBrush" Color="#0D56A3" />
+            <SolidColorBrush x:Key="AccentPressedBrush" Color="#0B4A8C" />
+            <SolidColorBrush x:Key="OnAccentBrush" Color="#FFFFFF" />
+            <SolidColorBrush x:Key="AccentTextBrush" Color="#0F5BAA" />
+            <SolidColorBrush x:Key="AccentSubtleBrush" Color="#E3EEFA" />
+            <SolidColorBrush x:Key="AccentSubtleBorderBrush" Color="#B9D3F0" />
+
+            <!-- Opasne akcije -->
+            <SolidColorBrush x:Key="DangerBrush" Color="#C42B1C" />
+            <SolidColorBrush x:Key="DangerHoverBrush" Color="#AE2618" />
+            <SolidColorBrush x:Key="DangerPressedBrush" Color="#962014" />
+            <SolidColorBrush x:Key="OnDangerBrush" Color="#FFFFFF" />
+            <SolidColorBrush x:Key="DangerTextBrush" Color="#B3261A" />
+
+            <!-- Statusi: tekst/ikonica, pozadina, ivica -->
+            <SolidColorBrush x:Key="ErrorForegroundBrush" Color="#B3261A" />
+            <SolidColorBrush x:Key="ErrorBackgroundBrush" Color="#FDECEC" />
+            <SolidColorBrush x:Key="ErrorBorderBrush" Color="#F3C2BE" />
+            <SolidColorBrush x:Key="WarningForegroundBrush" Color="#8A5300" />
+            <SolidColorBrush x:Key="WarningBackgroundBrush" Color="#FFF5D9" />
+            <SolidColorBrush x:Key="WarningBorderBrush" Color="#F0D899" />
+            <SolidColorBrush x:Key="SuccessForegroundBrush" Color="#0E6E2E" />
+            <SolidColorBrush x:Key="SuccessBackgroundBrush" Color="#E4F5E8" />
+            <SolidColorBrush x:Key="SuccessBorderBrush" Color="#B5DFC0" />
+            <SolidColorBrush x:Key="InfoForegroundBrush" Color="#0F5BAA" />
+            <SolidColorBrush x:Key="InfoBackgroundBrush" Color="#E8F1FB" />
+            <SolidColorBrush x:Key="InfoBorderBrush" Color="#BCD5F0" />
+
+            <!-- Oznake (badge) -->
+            <SolidColorBrush x:Key="BadgeNeutralBackgroundBrush" Color="#EBEDF0" />
+            <SolidColorBrush x:Key="BadgeNeutralForegroundBrush" Color="#3D4550" />
+        </ResourceDictionary>
+
+        <!-- Tamna tema -->
+        <ResourceDictionary x:Key="Dark">
+            <SolidColorBrush x:Key="AppBackgroundBrush" Color="#18191C" />
+            <SolidColorBrush x:Key="SurfaceBrush" Color="#232529" />
+            <SolidColorBrush x:Key="SurfaceAltBrush" Color="#1E2023" />
+            <SolidColorBrush x:Key="SurfaceHoverBrush" Color="#2E3136" />
+            <SolidColorBrush x:Key="SurfacePressedBrush" Color="#373A40" />
+            <SolidColorBrush x:Key="DividerBrush" Color="#33363C" />
+            <SolidColorBrush x:Key="CardBorderBrush" Color="#373A40" />
+            <SolidColorBrush x:Key="OverlayBrush" Color="#F218191C" />
+
+            <SolidColorBrush x:Key="TextPrimaryBrush" Color="#ECEEF1" />
+            <SolidColorBrush x:Key="TextSecondaryBrush" Color="#A9B0BA" />
+            <SolidColorBrush x:Key="TextDisabledBrush" Color="#6B7179" />
+
+            <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColorDark}" />
+            <SolidColorBrush x:Key="AccentHoverBrush" Color="#73B4F3" />
+            <SolidColorBrush x:Key="AccentPressedBrush" Color="#4A93DB" />
+            <SolidColorBrush x:Key="OnAccentBrush" Color="#0A1A2C" />
+            <SolidColorBrush x:Key="AccentTextBrush" Color="#7DB9F4" />
+            <SolidColorBrush x:Key="AccentSubtleBrush" Color="#1E3249" />
+            <SolidColorBrush x:Key="AccentSubtleBorderBrush" Color="#2F4D6E" />
+
+            <SolidColorBrush x:Key="DangerBrush" Color="#E5534B" />
+            <SolidColorBrush x:Key="DangerHoverBrush" Color="#EC6B64" />
+            <SolidColorBrush x:Key="DangerPressedBrush" Color="#CF463F" />
+            <SolidColorBrush x:Key="OnDangerBrush" Color="#1C0807" />
+            <SolidColorBrush x:Key="DangerTextBrush" Color="#FF8A82" />
+
+            <SolidColorBrush x:Key="ErrorForegroundBrush" Color="#FF8A82" />
+            <SolidColorBrush x:Key="ErrorBackgroundBrush" Color="#3A2224" />
+            <SolidColorBrush x:Key="ErrorBorderBrush" Color="#5C3134" />
+            <SolidColorBrush x:Key="WarningForegroundBrush" Color="#F2C14E" />
+            <SolidColorBrush x:Key="WarningBackgroundBrush" Color="#382F1A" />
+            <SolidColorBrush x:Key="WarningBorderBrush" Color="#5A4A22" />
+            <SolidColorBrush x:Key="SuccessForegroundBrush" Color="#6FD08C" />
+            <SolidColorBrush x:Key="SuccessBackgroundBrush" Color="#1F3326" />
+            <SolidColorBrush x:Key="SuccessBorderBrush" Color="#2E5039" />
+            <SolidColorBrush x:Key="InfoForegroundBrush" Color="#7DB9F4" />
+            <SolidColorBrush x:Key="InfoBackgroundBrush" Color="#1D2B3B" />
+            <SolidColorBrush x:Key="InfoBorderBrush" Color="#2D4560" />
+
+            <SolidColorBrush x:Key="BadgeNeutralBackgroundBrush" Color="#33363C" />
+            <SolidColorBrush x:Key="BadgeNeutralForegroundBrush" Color="#D3D7DD" />
+        </ResourceDictionary>
+
+    </ResourceDictionary.ThemeDictionaries>
+
+    <!-- Skala razmaka: 4, 8, 12, 16, 24, 32 -->
+    <x:Double x:Key="SpaceXs">4</x:Double>
+    <x:Double x:Key="SpaceS">8</x:Double>
+    <x:Double x:Key="SpaceM">12</x:Double>
+    <x:Double x:Key="SpaceL">16</x:Double>
+    <x:Double x:Key="SpaceXl">24</x:Double>
+    <x:Double x:Key="SpaceXxl">32</x:Double>
+
+    <Thickness x:Key="ThicknessXs">4</Thickness>
+    <Thickness x:Key="ThicknessS">8</Thickness>
+    <Thickness x:Key="ThicknessM">12</Thickness>
+    <Thickness x:Key="ThicknessL">16</Thickness>
+    <Thickness x:Key="ThicknessXl">24</Thickness>
+    <Thickness x:Key="ThicknessXxl">32</Thickness>
+
+    <!-- Složeni razmaci (izvedeni iz skale) -->
+    <Thickness x:Key="PagePadding">24</Thickness>
+    <Thickness x:Key="CardPadding">24,20</Thickness>
+    <Thickness x:Key="ToolbarPadding">12,8</Thickness>
+    <Thickness x:Key="StatusBarPadding">16,4</Thickness>
+    <Thickness x:Key="ButtonPadding">16,8</Thickness>
+    <Thickness x:Key="ToolbarButtonPadding">12,8</Thickness>
+    <Thickness x:Key="TabHeaderPadding">12,0</Thickness>
+    <Thickness x:Key="TabStripPadding">12,0</Thickness>
+    <Thickness x:Key="BannerPadding">16,12</Thickness>
+    <Thickness x:Key="BadgePadding">8,2</Thickness>
+    <Thickness x:Key="ListItemPadding">12,10</Thickness>
+    <Thickness x:Key="DialogPadding">24,24,24,20</Thickness>
+    <Thickness x:Key="DialogFooterPadding">24,16</Thickness>
+    <Thickness x:Key="SectionGap">0,24,0,0</Thickness>
+    <Thickness x:Key="SectionTitleGap">0,0,0,8</Thickness>
+    <Thickness x:Key="LabelGap">0,0,0,4</Thickness>
+    <Thickness x:Key="StackGapS">0,8,0,0</Thickness>
+    <Thickness x:Key="StackGapM">0,12,0,0</Thickness>
+    <Thickness x:Key="StackGapL">0,16,0,0</Thickness>
+    <Thickness x:Key="InlineGapS">8,0,0,0</Thickness>
+    <Thickness x:Key="InlineGapM">12,0,0,0</Thickness>
+    <Thickness x:Key="InlineGapL">16,0,0,0</Thickness>
+    <Thickness x:Key="DividerThickness">1</Thickness>
+    <Thickness x:Key="DividerTop">0,1,0,0</Thickness>
+    <Thickness x:Key="DividerBottom">0,0,0,1</Thickness>
+    <Thickness x:Key="DividerRight">0,0,1,0</Thickness>
+    <Thickness x:Key="FocusThickness">2</Thickness>
+    <Thickness x:Key="NoThickness">0</Thickness>
+
+    <!-- Radijusi uglova -->
+    <CornerRadius x:Key="RadiusS">4</CornerRadius>
+    <CornerRadius x:Key="RadiusM">6</CornerRadius>
+    <CornerRadius x:Key="RadiusL">8</CornerRadius>
+    <CornerRadius x:Key="RadiusPill">10</CornerRadius>
+    <CornerRadius x:Key="RadiusHero">40</CornerRadius>
+
+    <!-- Fontovi -->
+    <x:Double x:Key="FontSizeCaption">12</x:Double>
+    <x:Double x:Key="FontSizeBody">14</x:Double>
+    <x:Double x:Key="FontSizeSubtitle">16</x:Double>
+    <x:Double x:Key="FontSizeTitle">20</x:Double>
+    <x:Double x:Key="FontSizeDisplay">24</x:Double>
+    <FontFamily x:Key="MonospaceFontFamily">Cascadia Mono, Consolas, Menlo, monospace</FontFamily>
+
+    <!-- Veličine ikonica -->
+    <x:Double x:Key="IconSizeS">14</x:Double>
+    <x:Double x:Key="IconSizeM">16</x:Double>
+    <x:Double x:Key="IconSizeL">20</x:Double>
+    <x:Double x:Key="IconSizeXl">32</x:Double>
+    <x:Double x:Key="IconSizeHero">40</x:Double>
+    <x:Double x:Key="HeroFrameSize">80</x:Double>
+
+    <!-- Veličine elemenata -->
+    <x:Double x:Key="ControlHeight">32</x:Double>
+    <x:Double x:Key="TabHeaderHeight">44</x:Double>
+    <x:Double x:Key="FieldWidth">220</x:Double>
+    <x:Double x:Key="NumericFieldWidth">160</x:Double>
+    <x:Double x:Key="ContentMaxWidth">760</x:Double>
+    <x:Double x:Key="EmptyStateMaxWidth">460</x:Double>
+    <x:Double x:Key="RecentMenuMaxWidth">520</x:Double>
+    <x:Double x:Key="DiffPanelHeight">280</x:Double>
+    <x:Double x:Key="ListMinHeight">72</x:Double>
+    <x:Double x:Key="ListMaxHeight">320</x:Double>
+    <x:Double x:Key="DetailsMaxHeight">200</x:Double>
+    <x:Double x:Key="OptionsMaxHeight">220</x:Double>
+    <x:Double x:Key="BusyBarWidth">120</x:Double>
+    <x:Double x:Key="BusyBarHeight">4</x:Double>
+    <GridLength x:Key="SettingsNavWidth">184</GridLength>
+
+    <!-- Veličine prozora -->
+    <x:Double x:Key="MainWindowWidth">1200</x:Double>
+    <x:Double x:Key="MainWindowHeight">780</x:Double>
+    <x:Double x:Key="MainWindowMinWidth">960</x:Double>
+    <x:Double x:Key="MainWindowMinHeight">640</x:Double>
+    <x:Double x:Key="SettingsWindowWidth">940</x:Double>
+    <x:Double x:Key="SettingsWindowHeight">640</x:Double>
+    <x:Double x:Key="SettingsWindowMinWidth">760</x:Double>
+    <x:Double x:Key="SettingsWindowMinHeight">520</x:Double>
+    <x:Double x:Key="DialogMinWidth">400</x:Double>
+    <x:Double x:Key="DialogWidth">480</x:Double>
+    <x:Double x:Key="DialogMaxWidth">560</x:Double>
+
+</ResourceDictionary>

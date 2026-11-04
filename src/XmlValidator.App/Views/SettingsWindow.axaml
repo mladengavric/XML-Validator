@@ -1,0 +1,383 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:XmlValidator.App.ViewModels"
+        xmlns:ui="using:XmlValidator.App.Controls"
+        x:Class="XmlValidator.App.Views.SettingsWindow"
+        x:DataType="vm:SettingsViewModel"
+        Title="{Binding Title}"
+        Icon="/Assets/app.ico"
+        Width="{StaticResource SettingsWindowWidth}"
+        Height="{StaticResource SettingsWindowHeight}"
+        MinWidth="{StaticResource SettingsWindowMinWidth}"
+        MinHeight="{StaticResource SettingsWindowMinHeight}"
+        WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False"
+        CanResize="True">
+
+    <Grid RowDefinitions="*,Auto">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="{StaticResource SettingsNavWidth}" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <!-- ===== Navigacija ===== -->
+        <Border Grid.RowSpan="2" Background="{DynamicResource SurfaceAltBrush}"
+                BorderBrush="{DynamicResource DividerBrush}" BorderThickness="{StaticResource DividerRight}">
+            <DockPanel>
+                <TextBlock DockPanel.Dock="Top" Classes="subtitle" Text="Podešavanja"
+                           Margin="{StaticResource ThicknessL}" />
+                <ListBox x:Name="NavList" Classes="nav" SelectedIndex="{Binding SelectedPageIndex}"
+                         AutomationProperties.Name="Stranice podešavanja">
+                    <ListBoxItem AutomationProperties.Name="Opšte">
+                        <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceM}">
+                            <PathIcon Classes="muted" Data="{StaticResource IconSettings}" />
+                            <TextBlock Text="Opšte" />
+                        </StackPanel>
+                    </ListBoxItem>
+                    <ListBoxItem AutomationProperties.Name="Šeme">
+                        <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceM}">
+                            <PathIcon Classes="muted" Data="{StaticResource IconSchema}" />
+                            <TextBlock Text="Šeme" />
+                        </StackPanel>
+                    </ListBoxItem>
+                </ListBox>
+            </DockPanel>
+        </Border>
+
+        <!-- ===== Stranica „Opšte” ===== -->
+        <ScrollViewer Grid.Column="1" IsVisible="{Binding IsGeneralPage}">
+            <StackPanel x:Name="GeneralPage" DataContext="{Binding General}" x:DataType="vm:GeneralSettingsViewModel"
+                        Margin="{StaticResource PagePadding}" MaxWidth="{StaticResource ContentMaxWidth}"
+                        HorizontalAlignment="Stretch" Spacing="{StaticResource SpaceXs}">
+                <TextBlock Classes="title" Text="Opšte" />
+                <TextBlock Classes="muted wrap" Text="Izgled programa i podrazumijevana podešavanja čišćenja faktura." />
+
+                <!-- Problem pri čuvanju -->
+                <Border Classes="banner warning" Margin="{StaticResource StackGapM}"
+                        IsVisible="{Binding SaveProblem, Converter={x:Static ObjectConverters.IsNotNull}}">
+                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="{StaticResource SpaceM}">
+                        <PathIcon Classes="status warning" VerticalAlignment="Top" />
+                        <SelectableTextBlock Grid.Column="1" Classes="wrap" Text="{Binding SaveProblem}" />
+                    </Grid>
+                </Border>
+
+                <!-- Izgled -->
+                <TextBlock Classes="subtitle" Text="Izgled" Margin="{StaticResource SectionGap}" />
+                <Border Classes="settingRow" Margin="{StaticResource StackGapS}">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="{StaticResource SpaceL}">
+                        <StackPanel VerticalAlignment="Center" Spacing="{StaticResource SpaceXs}">
+                            <TextBlock Classes="strong" Text="Tema" />
+                            <TextBlock Classes="muted caption wrap" Text="Svijetla, tamna ili prema podešavanju sistema." />
+                        </StackPanel>
+                        <ComboBox x:Name="ThemeCombo" Grid.Column="1" Width="{StaticResource FieldWidth}"
+                                  VerticalAlignment="Center"
+                                  ItemsSource="{Binding ThemeOptions}" SelectedItem="{Binding SelectedTheme}"
+                                  AutomationProperties.Name="Tema" />
+                    </Grid>
+                </Border>
+
+                <!-- Čišćenje faktura -->
+                <TextBlock Classes="subtitle" Text="Čišćenje faktura (SHMP)" Margin="{StaticResource SectionGap}" />
+                <TextBlock Classes="muted caption wrap" Margin="{StaticResource LabelGap}"
+                           Text="Podrazumijevane vrijednosti za analizu; akcija se može promijeniti za svaku fakturu posebno." />
+
+                <Border Classes="settingRow" Margin="{StaticResource StackGapS}">
+                    <StackPanel Spacing="{StaticResource SpaceS}">
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="{StaticResource SpaceL}">
+                            <StackPanel VerticalAlignment="Center" Spacing="{StaticResource SpaceXs}">
+                                <TextBlock Classes="strong" Text="Ciljna grupa" />
+                                <TextBlock Classes="muted caption wrap"
+                                           Text="Fakture sa bar jednom stavkom iz ove grupe usluga (usluga-grupa) ostaju u fajlu." />
+                            </StackPanel>
+                            <NumericUpDown x:Name="TargetGroupInput" Grid.Column="1"
+                                           Width="{StaticResource NumericFieldWidth}" VerticalAlignment="Center"
+                                           Minimum="0" Maximum="65535" Increment="1" FormatString="0"
+                                           Value="{Binding TargetGroup}"
+                                           AutomationProperties.Name="Ciljna grupa" />
+                        </Grid>
+                        <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}"
+                                    IsVisible="{Binding HasTargetGroupError}">
+                            <PathIcon Classes="status error small" VerticalAlignment="Center" />
+                            <TextBlock Text="{Binding TargetGroupError}" VerticalAlignment="Center"
+                                       Foreground="{DynamicResource ErrorForegroundBrush}" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <Border Classes="settingRow">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="{StaticResource SpaceL}">
+                        <StackPanel VerticalAlignment="Center" Spacing="{StaticResource SpaceXs}">
+                            <TextBlock Classes="strong" Text="Prazna faktura" />
+                            <TextBlock Classes="muted caption wrap"
+                                       Text="Faktura bez ijedne stavke (prazna ili polomljena)." />
+                        </StackPanel>
+                        <ComboBox x:Name="EmptyInvoiceCombo" Grid.Column="1" Width="{StaticResource FieldWidth}"
+                                  VerticalAlignment="Center"
+                                  ItemsSource="{Binding ActionOptions}" SelectedItem="{Binding EmptyInvoiceAction}"
+                                  AutomationProperties.Name="Akcija za praznu fakturu" />
+                    </Grid>
+                </Border>
+
+                <Border Classes="settingRow">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="{StaticResource SpaceL}">
+                        <StackPanel VerticalAlignment="Center" Spacing="{StaticResource SpaceXs}">
+                            <TextBlock Classes="strong" Text="Bez ciljne grupe i bez podudaranja JMB-a" />
+                            <TextBlock Classes="muted caption wrap"
+                                       Text="Faktura bez ciljne grupe čiji JMB nema nijednu fakturu sa ciljnom grupom (i faktura bez JMB-a)." />
+                        </StackPanel>
+                        <ComboBox x:Name="NoGroupCombo" Grid.Column="1" Width="{StaticResource FieldWidth}"
+                                  VerticalAlignment="Center"
+                                  ItemsSource="{Binding ActionOptions}" SelectedItem="{Binding NoGroupNoJmbMatchAction}"
+                                  AutomationProperties.Name="Akcija za fakturu bez ciljne grupe i bez podudaranja JMB-a" />
+                    </Grid>
+                </Border>
+
+                <Border Classes="settingRow">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="{StaticResource SpaceL}">
+                        <StackPanel VerticalAlignment="Center" Spacing="{StaticResource SpaceXs}">
+                            <TextBlock Classes="strong" Text="Automatske popravke zagrada" />
+                            <TextBlock Classes="muted caption wrap"
+                                       Text="Popravlja oznake faktura kojima nedostaje „&lt;” ili „&gt;”. Svaka popravka se navodi u izvještaju." />
+                        </StackPanel>
+                        <CheckBox x:Name="RepairBracketsCheck" Grid.Column="1" VerticalAlignment="Center"
+                                  IsChecked="{Binding RepairBrackets}" Content="Uključene"
+                                  AutomationProperties.Name="Automatske popravke zagrada" />
+                    </Grid>
+                </Border>
+
+                <Button x:Name="ResetDefaultsButton" Margin="{StaticResource StackGapS}"
+                        Command="{Binding ResetCleaningDefaultsCommand}"
+                        ToolTip.Tip="Ciljna grupa 100, akcije „Obriši”, popravke uključene (kao skripta clean.py)">
+                    <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
+                        <PathIcon Data="{StaticResource IconReset}" />
+                        <TextBlock Text="Vrati podrazumijevano" />
+                    </StackPanel>
+                </Button>
+
+                <!-- Podaci programa -->
+                <TextBlock Classes="subtitle" Text="Podaci programa" Margin="{StaticResource SectionGap}" />
+                <Border Classes="settingRow" Margin="{StaticResource StackGapS}">
+                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="{StaticResource SpaceM}">
+                        <PathIcon Classes="muted" Data="{StaticResource IconFolder}" VerticalAlignment="Top" />
+                        <StackPanel Grid.Column="1" Spacing="{StaticResource SpaceXs}">
+                            <TextBlock Classes="strong" Text="Folder sa podešavanjima, šemama i logom" />
+                            <SelectableTextBlock x:Name="DataFolderText" Classes="mono muted wrap" Text="{Binding DataFolder}" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- ===== Stranica „Šeme” ===== -->
+        <Panel Grid.Column="1" IsVisible="{Binding IsSchemasPage}">
+            <Grid x:Name="SchemasPage"
+                  DataContext="{Binding Schemas}" x:DataType="vm:SchemasSettingsViewModel"
+                  DragDrop.AllowDrop="True" Background="Transparent">
+                <!-- Stranica se skroluje kao cjelina: lista šema je kratka, a poruka i razlike je ne smiju istisnuti. -->
+                <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+                <Grid Margin="{StaticResource PagePadding}" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto"
+                      RowSpacing="{StaticResource SpaceM}">
+
+                    <!-- Naslov i uvoz -->
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="{StaticResource SpaceL}">
+                        <StackPanel Spacing="{StaticResource SpaceXs}">
+                            <TextBlock Classes="title" Text="Šeme" />
+                            <TextBlock Classes="muted wrap"
+                                       Text="XSD šema po kojoj se provjeravaju fakture. Ugrađena šema je uvijek dostupna kao rezerva." />
+                        </StackPanel>
+                        <Button x:Name="ImportButton" Grid.Column="1" Classes="primary" VerticalAlignment="Top"
+                                Command="{Binding ImportCommand}"
+                                ToolTip.Tip="Uvoz .xsd fajla ili .zip paketa sa sajta FZO">
+                            <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
+                                <PathIcon Data="{StaticResource IconImport}" />
+                                <TextBlock Text="Uvezi šemu…" />
+                            </StackPanel>
+                        </Button>
+                    </Grid>
+
+                    <!-- Upozorenje: koristi se ugrađena šema -->
+                    <Border Grid.Row="1" Classes="banner warning" IsVisible="{Binding HasFallbackWarning}">
+                        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="{StaticResource SpaceM}">
+                            <PathIcon Classes="status warning" VerticalAlignment="Top" />
+                            <SelectableTextBlock Grid.Column="1" Classes="wrap" Text="{Binding FallbackWarning}" />
+                        </Grid>
+                    </Border>
+
+                    <!-- Poruka (ishod uvoza, greška...) -->
+                    <Border x:Name="MessageBanner" Grid.Row="2" Classes="banner" IsVisible="{Binding HasMessage}"
+                            ui:SeverityStyle.Severity="{Binding Message.Severity}">
+                        <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="{StaticResource SpaceM}">
+                            <PathIcon Classes="status" ui:SeverityStyle.Severity="{Binding Message.Severity}"
+                                      VerticalAlignment="Top" />
+                            <StackPanel Grid.Column="1" Spacing="{StaticResource SpaceXs}">
+                                <SelectableTextBlock Classes="wrap strong" Text="{Binding Message.Text}" />
+                                <ScrollViewer MaxHeight="{StaticResource DetailsMaxHeight}" IsVisible="{Binding Message.HasDetails}">
+                                    <ItemsControl ItemsSource="{Binding Message.Details}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate x:DataType="x:String">
+                                                <SelectableTextBlock Classes="caption wrap" Text="{Binding}" />
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </ScrollViewer>
+                            </StackPanel>
+                            <Button Grid.Column="2" Classes="icon" VerticalAlignment="Top"
+                                    Command="{Binding DismissMessageCommand}"
+                                    ToolTip.Tip="Zatvori poruku" AutomationProperties.Name="Zatvori poruku">
+                                <PathIcon Classes="small" Data="{StaticResource IconClose}" />
+                            </Button>
+                        </Grid>
+                    </Border>
+
+                    <!-- Akcije nad izabranom šemom -->
+                    <Grid Grid.Row="3" ColumnDefinitions="*,Auto" ColumnSpacing="{StaticResource SpaceM}">
+                        <WrapPanel ItemSpacing="{StaticResource SpaceS}" LineSpacing="{StaticResource SpaceS}">
+                            <Button x:Name="SetActiveButton" Command="{Binding SetActiveCommand}"
+                                    ToolTip.Tip="Validacija i provjera rezultata čišćenja koriste aktivnu šemu">
+                                <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
+                                    <PathIcon Classes="small" Data="{StaticResource IconActivate}" />
+                                    <TextBlock Text="Postavi kao aktivnu" />
+                                </StackPanel>
+                            </Button>
+                            <Button x:Name="ShowDiffButton" Command="{Binding ShowDiffCommand}"
+                                    ToolTip.Tip="Prikaži razlike prema aktivnoj šemi: dodati i uklonjeni elementi, atributi i ograničenja">
+                                <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
+                                    <PathIcon Classes="small" Data="{StaticResource IconCompare}" />
+                                    <TextBlock Text="Razlike prema aktivnoj" />
+                                </StackPanel>
+                            </Button>
+                            <Button x:Name="RenameButton" Command="{Binding RenameCommand}"
+                                    ToolTip.Tip="Naziv šeme se upisuje u izvještaje">
+                                <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
+                                    <PathIcon Classes="small" Data="{StaticResource IconRename}" />
+                                    <TextBlock Text="Preimenuj…" />
+                                </StackPanel>
+                            </Button>
+                            <Button x:Name="DeleteButton" Classes="danger" Command="{Binding DeleteCommand}"
+                                    ToolTip.Tip="Briše šemu iz programa (uz potvrdu). Ugrađena šema se ne može obrisati.">
+                                <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
+                                    <PathIcon Classes="small" Data="{StaticResource IconDelete}" />
+                                    <TextBlock Text="Obriši…" />
+                                </StackPanel>
+                            </Button>
+                        </WrapPanel>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="{StaticResource SpaceS}"
+                                    IsVisible="{Binding IsBusy}" VerticalAlignment="Center">
+                            <ProgressBar Classes="busy" AutomationProperties.Name="Rad u toku" />
+                            <TextBlock Classes="muted" Text="{Binding BusyText}" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Lista šema -->
+                    <ListBox x:Name="SchemaList" Grid.Row="4" Classes="list"
+                             MinHeight="{StaticResource ListMinHeight}" MaxHeight="{StaticResource ListMaxHeight}"
+                             ItemsSource="{Binding Schemas}" SelectedItem="{Binding SelectedSchema}"
+                             AutomationProperties.Name="Šeme">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate x:DataType="vm:SchemaItemViewModel">
+                                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="{StaticResource SpaceM}"
+                                      AutomationProperties.Name="{Binding Name}"
+                                      AutomationProperties.HelpText="{Binding StatusText}">
+                                    <PathIcon Classes="large muted" Data="{StaticResource IconSchema}" VerticalAlignment="Top" />
+                                    <StackPanel Grid.Column="1" Spacing="{StaticResource SpaceXs}">
+                                        <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
+                                            <TextBlock Classes="strong" Text="{Binding Name}" TextTrimming="CharacterEllipsis"
+                                                       VerticalAlignment="Center" />
+                                            <Border Classes="badge accent" IsVisible="{Binding IsActive}">
+                                                <TextBlock Text="Aktivna" />
+                                            </Border>
+                                            <Border Classes="badge" IsVisible="{Binding IsBuiltIn}">
+                                                <TextBlock Text="Ugrađena" />
+                                            </Border>
+                                            <Border Classes="badge warning" IsVisible="{Binding HasProblem}"
+                                                    ToolTip.Tip="{Binding Problem}">
+                                                <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceXs}">
+                                                    <PathIcon Classes="status warning small" />
+                                                    <TextBlock Text="Ne može da se koristi" />
+                                                </StackPanel>
+                                            </Border>
+                                        </StackPanel>
+                                        <TextBlock Classes="caption muted" TextTrimming="CharacterEllipsis">
+                                            <Run Text="Verzija: " /><Run Text="{Binding VersionText}" />
+                                            <Run Text="  ·  Uvezena: " /><Run Text="{Binding ImportedAtText}" />
+                                            <Run Text="  ·  Izvor: " /><Run Text="{Binding SourceText}" />
+                                        </TextBlock>
+                                    </StackPanel>
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+
+                    <!-- Nagovještaj prevlačenja -->
+                    <Grid Grid.Row="5" ColumnDefinitions="Auto,*" ColumnSpacing="{StaticResource SpaceS}">
+                        <PathIcon Classes="small muted" Data="{StaticResource IconImport}" VerticalAlignment="Top" />
+                        <TextBlock Grid.Column="1" Classes="caption muted wrap" Text="{Binding ImportHint}" />
+                    </Grid>
+
+                    <!-- Razlike prema aktivnoj šemi -->
+                    <Border x:Name="DiffPanel" Grid.Row="6" Classes="card" IsVisible="{Binding HasDiff}"
+                            Padding="{StaticResource ThicknessL}">
+                        <DockPanel>
+                            <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="{StaticResource SpaceM}">
+                                <PathIcon Classes="accent" Data="{StaticResource IconCompare}" VerticalAlignment="Top" />
+                                <StackPanel Grid.Column="1" Spacing="{StaticResource SpaceXs}">
+                                    <SelectableTextBlock Classes="strong wrap" Text="{Binding DiffTitle}" />
+                                    <TextBlock Classes="muted caption wrap" Text="{Binding DiffSummary}" />
+                                </StackPanel>
+                                <Button Grid.Column="2" Classes="icon" VerticalAlignment="Top"
+                                        Command="{Binding CloseDiffCommand}"
+                                        ToolTip.Tip="Zatvori prikaz razlika" AutomationProperties.Name="Zatvori prikaz razlika">
+                                    <PathIcon Classes="small" Data="{StaticResource IconClose}" />
+                                </Button>
+                            </Grid>
+                            <ScrollViewer Margin="{StaticResource StackGapS}" MaxHeight="{StaticResource DiffPanelHeight}"
+                                          HorizontalScrollBarVisibility="Disabled">
+                                <ItemsControl ItemsSource="{Binding DiffSections}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="vm:SchemaDiffSection">
+                                            <StackPanel Spacing="{StaticResource SpaceXs}" Margin="{StaticResource StackGapS}">
+                                                <TextBlock Classes="caption strong">
+                                                    <Run Text="{Binding Title}" /><Run Text=" (" /><Run Text="{Binding Count}" /><Run Text=")" />
+                                                </TextBlock>
+                                                <ItemsControl ItemsSource="{Binding Items}">
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate x:DataType="x:String">
+                                                            <SelectableTextBlock Classes="mono caption wrap" Text="{Binding}" />
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                        </DockPanel>
+                    </Border>
+                </Grid>
+                </ScrollViewer>
+
+                <!-- Nagovještaj tokom prevlačenja -->
+                <Border x:Name="SchemaDropOverlay" Classes="dropOverlay" IsVisible="False" IsHitTestVisible="False">
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="{StaticResource SpaceM}">
+                        <Border Classes="heroIcon">
+                            <PathIcon Data="{StaticResource IconImport}" />
+                        </Border>
+                        <TextBlock Classes="title" Text="Pustite fajl da uvezete šemu" HorizontalAlignment="Center" />
+                        <TextBlock Classes="muted" Text="Prihvataju se .xsd fajl i .zip paket." HorizontalAlignment="Center" />
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Panel>
+
+        <!-- ===== Podnožje ===== -->
+        <Border Grid.Row="1" Grid.Column="1" Classes="footer">
+            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="{StaticResource SpaceS}">
+                <PathIcon Classes="small muted" Data="{StaticResource IconSuccess}" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="1" Classes="muted caption" VerticalAlignment="Center"
+                           Text="Izmjene se čuvaju odmah." />
+                <Button x:Name="CloseButton" Grid.Column="2" Content="Zatvori" IsCancel="True"
+                        Click="OnCloseClick" ToolTip.Tip="Zatvori podešavanja (Esc)" />
+            </Grid>
+        </Border>
+    </Grid>
+</Window>
