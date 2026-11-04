@@ -73,6 +73,9 @@ public sealed partial class SchemasSettingsViewModel : ViewModelBase, IDisposabl
     private readonly ISettingsService _settings;
     private readonly IUiDispatcher _ui;
     private readonly IAppLog _log;
+    private readonly SchemaDownloader _downloader;
+    private readonly AppPaths _paths;
+    private CancellationTokenSource? _downloadCancellation;
     private int _loadGeneration;
 
     public SchemasSettingsViewModel(
@@ -81,8 +84,14 @@ public sealed partial class SchemasSettingsViewModel : ViewModelBase, IDisposabl
         IDialogService dialogs,
         ISettingsService settings,
         IUiDispatcher ui,
-        IAppLog log)
+        IAppLog log,
+        SchemaDownloader downloader,
+        AppPaths paths)
     {
+        ArgumentNullException.ThrowIfNull(downloader);
+        ArgumentNullException.ThrowIfNull(paths);
+        _downloader = downloader;
+        _paths = paths;
         ArgumentNullException.ThrowIfNull(store);
         ArgumentNullException.ThrowIfNull(schemas);
         ArgumentNullException.ThrowIfNull(dialogs);
@@ -105,11 +114,23 @@ public sealed partial class SchemasSettingsViewModel : ViewModelBase, IDisposabl
     public partial SchemaItemViewModel? SelectedSchema { get; set; }
 
     [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(ImportCommand), nameof(SetActiveCommand), nameof(DeleteCommand), nameof(RenameCommand), nameof(ShowDiffCommand))]
+    [NotifyCanExecuteChangedFor(nameof(ImportCommand), nameof(ImportFromUrlCommand), nameof(SetActiveCommand), nameof(DeleteCommand), nameof(RenameCommand), nameof(ShowDiffCommand))]
     public partial bool IsBusy { get; private set; }
 
     [ObservableProperty]
     public partial string BusyText { get; private set; } = string.Empty;
+
+    /// <summary>Preuzimanje sa linka je u toku (može se prekinuti).</summary>
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(CancelDownloadCommand))]
+    public partial bool IsDownloading { get; private set; }
+
+    /// <summary>Napredak preuzimanja od 0 do 100; <c>null</c> kad server ne javi veličinu.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsDownloadProgressKnown))]
+    public partial double? DownloadPercent { get; private set; }
+
+    public bool IsDownloadProgressKnown => DownloadPercent is not null;
 
     /// <summary>Poruka na vrhu stranice (ishod uvoza, greška, upozorenje o aktivnoj šemi).</summary>
     [ObservableProperty]
@@ -139,7 +160,91 @@ public sealed partial class SchemasSettingsViewModel : ViewModelBase, IDisposabl
     public ObservableCollection<SchemaDiffSection> DiffSections { get; } = [];
 
     /// <summary>Tekst za prazno stanje liste (samo ugrađena šema).</summary>
-    public string ImportHint => "Prevucite .xsd ili .zip fajl ovdje, ili kliknite „Uvezi šemu…”. ZIP paket se preuzima ručno sa sajta FZO.";
+    public string ImportHint => "Prevucite .xsd ili .zip fajl ovdje, kliknite „Uvezi šemu…”, ili nalijepite link ZIP paketa sa sajta FZO preko „Uvezi sa linka…”.";
+
+    /// <summary>
+    /// Uvoz šeme sa linka: preuzima <c>.zip</c> ili <c>.xsd</c> (samo <c>https</c>, ograničena veličina) u privremeni
+    /// folder i pokreće isti uvoz kao za fajl. Pri uvozu se dalje ništa ne preuzima sa mreže.
+    /// </summary>
+    public async Task ImportFromUrlAsync(string url)
+    {
+        ArgumentNullException.ThrowIfNull(url);
+        if (IsBusy)
+        {
+            return;
+        }
+
+        var problem = SchemaDownloader.ValidateUrl(url, out var uri);
+        if (problem is not null || uri is null)
+        {
+            Message = UserMessage.Error("Šema nije preuzeta.", [problem ?? "Adresa nije ispravna."]);
+            return;
+        }
+
+        Message = null;
+        _settings.Update(s => s with { LastSchemaUrl = uri.AbsoluteUri });
+        var folder = Path.Combine(_paths.DownloadsFolder, Guid.NewGuid().ToString("N"));
+        using var cancellation = new CancellationTokenSource();
+        _downloadCancellation = cancellation;
+        SetBusy($"Preuzimam šemu sa „{uri.Host}”…");
+        IsDownloading = true;
+        DownloadPercent = null;
+        try
+        {
+            Directory.CreateDirectory(folder);
+            var progress = new Progress<SchemaDownloadProgress>(p => _ui.Post(() =>
+            {
+                if (IsDownloading)
+                {
+                    DownloadPercent = p.Total is > 0 ? Math.Min(100, 100.0 * p.Received / p.Total.Value) : null;
+                }
+            }));
+            var download = await _downloader.DownloadAsync(uri.AbsoluteUri, folder, progress, cancellation.Token);
+            _downloadCancellation = null;
+            IsDownloading = false;
+            DownloadPercent = null;
+            BusyText = $"Uvozim „{download.FileName}”…";
+
+            var result = await _store.ImportAsync(download.FilePath);
+            if (result.Status == SchemaImportStatus.NeedsMainSchemaSelection)
+            {
+                ClearBusy();
+                var choice = await _dialogs.ChooseAsync("Izbor glavne šeme", result.Message, result.MainSchemaCandidates, "Uvezi");
+                if (choice is null)
+                {
+                    Message = UserMessage.Info("Uvoz je otkazan.");
+                    return;
+                }
+
+                SetBusy($"Uvozim „{download.FileName}”…");
+                result = await _store.ImportAsync(download.FilePath, new SchemaImportOptions(MainSchemaFile: choice));
+            }
+
+            await HandleImportResultAsync(result);
+        }
+        catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
+        {
+            Message = UserMessage.Info("Preuzimanje je prekinuto. Ništa nije uvezeno.");
+        }
+        catch (SchemaDownloadException ex)
+        {
+            _log.Warning("Šema ne može da se preuzme sa linka.", ex);
+            Message = UserMessage.Error($"Šema nije preuzeta sa „{uri.Host}”.", [ex.Message]);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            _log.Warning("Preuzeta šema ne može da se sačuva.", ex);
+            Message = UserMessage.Error("Preuzeta šema ne može da se sačuva u privremeni folder.", [ex.Message]);
+        }
+        finally
+        {
+            _downloadCancellation = null;
+            IsDownloading = false;
+            DownloadPercent = null;
+            ClearBusy();
+            DeleteDownloadFolder(folder);
+        }
+    }
 
     /// <summary>Učitava listu šema i stanje aktivne (bez blokiranja UI niti).</summary>
     public async Task LoadAsync(string? selectId = null)
@@ -231,6 +336,26 @@ public sealed partial class SchemasSettingsViewModel : ViewModelBase, IDisposabl
             await ImportFromPathAsync(path);
         }
     }
+
+    /// <summary>„Uvezi sa linka…”: korisnik nalijepi adresu ZIP paketa sa sajta FZO.</summary>
+    [RelayCommand(CanExecute = nameof(CanImport))]
+    private async Task ImportFromUrlAsync()
+    {
+        var url = await _dialogs.PromptTextAsync(
+            "Uvezi šemu sa linka",
+            "Nalijepite link (adresu) ZIP paketa šema sa sajta FZO. Dozvoljene su samo adrese koje počinju sa https://.",
+            _settings.Current.LastSchemaUrl ?? "https://",
+            "Preuzmi i uvezi");
+        if (!string.IsNullOrWhiteSpace(url))
+        {
+            await ImportFromUrlAsync(url);
+        }
+    }
+
+    private bool CanCancelDownload() => IsDownloading;
+
+    [RelayCommand(CanExecute = nameof(CanCancelDownload))]
+    private void CancelDownload() => _downloadCancellation?.Cancel();
 
     private bool CanSetActive() => !IsBusy && SelectedSchema is { IsActive: false };
 
@@ -445,6 +570,22 @@ public sealed partial class SchemasSettingsViewModel : ViewModelBase, IDisposabl
     {
         IsBusy = false;
         BusyText = string.Empty;
+    }
+
+    private void DeleteDownloadFolder(string folder)
+    {
+        // Briše se samo podfolder koji je napravilo ovo preuzimanje.
+        try
+        {
+            if (Directory.Exists(folder))
+            {
+                Directory.Delete(folder, recursive: true);
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            _log.Warning("Privremeni folder preuzete šeme ne može da se obriše.", ex);
+        }
     }
 
     private void OnStoreChanged(object? sender, EventArgs e) => _ui.Post(() =>

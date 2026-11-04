@@ -12,8 +12,12 @@
              x:Class="XmlValidator.App.Views.CleaningTabView"
              x:DataType="vm:CleaningTabViewModel">
 
+    <!-- Prečice taba (važe i kad je fokus van taba, vidi MainWindow); F5 je u MainWindow.axaml.cs,
+         Ctrl+F u CleaningTabView.axaml.cs, Delete samo u tabeli faktura, Ctrl+Enter/Esc samo u editoru bloka. -->
     <UserControl.KeyBindings>
         <KeyBinding Gesture="Ctrl+S" Command="{Binding SaveOutputCommand}" />
+        <KeyBinding Gesture="Ctrl+D" Command="{Binding PreviewChangesCommand}" />
+        <KeyBinding Gesture="Ctrl+R" Command="{Binding SaveReportCommand}" />
     </UserControl.KeyBindings>
 
     <!-- Redoslijed u XAML-u prati redoslijed na ekranu (i redoslijed fokusa tasterom Tab). -->
@@ -359,7 +363,7 @@
                                                ToolTip.Tip="Ctrl ili Shift + klik bira više faktura; grupna akcija važi samo za kandidate" />
                                     <Button x:Name="DeleteSelectedButton" Classes="toolbar compact"
                                             Command="{Binding DeleteSelectedCommand}"
-                                            ToolTip.Tip="Postavi akciju Obriši za izabrane kandidate (briše se samo iz očišćenog fajla)">
+                                            ToolTip.Tip="Postavi akciju Obriši za izabrane kandidate; briše se samo iz očišćenog fajla (Delete u tabeli)">
                                         <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceXs}">
                                             <PathIcon Classes="small" Data="{StaticResource IconDelete}" />
                                             <TextBlock Text="Obriši" />
@@ -391,6 +395,10 @@
                                       SelectedItem="{Binding SelectedRow}"
                                       IsVisible="{Binding !!Rows.Count}"
                                       AutomationProperties.Name="Tabela faktura">
+                                <!-- Delete samo dok je fokus u tabeli (u poljima za tekst i editoru briše tekst). -->
+                                <DataGrid.KeyBindings>
+                                    <KeyBinding Gesture="Delete" Command="{Binding DeleteSelectedCommand}" />
+                                </DataGrid.KeyBindings>
                                 <DataGrid.Columns>
                                     <DataGridTemplateColumn Header="Status" Width="{StaticResource InvoiceStatusColumnWidth}"
                                                             MinWidth="{StaticResource InvoiceStatusColumnMinWidth}">
@@ -727,26 +735,34 @@
                 </Panel>
 
                 <!-- Opcije -->
-                <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="{StaticResource SpaceXl}" VerticalAlignment="Center">
+                <!-- Opcije se prelamaju u dva reda kad je prozor uzak (dugmad za čuvanje ostaju cijela). -->
+                <WrapPanel Grid.Row="1" ItemSpacing="{StaticResource SpaceXl}" VerticalAlignment="Center">
                     <CheckBox x:Name="ValidateAfterSaveCheck" Classes="compact" IsChecked="{Binding ValidateAfterSave}"
                               Content="Nakon čuvanja validiraj rezultat"
                               ToolTip.Tip="Sačuvan očišćen fajl se otvara u tabu „Validacija”" />
                     <CheckBox x:Name="MaskJmbCheck" Classes="compact" IsChecked="{Binding MaskJmb}"
                               Content="Maskiraj JMB u izvještaju"
                               ToolTip.Tip="U sačuvanom izvještaju JMB ima samo prvih 7 cifara (npr. 0101990******)" />
-                </StackPanel>
+                </WrapPanel>
 
                 <!-- Čuvanje -->
                 <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
                     <Button x:Name="SaveReportButton" Command="{Binding SaveReportCommand}"
-                            ToolTip.Tip="Sačuvaj izvještaj o čišćenju u .txt ili .csv fajl">
+                            ToolTip.Tip="Sačuvaj izvještaj o čišćenju u .txt ili .csv fajl (Ctrl+R)">
                         <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
                             <PathIcon Data="{StaticResource IconReport}" />
                             <TextBlock Text="Sačuvaj izvještaj…" />
                         </StackPanel>
                     </Button>
+                    <Button x:Name="PreviewChangesButton" Command="{Binding PreviewChangesCommand}"
+                            ToolTip.Tip="Pregled blokova koji se brišu, ručno mijenjaju ili automatski popravljaju, uz provjeru prema šemi; ništa se ne čuva (Ctrl+D)">
+                        <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
+                            <PathIcon Data="{StaticResource IconCompare}" />
+                            <TextBlock Text="Pregled izmjena…" />
+                        </StackPanel>
+                    </Button>
                     <Button x:Name="SaveOutputButton" Classes="primary" Command="{Binding SaveOutputCommand}"
-                            ToolTip.Tip="Sačuvaj očišćen fajl u novi fajl (Ctrl+S). Ulazni fajl se nikad ne mijenja.">
+                            ToolTip.Tip="Pregled izmjena, pa čuvanje očišćenog fajla u novi fajl (Ctrl+S). Ulazni fajl se nikad ne mijenja.">
                         <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
                             <PathIcon Data="{StaticResource IconSave}" />
                             <TextBlock Text="Sačuvaj očišćeni fajl…" />

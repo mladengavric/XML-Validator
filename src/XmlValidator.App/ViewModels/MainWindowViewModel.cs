@@ -409,6 +409,26 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IDisposable
     [RelayCommand]
     private Task OpenSettingsAsync() => _dialogs.ShowSettingsAsync(SettingsPage.General);
 
+    /// <summary>„O programu” (F1): verzija, licence korišćenih paketa i prečice.</summary>
+    [RelayCommand]
+    private Task ShowAboutAsync() => _dialogs.ShowAboutAsync();
+
+    /// <summary>Izbor taba prečicom (Ctrl+1 / Ctrl+2); parametar je indeks taba kao tekst ili broj.</summary>
+    [RelayCommand]
+    private void SelectTab(object? index)
+    {
+        var value = index switch
+        {
+            int i => i,
+            string s when int.TryParse(s, System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var i) => i,
+            _ => -1,
+        };
+        if (value is 0 or 1)
+        {
+            SelectedTabIndex = value;
+        }
+    }
+
     [RelayCommand]
     private Task ManageSchemasAsync() => _dialogs.ShowSettingsAsync(SettingsPage.Schemas);
 

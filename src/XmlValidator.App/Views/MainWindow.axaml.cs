@@ -1,8 +1,10 @@
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using XmlValidator.App.ViewModels;
 
 namespace XmlValidator.App.Views;
@@ -29,6 +31,43 @@ public partial class MainWindow : Window
 
         // F5 radi glavnu akciju aktivnog taba (prečica važi i dok je fokus u editoru).
         AddHandler(KeyDownEvent, OnPreviewKeyDown, RoutingStrategies.Tunnel);
+
+        // Prečice aktivnog taba rade i kad je fokus van taba (traka, zaglavlje taba, statusna traka).
+        AddHandler(KeyDownEvent, OnActiveTabKeyDown, RoutingStrategies.Bubble);
+    }
+
+    /// <summary>Prikaz aktivnog taba (ako je fajl otvoren), za prečice tog taba.</summary>
+    internal Control? ActiveTabView => DataContext is MainWindowViewModel viewModel
+        ? viewModel.SelectedTabIndex switch
+        {
+            ValidationTabIndex => ValidationView,
+            CleaningTabIndex => CleaningView,
+            _ => null,
+        }
+        : null;
+
+    /// <summary>
+    /// Prečice taba (<c>KeyBindings</c> prikaza taba) važe dok je tab izabran, i kad je fokus van njega.
+    /// Ako je fokus u tabu, prikaz ih je već obradio pri prolasku događaja.
+    /// </summary>
+    private void OnActiveTabKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.Handled || ActiveTabView is not { IsEffectivelyVisible: true } view
+            || (e.Source is Visual source && (ReferenceEquals(source, view) || view.IsVisualAncestorOf(source))))
+        {
+            return;
+        }
+
+        foreach (var binding in view.KeyBindings)
+        {
+            if (binding.Gesture?.Matches(e) == true && binding.Command is { } command
+                && command.CanExecute(binding.CommandParameter))
+            {
+                e.Handled = true;
+                command.Execute(binding.CommandParameter);
+                return;
+            }
+        }
     }
 
     /// <summary>F5: u tabu „Validacija” validira, u tabu „Čišćenje faktura” ponovo analizira.</summary>

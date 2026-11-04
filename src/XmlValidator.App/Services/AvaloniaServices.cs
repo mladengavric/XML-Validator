@@ -131,6 +131,23 @@ public sealed class AvaloniaDialogService : IDialogService
         await ShowWindowAsync(window, viewModel.ActivateAsync(page, importSchemaPath));
     }
 
+    public async Task<bool> ShowChangesPreviewAsync(ChangesPreviewViewModel preview)
+    {
+        ArgumentNullException.ThrowIfNull(preview);
+        var window = new ChangesPreviewWindow { DataContext = preview };
+        preview.CloseRequested += (_, _) => window.Close();
+        await ShowWindowAsync(window, null);
+        return preview.Result == true;
+    }
+
+    public async Task ShowAboutAsync()
+    {
+        var viewModel = _services.GetRequiredService<AboutViewModel>();
+        var window = new AboutWindow { DataContext = viewModel };
+        viewModel.CloseRequested += (_, _) => window.Close();
+        await ShowWindowAsync(window, null);
+    }
+
     private async Task<bool> ShowDialogAsync(DialogViewModel viewModel)
     {
         var window = new DialogWindow { DataContext = viewModel };

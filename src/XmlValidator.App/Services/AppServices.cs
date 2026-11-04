@@ -30,6 +30,7 @@ public static class AppServices
         services.AddSingleton<IAppLog, FileAppLog>();
         services.AddSingleton<ISettingsService, SettingsService>();
         services.AddSingleton(_ => new SchemaStore(paths.SchemasFolder));
+        services.AddSingleton(_ => new SchemaDownloader());
         services.AddSingleton<StoreSchemaProvider>();
         services.AddSingleton<ISchemaProvider>(sp => sp.GetRequiredService<StoreSchemaProvider>());
         services.AddSingleton<XmlValidationService>();
@@ -42,6 +43,7 @@ public static class AppServices
         services.AddTransient<GeneralSettingsViewModel>();
         services.AddTransient<SchemasSettingsViewModel>();
         services.AddTransient<SettingsViewModel>();
+        services.AddTransient<AboutViewModel>();
         return services;
     }
 }

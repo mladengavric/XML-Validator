@@ -56,6 +56,15 @@ public interface IDialogService
 
     /// <summary>Otvara prozor „Podešavanja” na zadatoj stranici; opciono odmah uvozi šemu iz fajla.</summary>
     Task ShowSettingsAsync(SettingsPage page, string? importSchemaPath = null);
+
+    /// <summary>
+    /// Pregled izmjena (ulaz prema izlazu čišćenja). Za pregled prije čuvanja vraća <c>true</c> ako je
+    /// korisnik potvrdio čuvanje; pregled bez potvrde uvijek vraća <c>false</c>.
+    /// </summary>
+    Task<bool> ShowChangesPreviewAsync(ViewModels.ChangesPreviewViewModel preview);
+
+    /// <summary>Prozor „O programu” (verzija, licence, prečice).</summary>
+    Task ShowAboutAsync();
 }
 
 /// <summary>Primjena teme (svijetla, tamna, po sistemu).</summary>

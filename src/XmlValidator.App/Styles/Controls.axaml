@@ -21,6 +21,8 @@
             ListBox.notes (+ TextBlock.noteText), Border.pane.editing, Border.savebar (+ TextBlock.reason),
             CheckBox.compact, TextBox.search, TextBlock.errorText, ProgressBar.analysis, GridSplitter.paneColumns,
             Button.icon.small, Border.banner TextBlock.message, ui|FileLineNumberMargin
+    Faza 6: RadioButton.segment (uz Theme ToggleButton), Border.badge (+ info/success), Border.windowHeader,
+            Border.keyCap, Border.listRow, ProgressBar.download
 -->
 <Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -885,6 +887,106 @@
     </Style>
     <Style Selector="GridSplitter.paneColumns:pointerover, GridSplitter.paneColumns:focus-visible">
         <Setter Property="Background" Value="{DynamicResource AccentSubtleBrush}" />
+    </Style>
+
+    <!-- ========== Faza 6: pregled izmjena, „O programu”, preuzimanje šeme ========== -->
+
+    <!-- Segmentni izbor (filter): RadioButton sa izgledom preklopnog dugmeta (Theme u XAML-u je ToggleButton) -->
+    <Style Selector="RadioButton.segment">
+        <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}" />
+        <Setter Property="BorderThickness" Value="{DynamicResource DividerThickness}" />
+        <Setter Property="CornerRadius" Value="{DynamicResource RadiusPill}" />
+        <Setter Property="Padding" Value="{DynamicResource SegmentPadding}" />
+        <Setter Property="MinHeight" Value="{DynamicResource ControlHeightCompact}" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="RadioButton.segment:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource SurfaceHoverBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+    </Style>
+    <Style Selector="RadioButton.segment:pressed /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource SurfacePressedBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+    </Style>
+    <Style Selector="RadioButton.segment:checked /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource AccentSubtleBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource AccentTextBrush}" />
+    </Style>
+    <Style Selector="RadioButton.segment:checked:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource AccentSubtleBorderBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource AccentTextBrush}" />
+    </Style>
+    <Style Selector="RadioButton.segment:checked TextBlock">
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="RadioButton.segment:disabled /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource SurfaceAltBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DividerBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource TextDisabledBrush}" />
+    </Style>
+
+    <!-- Oznaka vrste izmjene / ozbiljnosti u ćeliji: ikonica + tekst u boji statusa -->
+    <Style Selector="Border.badge.info">
+        <Setter Property="Background" Value="{DynamicResource InfoBackgroundBrush}" />
+    </Style>
+    <Style Selector="Border.badge.info TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource InfoForegroundBrush}" />
+    </Style>
+    <Style Selector="Border.badge.success">
+        <Setter Property="Background" Value="{DynamicResource SuccessBackgroundBrush}" />
+    </Style>
+    <Style Selector="Border.badge.success TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource SuccessForegroundBrush}" />
+    </Style>
+
+    <!-- Zaglavlje prozora (naslov, opis) i tijelo sa bočnim razmakom -->
+    <Style Selector="Border.windowHeader">
+        <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DividerBrush}" />
+        <Setter Property="BorderThickness" Value="{DynamicResource DividerBottom}" />
+        <Setter Property="Padding" Value="{DynamicResource HeaderPadding}" />
+    </Style>
+
+    <!-- Taster na tastaturi (prečice u „O programu”) -->
+    <Style Selector="Border.keyCap">
+        <Setter Property="Background" Value="{DynamicResource SurfaceAltBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}" />
+        <Setter Property="BorderThickness" Value="{DynamicResource DividerThickness}" />
+        <Setter Property="CornerRadius" Value="{DynamicResource RadiusS}" />
+        <Setter Property="Padding" Value="{DynamicResource KeyCapPadding}" />
+        <Setter Property="HorizontalAlignment" Value="Left" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Border.keyCap TextBlock">
+        <Setter Property="FontFamily" Value="{DynamicResource MonospaceFontFamily}" />
+        <Setter Property="FontSize" Value="{DynamicResource FontSizeCaption}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+
+    <!-- Red u listi (prečice, biblioteke): donja linija između redova -->
+    <Style Selector="Border.listRow">
+        <Setter Property="BorderBrush" Value="{DynamicResource DividerBrush}" />
+        <Setter Property="BorderThickness" Value="{DynamicResource DividerBottom}" />
+        <Setter Property="Padding" Value="{DynamicResource NoteItemPadding}" />
+    </Style>
+
+    <!-- Kartica preuzimanja šeme (napredak + Prekini) -->
+    <Style Selector="ProgressBar.download">
+        <Setter Property="MinWidth" Value="0" />
+        <Setter Property="Height" Value="{DynamicResource BusyBarHeight}" />
+        <Setter Property="MinHeight" Value="0" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <!-- Glavni prozor: tab sa prečicom u opisu -->
+    <Style Selector="TabControl.main TabItem:focus-visible">
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
     </Style>
 
 </Styles>

@@ -28,10 +28,20 @@
                         Classes.danger="{Binding IsDangerous}"
                         IsDefault="{Binding !IsDangerous}"
                         Content="{Binding ConfirmText}"
-                        Command="{Binding ConfirmCommand}" />
+                        Command="{Binding ConfirmCommand}">
+                    <ToolTip.Tip>
+                        <Panel>
+                            <TextBlock IsVisible="{Binding !IsDangerous}"
+                                       Text="{Binding ConfirmText, StringFormat='{}{0} (Enter)'}" />
+                            <TextBlock IsVisible="{Binding IsDangerous}"
+                                       Text="{Binding ConfirmText, StringFormat='{}{0}: samo klikom, Enter ne potvrđuje opasnu akciju'}" />
+                        </Panel>
+                    </ToolTip.Tip>
+                </Button>
                 <Button x:Name="CancelButton" IsVisible="{Binding HasCancel}"
                         Content="{Binding CancelText}"
-                        Command="{Binding CancelCommand}" />
+                        Command="{Binding CancelCommand}"
+                        ToolTip.Tip="{Binding CancelText, StringFormat='{}{0} (Esc)'}" />
             </StackPanel>
         </Border>
 

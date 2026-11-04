@@ -11,6 +11,15 @@
              x:Class="XmlValidator.App.Views.ValidationTabView"
              x:DataType="vm:ValidationTabViewModel">
 
+    <!-- Prečice taba (važe i kad je fokus van taba, vidi MainWindow); F5 je u MainWindow.axaml.cs.
+         Ctrl+C u editoru ostaje kopiranje teksta, zato je kopiranje nalaza Ctrl+Shift+C. -->
+    <UserControl.KeyBindings>
+        <KeyBinding Gesture="F8" Command="{Binding NextIssueCommand}" />
+        <KeyBinding Gesture="Shift+F8" Command="{Binding PreviousIssueCommand}" />
+        <KeyBinding Gesture="Ctrl+Shift+C" Command="{Binding CopyIssuesCommand}" />
+        <KeyBinding Gesture="Ctrl+E" Command="{Binding ExportIssuesCommand}" />
+    </UserControl.KeyBindings>
+
     <DockPanel>
 
         <!-- ===== Traka taba ===== -->
@@ -186,15 +195,28 @@
                                     </Border>
                                 </StackPanel>
                                 <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="{StaticResource SpaceXs}">
+                                    <Button x:Name="PreviousIssueButton" Classes="icon" Command="{Binding PreviousIssueCommand}"
+                                            IsEnabled="{Binding HasIssues}"
+                                            ToolTip.Tip="Prethodna greška ili upozorenje (Shift+F8)"
+                                            AutomationProperties.Name="Prethodna greška ili upozorenje">
+                                        <PathIcon Classes="small" Data="{StaticResource IconChevronUp}" />
+                                    </Button>
+                                    <Button x:Name="NextIssueButton" Classes="icon" Command="{Binding NextIssueCommand}"
+                                            IsEnabled="{Binding HasIssues}"
+                                            ToolTip.Tip="Sljedeća greška ili upozorenje (F8)"
+                                            AutomationProperties.Name="Sljedeća greška ili upozorenje">
+                                        <PathIcon Classes="small" Data="{StaticResource IconChevronDown}" />
+                                    </Button>
+                                    <Border Classes="divider" />
                                     <Button x:Name="CopyIssuesButton" Classes="toolbar compact" Command="{Binding CopyIssuesCommand}"
-                                            ToolTip.Tip="Kopiraj sve nalaze (sa nazivom šeme) u clipboard">
+                                            ToolTip.Tip="Kopiraj sve nalaze (sa nazivom šeme) u clipboard (Ctrl+Shift+C)">
                                         <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
                                             <PathIcon Data="{StaticResource IconCopy}" />
                                             <TextBlock Text="Kopiraj" />
                                         </StackPanel>
                                     </Button>
                                     <Button x:Name="ExportIssuesButton" Classes="toolbar compact" Command="{Binding ExportIssuesCommand}"
-                                            ToolTip.Tip="Sačuvaj nalaze u .txt ili .csv fajl">
+                                            ToolTip.Tip="Sačuvaj nalaze u .txt ili .csv fajl (Ctrl+E)">
                                         <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
                                             <PathIcon Data="{StaticResource IconExport}" />
                                             <TextBlock Text="Izvezi…" />

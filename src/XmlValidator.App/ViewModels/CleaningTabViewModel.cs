@@ -548,22 +548,9 @@ public sealed partial class CleaningTabViewModel : DocumentTabViewModel, IDispos
             return;
         }
 
-        var suggested = Path.GetFileName(CleaningOutputWriter.GetDefaultOutputPath(document.Path));
-        var target = await _dialogs.PickSaveFileAsync("Sačuvaj očišćeni fajl", suggested, [FileFilter.Xml, FileFilter.All], document.Folder);
-        if (target is null)
-        {
-            return;
-        }
-
-        var fullTarget = Path.GetFullPath(target);
-        if (AppSettings.PathComparer.Equals(fullTarget, document.Path))
-        {
-            await _dialogs.ShowMessageAsync("Fajl nije sačuvan", "Ulazni fajl se nikad ne prepisuje. Izaberite drugo ime ili folder.", MessageSeverity.Error);
-            return;
-        }
-
         IsSaving = true;
         NotifyCommands();
+        var fullTarget = string.Empty;
         try
         {
             var result = await GetCheckedResultAsync(session);
@@ -572,17 +559,25 @@ public sealed partial class CleaningTabViewModel : DocumentTabViewModel, IDispos
                 return;
             }
 
-            if (!result.Validation.IsValid)
+            // Pregled izmjena (sa provjerom prema šemi) prije izbora fajla; izlaz sa greškama šeme traži „Sačuvaj svejedno”.
+            var preview = new ChangesPreviewViewModel(CleaningChangeSet.Create(result.Output.Blocks), document.FileName, result.Validation, isConfirmation: true);
+            if (!await _dialogs.ShowChangesPreviewAsync(preview))
             {
-                var proceed = await _dialogs.ConfirmAsync(
-                    "Rezultat nije ispravan",
-                    $"Očišćen fajl ima greške prema šemi „{result.Validation.SchemaName}” ({ValidationTabViewModel.Errors(result.Validation.ErrorCount)}). "
-                    + "Greške mogu poticati i iz ulaznog fajla. Da li ipak da ga sačuvam?",
-                    "Sačuvaj svejedno");
-                if (!proceed)
-                {
-                    return;
-                }
+                return;
+            }
+
+            var suggested = Path.GetFileName(CleaningOutputWriter.GetDefaultOutputPath(document.Path));
+            var target = await _dialogs.PickSaveFileAsync("Sačuvaj očišćeni fajl", suggested, [FileFilter.Xml, FileFilter.All], document.Folder);
+            if (target is null)
+            {
+                return;
+            }
+
+            fullTarget = Path.GetFullPath(target);
+            if (AppSettings.PathComparer.Equals(fullTarget, document.Path))
+            {
+                await _dialogs.ShowMessageAsync("Fajl nije sačuvan", "Ulazni fajl se nikad ne prepisuje. Izaberite drugo ime ili folder.", MessageSeverity.Error);
+                return;
             }
 
             // Prepisivanje postojećeg fajla je potvrdio korisnik u sistemskom dijalogu za čuvanje.
@@ -603,6 +598,34 @@ public sealed partial class CleaningTabViewModel : DocumentTabViewModel, IDispos
             _log.Warning("Očišćen fajl ne može da se sačuva.", ex);
             Message = UserMessage.Error("Očišćen fajl nije sačuvan.");
             await _dialogs.ShowMessageAsync("Fajl nije sačuvan", $"Fajl „{Path.GetFileName(fullTarget)}” ne može da se sačuva.", MessageSeverity.Error, [ex.Message]);
+        }
+        finally
+        {
+            IsSaving = false;
+            NotifyCommands();
+        }
+    }
+
+    /// <summary>„Pregled izmjena” (Ctrl+D): lista blokova koji se brišu, mijenjaju ili popravljaju, bez čuvanja.</summary>
+    [RelayCommand(CanExecute = nameof(CanSaveOutput))]
+    private async Task PreviewChangesAsync()
+    {
+        var document = Document;
+        if (_session is not { } session || document is null)
+        {
+            return;
+        }
+
+        IsSaving = true;
+        NotifyCommands();
+        try
+        {
+            var result = await GetCheckedResultAsync(session);
+            if (result is not null)
+            {
+                await _dialogs.ShowChangesPreviewAsync(
+                    new ChangesPreviewViewModel(CleaningChangeSet.Create(result.Output.Blocks), document.FileName, result.Validation, isConfirmation: false));
+            }
         }
         finally
         {
@@ -1341,6 +1364,7 @@ public sealed partial class CleaningTabViewModel : DocumentTabViewModel, IDispos
         CancelEditCommand.NotifyCanExecuteChanged();
         RevertEditCommand.NotifyCanExecuteChanged();
         SaveOutputCommand.NotifyCanExecuteChanged();
+        PreviewChangesCommand.NotifyCanExecuteChanged();
         SaveReportCommand.NotifyCanExecuteChanged();
     }
 

@@ -1,0 +1,197 @@
+<!--
+  „O programu”: naziv, verzija i opis programa, okruženje i folder sa podacima, prečice na tastaturi
+  i korišćene biblioteke sa licencama. Adrese se mogu selektovati i kopirati (ne otvara se browser).
+-->
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:XmlValidator.App.ViewModels"
+        x:Class="XmlValidator.App.Views.AboutWindow"
+        x:DataType="vm:AboutViewModel"
+        Title="O programu"
+        Icon="/Assets/app.ico"
+        Width="{StaticResource AboutWindowWidth}"
+        Height="{StaticResource AboutWindowHeight}"
+        MinWidth="{StaticResource AboutWindowMinWidth}"
+        MinHeight="{StaticResource AboutWindowMinHeight}"
+        CanResize="True"
+        ShowInTaskbar="False"
+        WindowStartupLocation="CenterOwner">
+
+    <Window.KeyBindings>
+        <KeyBinding Gesture="Escape" Command="{Binding CloseCommand}" />
+    </Window.KeyBindings>
+
+    <Grid RowDefinitions="Auto,*,Auto">
+
+        <!-- ===== Zaglavlje ===== -->
+        <Border Classes="windowHeader">
+            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="{StaticResource SpaceL}">
+                <Image x:Name="AppIcon" Source="/Assets/app.ico" VerticalAlignment="Top"
+                       Width="{StaticResource AppIconSize}" Height="{StaticResource AppIconSize}"
+                       AutomationProperties.Name="Ikonica programa" />
+                <StackPanel Grid.Column="1" Spacing="{StaticResource SpaceXs}">
+                    <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceM}">
+                        <TextBlock x:Name="AppNameText" Classes="display" Text="{Binding AppName}" VerticalAlignment="Center" />
+                        <Border Classes="badge accentSubtle" VerticalAlignment="Center">
+                            <TextBlock x:Name="VersionText" Text="{Binding VersionText}" />
+                        </Border>
+                    </StackPanel>
+                    <TextBlock Classes="muted wrap" Text="{Binding Description}" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ===== Sadržaj ===== -->
+        <TabControl x:Name="Sections" Grid.Row="1" Classes="main">
+
+            <!-- Okruženje -->
+            <TabItem AutomationProperties.Name="Okruženje">
+                <TabItem.Header>
+                    <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
+                        <PathIcon Data="{StaticResource IconInfo}" />
+                        <TextBlock Text="Okruženje" />
+                    </StackPanel>
+                </TabItem.Header>
+                <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel Margin="{StaticResource PagePadding}" Spacing="{StaticResource SpaceS}">
+                        <Border Classes="settingRow">
+                            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="{StaticResource SpaceM}">
+                                <PathIcon Classes="muted" Data="{StaticResource IconSettings}" VerticalAlignment="Top" />
+                                <StackPanel Grid.Column="1" Spacing="{StaticResource SpaceXs}">
+                                    <TextBlock Classes="strong" Text="Izvršno okruženje" />
+                                    <SelectableTextBlock x:Name="RuntimeText" Classes="muted wrap" Text="{Binding RuntimeText}" />
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                        <Border Classes="settingRow">
+                            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="{StaticResource SpaceM}">
+                                <PathIcon Classes="muted" Data="{StaticResource IconFolder}" VerticalAlignment="Top" />
+                                <StackPanel Grid.Column="1" Spacing="{StaticResource SpaceXs}">
+                                    <TextBlock Classes="strong" Text="Folder sa podešavanjima, šemama i logom" />
+                                    <SelectableTextBlock x:Name="DataFolderText" Classes="mono muted wrap" Text="{Binding DataFolder}" />
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="{StaticResource SpaceS}" Margin="{StaticResource StackGapS}">
+                            <PathIcon Classes="small muted" Data="{StaticResource IconInfo}" VerticalAlignment="Top" />
+                            <TextBlock Grid.Column="1" Classes="caption muted wrap"
+                                       Text="Za prijavu problema kliknite „Kopiraj podatke o verziji” i nalijepite tekst u poruku. Tekst sadrži samo verziju programa, okruženja i biblioteka, bez podataka iz faktura." />
+                        </Grid>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- Prečice -->
+            <TabItem AutomationProperties.Name="Prečice na tastaturi">
+                <TabItem.Header>
+                    <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
+                        <PathIcon Data="{StaticResource IconKeyboard}" />
+                        <TextBlock Text="Prečice" />
+                    </StackPanel>
+                </TabItem.Header>
+                <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+                    <Border Classes="pane" Margin="{StaticResource PagePadding}">
+                        <StackPanel>
+                            <Border Classes="paneHeader">
+                                <Grid ColumnSpacing="{StaticResource SpaceM}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="{StaticResource SettingsNavWidth}" />
+                                        <ColumnDefinition Width="Auto" MinWidth="{StaticResource ShortcutKeysWidth}" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Classes="caption muted strong" Text="Gdje važi" />
+                                    <TextBlock Grid.Column="1" Classes="caption muted strong" Text="Tasteri" />
+                                    <TextBlock Grid.Column="2" Classes="caption muted strong" Text="Šta radi" />
+                                </Grid>
+                            </Border>
+                            <ItemsControl x:Name="ShortcutsList" ItemsSource="{Binding Shortcuts}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:ShortcutInfo">
+                                        <Border Classes="listRow">
+                                            <Grid ColumnSpacing="{StaticResource SpaceM}">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="{StaticResource SettingsNavWidth}" />
+                                                    <ColumnDefinition Width="Auto" MinWidth="{StaticResource ShortcutKeysWidth}" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Classes="muted" Text="{Binding Area}" VerticalAlignment="Center"
+                                                           TextTrimming="CharacterEllipsis" />
+                                                <Border Grid.Column="1" Classes="keyCap">
+                                                    <TextBlock Text="{Binding Keys}" />
+                                                </Border>
+                                                <TextBlock Grid.Column="2" Classes="wrap" Text="{Binding Description}"
+                                                           VerticalAlignment="Center" />
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- Licence -->
+            <TabItem AutomationProperties.Name="Korišćene biblioteke i licence">
+                <TabItem.Header>
+                    <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
+                        <PathIcon Data="{StaticResource IconReport}" />
+                        <TextBlock Text="Licence" />
+                    </StackPanel>
+                </TabItem.Header>
+                <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel Margin="{StaticResource PagePadding}" Spacing="{StaticResource SpaceM}">
+                        <TextBlock Classes="muted wrap"
+                                   Text="Program koristi sljedeće biblioteke otvorenog koda. Verzije su očitane iz učitanih biblioteka." />
+                        <Border Classes="pane">
+                            <ItemsControl x:Name="ComponentsList" ItemsSource="{Binding Components}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:ThirdPartyComponent">
+                                        <Border Classes="listRow">
+                                            <Grid ColumnSpacing="{StaticResource SpaceM}" RowDefinitions="Auto,Auto"
+                                                  RowSpacing="{StaticResource SpaceXs}">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="{StaticResource ComponentNameWidth}" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel Grid.RowSpan="2" Spacing="{StaticResource SpaceXs}">
+                                                    <TextBlock Classes="strong wrap" Text="{Binding Name}" />
+                                                    <TextBlock Classes="caption muted mono" Text="{Binding Version}" />
+                                                </StackPanel>
+                                                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
+                                                    <Border Classes="badge">
+                                                        <TextBlock Text="{Binding License}" TextWrapping="Wrap" />
+                                                    </Border>
+                                                    <TextBlock Classes="muted" Text="{Binding Purpose}" VerticalAlignment="Center"
+                                                               TextTrimming="CharacterEllipsis" />
+                                                </StackPanel>
+                                                <SelectableTextBlock Grid.Row="1" Grid.Column="1" Classes="caption mono accent wrap"
+                                                                     Text="{Binding Url}" />
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+        </TabControl>
+
+        <!-- ===== Dugmad ===== -->
+        <Border Grid.Row="2" Classes="footer">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <Button x:Name="CopyDiagnosticsButton" Command="{Binding CopyDiagnosticsCommand}"
+                        ToolTip.Tip="Kopiraj verziju programa, okruženja i biblioteka u clipboard (za prijavu problema)">
+                    <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
+                        <PathIcon Data="{StaticResource IconCopy}" />
+                        <TextBlock Text="Kopiraj podatke o verziji" />
+                    </StackPanel>
+                </Button>
+                <Button x:Name="CloseButton" Grid.Column="2" Classes="primary" IsDefault="True"
+                        Content="Zatvori" Command="{Binding CloseCommand}"
+                        ToolTip.Tip="Zatvori prozor (Enter ili Esc)" />
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

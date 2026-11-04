@@ -141,7 +141,8 @@
                         </StackPanel>
                         <CheckBox x:Name="RepairBracketsCheck" Grid.Column="1" VerticalAlignment="Center"
                                   IsChecked="{Binding RepairBrackets}" Content="Uključene"
-                                  AutomationProperties.Name="Automatske popravke zagrada" />
+                                  AutomationProperties.Name="Automatske popravke zagrada"
+                                  ToolTip.Tip="Uključi ili isključi automatske popravke zagrada pri analizi" />
                     </Grid>
                 </Border>
 
@@ -185,14 +186,24 @@
                             <TextBlock Classes="muted wrap"
                                        Text="XSD šema po kojoj se provjeravaju fakture. Ugrađena šema je uvijek dostupna kao rezerva." />
                         </StackPanel>
-                        <Button x:Name="ImportButton" Grid.Column="1" Classes="primary" VerticalAlignment="Top"
-                                Command="{Binding ImportCommand}"
-                                ToolTip.Tip="Uvoz .xsd fajla ili .zip paketa sa sajta FZO">
-                            <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
-                                <PathIcon Data="{StaticResource IconImport}" />
-                                <TextBlock Text="Uvezi šemu…" />
-                            </StackPanel>
-                        </Button>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="{StaticResource SpaceS}"
+                                    VerticalAlignment="Top">
+                            <Button x:Name="ImportFromUrlButton" Command="{Binding ImportFromUrlCommand}"
+                                    ToolTip.Tip="Nalijepite link ZIP paketa šema sa sajta FZO (samo https://); paket se preuzima i uvozi kao fajl">
+                                <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
+                                    <PathIcon Data="{StaticResource IconDownload}" />
+                                    <TextBlock Text="Uvezi sa linka…" />
+                                </StackPanel>
+                            </Button>
+                            <Button x:Name="ImportButton" Classes="primary"
+                                    Command="{Binding ImportCommand}"
+                                    ToolTip.Tip="Uvoz .xsd fajla ili .zip paketa sačuvanog na računaru">
+                                <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
+                                    <PathIcon Data="{StaticResource IconImport}" />
+                                    <TextBlock Text="Uvezi šemu…" />
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
                     </Grid>
 
                     <!-- Upozorenje: koristi se ugrađena šema -->
@@ -200,6 +211,37 @@
                         <Grid ColumnDefinitions="Auto,*" ColumnSpacing="{StaticResource SpaceM}">
                             <PathIcon Classes="status warning" VerticalAlignment="Top" />
                             <SelectableTextBlock Grid.Column="1" Classes="wrap" Text="{Binding FallbackWarning}" />
+                        </Grid>
+                    </Border>
+
+                    <!-- Preuzimanje šeme sa linka: napredak i „Prekini” -->
+                    <Border x:Name="DownloadPanel" Grid.Row="2" Classes="banner" IsVisible="{Binding IsDownloading}">
+                        <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto,Auto"
+                              ColumnSpacing="{StaticResource SpaceM}" RowSpacing="{StaticResource SpaceS}">
+                            <PathIcon Grid.RowSpan="2" Classes="status info" VerticalAlignment="Top" />
+                            <TextBlock x:Name="DownloadText" Grid.Column="1" Classes="strong" Text="{Binding BusyText}"
+                                       VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                                       ToolTip.Tip="{Binding BusyText}" />
+                            <Grid Grid.Row="1" Grid.Column="1" ColumnDefinitions="*,Auto" ColumnSpacing="{StaticResource SpaceS}">
+                                <ProgressBar x:Name="DownloadProgress" Classes="download"
+                                             Minimum="0" Maximum="100"
+                                             IsIndeterminate="{Binding !IsDownloadProgressKnown}"
+                                             Value="{Binding DownloadPercent, TargetNullValue=0, FallbackValue=0}"
+                                             AutomationProperties.Name="Napredak preuzimanja šeme" />
+                                <TextBlock x:Name="DownloadPercentText" Grid.Column="1" Classes="caption muted mono"
+                                           MinWidth="{StaticResource ProgressPercentWidth}" TextAlignment="Right"
+                                           VerticalAlignment="Center"
+                                           Text="{Binding DownloadPercent, StringFormat='{}{0:0} %', TargetNullValue=''}"
+                                           IsVisible="{Binding IsDownloadProgressKnown}" />
+                            </Grid>
+                            <Button x:Name="CancelDownloadButton" Grid.Column="2" Grid.RowSpan="2" VerticalAlignment="Center"
+                                    Command="{Binding CancelDownloadCommand}"
+                                    ToolTip.Tip="Prekini preuzimanje; ništa se ne uvozi">
+                                <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
+                                    <PathIcon Data="{StaticResource IconStop}" />
+                                    <TextBlock Text="Prekini" />
+                                </StackPanel>
+                            </Button>
                         </Grid>
                     </Border>
 
@@ -262,7 +304,13 @@
                             </Button>
                         </WrapPanel>
                         <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="{StaticResource SpaceS}"
-                                    IsVisible="{Binding IsBusy}" VerticalAlignment="Center">
+                                    VerticalAlignment="Center">
+                            <StackPanel.IsVisible>
+                                <MultiBinding Converter="{x:Static BoolConverters.And}">
+                                    <Binding Path="IsBusy" />
+                                    <Binding Path="!IsDownloading" />
+                                </MultiBinding>
+                            </StackPanel.IsVisible>
                             <ProgressBar Classes="busy" AutomationProperties.Name="Rad u toku" />
                             <TextBlock Classes="muted" Text="{Binding BusyText}" VerticalAlignment="Center" />
                         </StackPanel>

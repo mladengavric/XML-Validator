@@ -316,6 +316,29 @@ public sealed partial class ValidationTabViewModel : DocumentTabViewModel, IDisp
         }
     }
 
+    /// <summary>Sljedeći nalaz (F8): bira ga u listi i skače na njega u editoru; poslije posljednjeg ide na prvi.</summary>
+    [RelayCommand]
+    private void NextIssue() => MoveIssue(+1);
+
+    /// <summary>Prethodni nalaz (Shift+F8); prije prvog ide na posljednji.</summary>
+    [RelayCommand]
+    private void PreviousIssue() => MoveIssue(-1);
+
+    private void MoveIssue(int step)
+    {
+        if (Issues.Count == 0)
+        {
+            return;
+        }
+
+        var index = SelectedIssue is { } current ? Issues.IndexOf(current) : -1;
+        index = index < 0
+            ? (step > 0 ? 0 : Issues.Count - 1)
+            : (index + step + Issues.Count) % Issues.Count;
+        SelectedIssue = Issues[index];
+        GoToIssue(SelectedIssue);
+    }
+
     private bool CanExport() => Result is not null && !IsValidating;
 
     /// <summary>Kopira nalaze (sa nazivom šeme) u clipboard.</summary>

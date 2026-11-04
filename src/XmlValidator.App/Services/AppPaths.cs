@@ -16,4 +16,7 @@ public sealed record AppPaths(string Root)
 
     /// <summary>Folder sa log fajlovima.</summary>
     public string LogsFolder => Path.Combine(Root, "logs");
+
+    /// <summary>Privremeni folder za šeme preuzete sa linka (svako preuzimanje ima svoj podfolder koji se briše poslije uvoza).</summary>
+    public string DownloadsFolder => Path.Combine(Root, "preuzimanja");
 }

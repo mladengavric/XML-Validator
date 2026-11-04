@@ -18,13 +18,17 @@
         <KeyBinding Gesture="Ctrl+O" Command="{Binding OpenCommand}" />
         <KeyBinding Gesture="Ctrl+Shift+S" Command="{Binding SaveAsCommand}" />
         <KeyBinding Gesture="Ctrl+OemComma" Command="{Binding OpenSettingsCommand}" />
+        <KeyBinding Gesture="Ctrl+D1" Command="{Binding SelectTabCommand}" CommandParameter="0" />
+        <KeyBinding Gesture="Ctrl+D2" Command="{Binding SelectTabCommand}" CommandParameter="1" />
+        <KeyBinding Gesture="F1" Command="{Binding ShowAboutCommand}" />
     </Window.KeyBindings>
 
     <Grid>
-        <DockPanel>
+        <!-- Redoslijed u XAML-u prati redoslijed na ekranu i redoslijed fokusa (Tab): traka, tabovi, statusna traka. -->
+        <Grid RowDefinitions="Auto,*,Auto">
 
             <!-- ===== Traka sa komandama ===== -->
-            <Border Classes="toolbar" DockPanel.Dock="Top">
+            <Border Classes="toolbar">
                 <Grid ColumnDefinitions="Auto,*,Auto">
                     <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceXs}">
                         <Button x:Name="OpenButton" Classes="toolbar" Command="{Binding OpenCommand}"
@@ -101,58 +105,30 @@
                         </DropDownButton>
                     </StackPanel>
 
-                    <Button x:Name="SettingsButton" Grid.Column="2" Classes="toolbar"
-                            Command="{Binding OpenSettingsCommand}"
-                            ToolTip.Tip="Podešavanja: tema, čišćenje faktura i šeme (Ctrl+,)">
-                        <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
-                            <PathIcon Data="{StaticResource IconSettings}" />
-                            <TextBlock Text="Podešavanja" />
-                        </StackPanel>
-                    </Button>
-                </Grid>
-            </Border>
-
-            <!-- ===== Statusna traka ===== -->
-            <Border Classes="statusbar" DockPanel.Dock="Bottom">
-                <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="{StaticResource SpaceS}">
-                    <PathIcon Classes="status small" ui:SeverityStyle.Severity="{Binding StatusSeverity}"
-                              VerticalAlignment="Center" />
-                    <TextBlock x:Name="StatusText" Grid.Column="1" Text="{Binding StatusMessage}"
-                               VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
-                               ToolTip.Tip="{Binding StatusMessage}" />
-
-                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
-                        <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}" IsVisible="{Binding IsBusy}">
-                            <ProgressBar Classes="busy" AutomationProperties.Name="Rad u toku" />
-                            <TextBlock Classes="muted" Text="Radim…" VerticalAlignment="Center" />
-                        </StackPanel>
-                        <Border Classes="divider" IsVisible="{Binding IsBusy}" />
-
-                        <PathIcon Classes="small muted" Data="{StaticResource IconSchema}" VerticalAlignment="Center" />
-                        <TextBlock Classes="muted" Text="Šema:" VerticalAlignment="Center" />
-                        <TextBlock x:Name="SchemaNameText" Classes="strong" Text="{Binding ActiveSchemaName}"
-                                   VerticalAlignment="Center" />
-                        <StackPanel x:Name="SchemaWarningPanel" Orientation="Horizontal" Spacing="{StaticResource SpaceXs}"
-                                    IsVisible="{Binding HasSchemaWarning}"
-                                    ToolTip.Tip="{Binding SchemaWarning}"
-                                    Background="Transparent">
-                            <PathIcon Classes="status warning small" VerticalAlignment="Center" />
-                            <TextBlock Text="izabrana šema ne može da se koristi" VerticalAlignment="Center"
-                                       Foreground="{DynamicResource WarningForegroundBrush}" />
-                        </StackPanel>
-                        <Border Classes="divider" />
-                        <Button x:Name="ManageSchemasButton" Classes="link" Content="Upravljaj šemama…"
-                                Command="{Binding ManageSchemasCommand}"
-                                ToolTip.Tip="Podešavanja → Šeme: uvoz, izbor aktivne šeme, razlike" />
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="{StaticResource SpaceXs}">
+                        <Button x:Name="SettingsButton" Classes="toolbar"
+                                Command="{Binding OpenSettingsCommand}"
+                                ToolTip.Tip="Podešavanja: tema, čišćenje faktura i šeme (Ctrl+,)">
+                            <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
+                                <PathIcon Data="{StaticResource IconSettings}" />
+                                <TextBlock Text="Podešavanja" />
+                            </StackPanel>
+                        </Button>
+                        <Button x:Name="AboutButton" Classes="toolbar"
+                                Command="{Binding ShowAboutCommand}"
+                                ToolTip.Tip="O programu i prečice (F1)"
+                                AutomationProperties.Name="O programu i prečice">
+                            <PathIcon Data="{StaticResource IconHelp}" />
+                        </Button>
                     </StackPanel>
                 </Grid>
             </Border>
 
             <!-- ===== Tabovi ===== -->
-            <TabControl x:Name="Tabs" Classes="main" SelectedIndex="{Binding SelectedTabIndex}">
+            <TabControl x:Name="Tabs" Grid.Row="1" Classes="main" SelectedIndex="{Binding SelectedTabIndex}">
 
                 <!-- Validacija -->
-                <TabItem AutomationProperties.Name="{Binding Validation.Header}">
+                <TabItem AutomationProperties.Name="{Binding Validation.Header}" ToolTip.Tip="Validacija XML fajla prema XSD šemi (Ctrl+1)">
                     <TabItem.Header>
                         <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
                             <PathIcon Data="{StaticResource IconValidate}" />
@@ -189,7 +165,7 @@
                 </TabItem>
 
                 <!-- Čišćenje faktura -->
-                <TabItem AutomationProperties.Name="{Binding Cleaning.Header}">
+                <TabItem AutomationProperties.Name="{Binding Cleaning.Header}" ToolTip.Tip="Čišćenje faktura po pravilu SHMP (Ctrl+2)">
                     <TabItem.Header>
                         <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
                             <PathIcon Data="{StaticResource IconClean}" />
@@ -225,7 +201,43 @@
                     </Grid>
                 </TabItem>
             </TabControl>
-        </DockPanel>
+
+            <!-- ===== Statusna traka ===== -->
+            <Border Grid.Row="2" Classes="statusbar">
+                <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="{StaticResource SpaceS}">
+                    <PathIcon Classes="status small" ui:SeverityStyle.Severity="{Binding StatusSeverity}"
+                              VerticalAlignment="Center" />
+                    <TextBlock x:Name="StatusText" Grid.Column="1" Text="{Binding StatusMessage}"
+                               VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                               ToolTip.Tip="{Binding StatusMessage}" />
+
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
+                        <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}" IsVisible="{Binding IsBusy}">
+                            <ProgressBar Classes="busy" AutomationProperties.Name="Rad u toku" />
+                            <TextBlock Classes="muted" Text="Radim…" VerticalAlignment="Center" />
+                        </StackPanel>
+                        <Border Classes="divider" IsVisible="{Binding IsBusy}" />
+
+                        <PathIcon Classes="small muted" Data="{StaticResource IconSchema}" VerticalAlignment="Center" />
+                        <TextBlock Classes="muted" Text="Šema:" VerticalAlignment="Center" />
+                        <TextBlock x:Name="SchemaNameText" Classes="strong" Text="{Binding ActiveSchemaName}"
+                                   VerticalAlignment="Center" />
+                        <StackPanel x:Name="SchemaWarningPanel" Orientation="Horizontal" Spacing="{StaticResource SpaceXs}"
+                                    IsVisible="{Binding HasSchemaWarning}"
+                                    ToolTip.Tip="{Binding SchemaWarning}"
+                                    Background="Transparent">
+                            <PathIcon Classes="status warning small" VerticalAlignment="Center" />
+                            <TextBlock Text="izabrana šema ne može da se koristi" VerticalAlignment="Center"
+                                       Foreground="{DynamicResource WarningForegroundBrush}" />
+                        </StackPanel>
+                        <Border Classes="divider" />
+                        <Button x:Name="ManageSchemasButton" Classes="link" Content="Upravljaj šemama…"
+                                Command="{Binding ManageSchemasCommand}"
+                                ToolTip.Tip="Podešavanja → Šeme: uvoz, izbor aktivne šeme, razlike" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
 
         <!-- ===== Nagovještaj tokom prevlačenja fajla ===== -->
         <Border x:Name="DropOverlay" Classes="dropOverlay" IsVisible="False" IsHitTestVisible="False">
