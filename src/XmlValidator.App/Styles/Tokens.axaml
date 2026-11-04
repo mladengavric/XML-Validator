@@ -62,6 +62,23 @@
             <!-- Oznake (badge) -->
             <SolidColorBrush x:Key="BadgeNeutralBackgroundBrush" Color="#EBEDF0" />
             <SolidColorBrush x:Key="BadgeNeutralForegroundBrush" Color="#3D4550" />
+            <!-- Editor XML-a: izbor, oznake linija sa nalazima, bojenje sintakse -->
+            <SolidColorBrush x:Key="EditorSelectionBrush" Color="#C7DDF5" />
+            <SolidColorBrush x:Key="EditorLineNumberBrush" Color="#8A929C" />
+            <SolidColorBrush x:Key="EditorErrorLineBrush" Color="#16C42B1C" />
+            <SolidColorBrush x:Key="EditorWarningLineBrush" Color="#1FD99A00" />
+            <SolidColorBrush x:Key="SyntaxTagBrush" Color="#1A5BA6" />
+            <SolidColorBrush x:Key="SyntaxAttributeNameBrush" Color="#9A3A12" />
+            <SolidColorBrush x:Key="SyntaxAttributeValueBrush" Color="#0E7040" />
+            <SolidColorBrush x:Key="SyntaxCommentBrush" Color="#6A737D" />
+            <SolidColorBrush x:Key="SyntaxDeclarationBrush" Color="#7A3E9D" />
+            <SolidColorBrush x:Key="SyntaxEntityBrush" Color="#9A5B00" />
+
+            <!-- Izabran red u tabelama (DataGrid): blaga akcentna pozadina, tekst ostaje čitljiv -->
+            <SolidColorBrush x:Key="DataGridRowSelectedBackgroundBrush" Color="#D9E7F8" />
+            <SolidColorBrush x:Key="DataGridRowSelectedHoveredBackgroundBrush" Color="#CCE0F6" />
+            <SolidColorBrush x:Key="DataGridRowSelectedUnfocusedBackgroundBrush" Color="#E4EDF8" />
+            <SolidColorBrush x:Key="DataGridRowSelectedHoveredUnfocusedBackgroundBrush" Color="#D9E7F8" />
         </ResourceDictionary>
 
         <!-- Tamna tema -->
@@ -108,6 +125,21 @@
 
             <SolidColorBrush x:Key="BadgeNeutralBackgroundBrush" Color="#33363C" />
             <SolidColorBrush x:Key="BadgeNeutralForegroundBrush" Color="#D3D7DD" />
+            <SolidColorBrush x:Key="EditorSelectionBrush" Color="#2B4A6E" />
+            <SolidColorBrush x:Key="EditorLineNumberBrush" Color="#7D848E" />
+            <SolidColorBrush x:Key="EditorErrorLineBrush" Color="#26FF6B61" />
+            <SolidColorBrush x:Key="EditorWarningLineBrush" Color="#1FF2C14E" />
+            <SolidColorBrush x:Key="SyntaxTagBrush" Color="#6CB2F5" />
+            <SolidColorBrush x:Key="SyntaxAttributeNameBrush" Color="#F0A47E" />
+            <SolidColorBrush x:Key="SyntaxAttributeValueBrush" Color="#86D6A6" />
+            <SolidColorBrush x:Key="SyntaxCommentBrush" Color="#8B949E" />
+            <SolidColorBrush x:Key="SyntaxDeclarationBrush" Color="#C9A0EC" />
+            <SolidColorBrush x:Key="SyntaxEntityBrush" Color="#E5C07B" />
+
+            <SolidColorBrush x:Key="DataGridRowSelectedBackgroundBrush" Color="#24405F" />
+            <SolidColorBrush x:Key="DataGridRowSelectedHoveredBackgroundBrush" Color="#2B4A6E" />
+            <SolidColorBrush x:Key="DataGridRowSelectedUnfocusedBackgroundBrush" Color="#2A3644" />
+            <SolidColorBrush x:Key="DataGridRowSelectedHoveredUnfocusedBackgroundBrush" Color="#2F3D4D" />
         </ResourceDictionary>
 
     </ResourceDictionary.ThemeDictionaries>
@@ -134,6 +166,8 @@
     <Thickness x:Key="StatusBarPadding">16,4</Thickness>
     <Thickness x:Key="ButtonPadding">16,8</Thickness>
     <Thickness x:Key="ToolbarButtonPadding">12,8</Thickness>
+    <Thickness x:Key="ToolbarCompactButtonPadding">8,4</Thickness>
+    <Thickness x:Key="BannerCompactPadding">12,8</Thickness>
     <Thickness x:Key="TabHeaderPadding">12,0</Thickness>
     <Thickness x:Key="TabStripPadding">12,0</Thickness>
     <Thickness x:Key="BannerPadding">16,12</Thickness>
@@ -156,6 +190,10 @@
     <Thickness x:Key="DividerRight">0,0,1,0</Thickness>
     <Thickness x:Key="FocusThickness">2</Thickness>
     <Thickness x:Key="NoThickness">0</Thickness>
+    <Thickness x:Key="PaneHeaderPadding">16,10</Thickness>
+    <Thickness x:Key="CellPadding">12,6</Thickness>
+    <Thickness x:Key="BottomGapM">0,0,0,12</Thickness>
+    <Thickness x:Key="EditorPadding">0,4,0,0</Thickness>
 
     <!-- Radijusi uglova -->
     <CornerRadius x:Key="RadiusS">4</CornerRadius>
@@ -171,6 +209,7 @@
     <x:Double x:Key="FontSizeTitle">20</x:Double>
     <x:Double x:Key="FontSizeDisplay">24</x:Double>
     <FontFamily x:Key="MonospaceFontFamily">Cascadia Mono, Consolas, Menlo, monospace</FontFamily>
+    <x:Double x:Key="EditorFontSize">13</x:Double>
 
     <!-- Veličine ikonica -->
     <x:Double x:Key="IconSizeS">14</x:Double>
@@ -182,6 +221,7 @@
 
     <!-- Veličine elemenata -->
     <x:Double x:Key="ControlHeight">32</x:Double>
+    <x:Double x:Key="ControlHeightCompact">28</x:Double>
     <x:Double x:Key="TabHeaderHeight">44</x:Double>
     <x:Double x:Key="FieldWidth">220</x:Double>
     <x:Double x:Key="NumericFieldWidth">160</x:Double>
@@ -196,6 +236,22 @@
     <x:Double x:Key="BusyBarWidth">120</x:Double>
     <x:Double x:Key="BusyBarHeight">4</x:Double>
     <GridLength x:Key="SettingsNavWidth">184</GridLength>
+    <x:Double x:Key="SchemaPickerWidth">240</x:Double>
+    <x:Double x:Key="IssueMarginWidth">18</x:Double>
+    <x:Double x:Key="EditorPaneMinHeight">140</x:Double>
+    <x:Double x:Key="IssuesPaneMinHeight">120</x:Double>
+    <x:Double x:Key="PaneSplitterSize">12</x:Double>
+    <DataGridLength x:Key="IssueSeverityColumnWidth">132</DataGridLength>
+    <DataGridLength x:Key="IssueNumberColumnWidth">88</DataGridLength>
+    <DataGridLength x:Key="IssueKindColumnWidth">150</DataGridLength>
+    <x:Int32 x:Key="IssueMessageMaxLines">2</x:Int32>
+    <x:Double x:Key="DataGridRowSelectedBackgroundOpacity">1</x:Double>
+    <x:Double x:Key="DataGridRowSelectedHoveredBackgroundOpacity">1</x:Double>
+    <x:Double x:Key="DataGridRowSelectedUnfocusedBackgroundOpacity">1</x:Double>
+    <x:Double x:Key="DataGridRowSelectedHoveredUnfocusedBackgroundOpacity">1</x:Double>
+    <!-- Odnos editora i liste nalaza (podrazumijevano 65/35) -->
+    <GridLength x:Key="EditorPaneHeight">65*</GridLength>
+    <GridLength x:Key="IssuesPaneHeight">35*</GridLength>
 
     <!-- Veličine prozora -->
     <x:Double x:Key="MainWindowWidth">1200</x:Double>

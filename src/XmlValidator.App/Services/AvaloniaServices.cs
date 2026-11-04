@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Input.Platform;
 using Avalonia.Platform.Storage;
 using Avalonia.Styling;
 using Avalonia.Threading;
@@ -169,4 +170,22 @@ public sealed class AvaloniaDialogService : IDialogService
         !string.IsNullOrWhiteSpace(folder) && Directory.Exists(folder)
             ? await storage.TryGetFolderFromPathAsync(folder)
             : null;
+}
+
+/// <summary>Clipboard glavnog prozora.</summary>
+public sealed class AvaloniaClipboardService : IClipboardService
+{
+    public async Task SetTextAsync(string text)
+    {
+        ArgumentNullException.ThrowIfNull(text);
+        var window = (Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.MainWindow;
+        if (window?.Clipboard is { } clipboard)
+        {
+            await clipboard.SetTextAsync(text);
+        }
+        else
+        {
+            throw new InvalidOperationException("Clipboard nije dostupan.");
+        }
+    }
 }

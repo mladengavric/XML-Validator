@@ -24,6 +24,10 @@ public sealed record FileFilter(string Name, IReadOnlyList<string> Patterns)
     public static FileFilter All { get; } = new("Svi fajlovi", ["*"]);
 
     public static FileFilter SchemaPackage { get; } = new("XSD šema ili ZIP paket", ["*.xsd", "*.zip"]);
+
+    public static FileFilter Text { get; } = new("Tekstualni fajl", ["*.txt"]);
+
+    public static FileFilter Csv { get; } = new("CSV tabela (Excel)", ["*.csv"]);
 }
 
 /// <summary>Dijalozi i prozori, iza interfejsa da bi ViewModel-i mogli da se testiraju bez UI-ja.</summary>
@@ -65,4 +69,10 @@ public interface IUiDispatcher
 {
     /// <summary>Izvršava akciju na UI niti; ako je pozivalac već na njoj, odmah.</summary>
     void Post(Action action);
+}
+
+/// <summary>Clipboard sistema.</summary>
+public interface IClipboardService
+{
+    Task SetTextAsync(string text);
 }

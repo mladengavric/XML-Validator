@@ -16,6 +16,7 @@ public static class AppServices
         services.AddSingleton<IUiDispatcher, AvaloniaUiDispatcher>();
         services.AddSingleton<IThemeService, AvaloniaThemeService>();
         services.AddSingleton<IDialogService, AvaloniaDialogService>();
+        services.AddSingleton<IClipboardService, AvaloniaClipboardService>();
         return services.BuildServiceProvider(new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true });
     }
 

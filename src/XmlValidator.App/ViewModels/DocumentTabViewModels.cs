@@ -26,20 +26,19 @@ public abstract partial class DocumentTabViewModel : ViewModelBase
     /// <summary>Postavlja otvoren fajl (poziva glavni prozor).</summary>
     public virtual void SetDocument(OpenedDocument? document) => Document = document;
 
-    /// <summary>Sadržaj za „Sačuvaj kao”; u fazi 3 su to originalni bajtovi, a od faze 4 sadržaj editora.</summary>
+    /// <summary>Sadržaj za „Sačuvaj kao” (originalni bajtovi, osim ako tab ima izmijenjen sadržaj).</summary>
     public virtual byte[]? GetContentToSave() => Document?.Content;
-}
 
-/// <summary>Tab „Validacija” (sadržaj se dodaje u fazi 4).</summary>
-public sealed class ValidationTabViewModel : DocumentTabViewModel
-{
-    public override string Header => "Validacija";
+    /// <summary>Razlog zbog kojeg sadržaj ne može da se sačuva, ili <c>null</c>.</summary>
+    public virtual string? GetSaveProblem() => null;
 
-    public override string EmptyStateHint =>
-        "Otvorite XML fajl (Ctrl+O) ili ga prevucite na prozor da biste ga provjerili prema aktivnoj šemi.";
+    /// <summary>Da li tab ima izmjene koje nisu sačuvane (pitanje prije otvaranja drugog fajla ili zatvaranja).</summary>
+    public virtual bool HasUnsavedChanges => false;
 
-    /// <summary>Privremena napomena dok editor i lista grešaka ne postoje.</summary>
-    public string PendingFeatureNote => "Prikaz fajla i lista grešaka validacije dolaze u sljedećoj verziji.";
+    /// <summary>Sadržaj vraćen iz <see cref="GetContentToSave"/> je sačuvan.</summary>
+    public virtual void MarkSaved()
+    {
+    }
 }
 
 /// <summary>Tab „Čišćenje faktura” (sadržaj se dodaje u fazi 5).</summary>

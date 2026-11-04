@@ -3,6 +3,7 @@
         xmlns:vm="using:XmlValidator.App.ViewModels"
         xmlns:services="using:XmlValidator.App.Services"
         xmlns:ui="using:XmlValidator.App.Controls"
+        xmlns:views="using:XmlValidator.App.Views"
         x:Class="XmlValidator.App.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Title="{Binding Title}"
@@ -205,19 +206,9 @@
                         </StackPanel>
 
                         <!-- Otvoren fajl -->
-                        <ScrollViewer IsVisible="{Binding Validation.HasDocument}">
-                            <StackPanel Margin="{StaticResource PagePadding}" MaxWidth="{StaticResource ContentMaxWidth}"
-                                        HorizontalAlignment="Left" Spacing="{StaticResource SpaceL}">
-                                <ContentControl Content="{Binding Validation.Document}"
-                                                ContentTemplate="{StaticResource DocumentCardTemplate}" />
-                                <Border Classes="banner info">
-                                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="{StaticResource SpaceM}">
-                                        <PathIcon Classes="status info" VerticalAlignment="Top" />
-                                        <TextBlock Grid.Column="1" Classes="wrap" Text="{Binding Validation.PendingFeatureNote}" />
-                                    </Grid>
-                                </Border>
-                            </StackPanel>
-                        </ScrollViewer>
+                        <Panel IsVisible="{Binding Validation.HasDocument}">
+                            <views:ValidationTabView x:Name="ValidationView" DataContext="{Binding Validation}" />
+                        </Panel>
                     </Grid>
                 </TabItem>
 

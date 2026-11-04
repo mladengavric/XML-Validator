@@ -21,6 +21,8 @@
                 <ColorPaletteResources x:Key="Dark" Accent="{StaticResource AccentColorDark}" />
             </FluentTheme.Palettes>
         </FluentTheme>
+        <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml" />
+        <StyleInclude Source="avares://AvaloniaEdit/Themes/Fluent/AvaloniaEdit.xaml" />
         <StyleInclude Source="avares://XmlValidator/Styles/Controls.axaml" />
     </Application.Styles>
 </Application>

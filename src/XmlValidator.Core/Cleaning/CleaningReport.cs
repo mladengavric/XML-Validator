@@ -356,7 +356,7 @@ public static class CleaningReportFormatter
 
     private static string Lines(int start, int end) => start == end ? $"linija {start}" : $"linije {start}–{end}";
 
-    private static string Escape(string value)
+    internal static string Escape(string value)
     {
         // Zaštita od formula u tabelama (CSV injection).
         if (value.Length > 0 && value[0] is '=' or '+' or '-' or '@' or '\t' or '\r')

@@ -112,6 +112,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IDisposable
         }
 
         await RefreshSchemaStatusAsync();
+        await Validation.InitializeAsync();
 
         if (!string.IsNullOrWhiteSpace(startupFile))
         {
@@ -152,6 +153,11 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IDisposable
                 + (wasRecent ? " Uklonjen je iz liste nedavnih fajlova." : string.Empty);
             SetStatus(message, MessageSeverity.Error);
             await _dialogs.ShowMessageAsync("Fajl ne postoji", message, MessageSeverity.Error, [fullPath]);
+            return false;
+        }
+
+        if (!await ConfirmDiscardChangesAsync())
+        {
             return false;
         }
 
@@ -240,6 +246,25 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IDisposable
         }
     }
 
+    /// <summary>
+    /// Pita korisnika da li da odbaci nesačuvane izmjene u editoru (prije otvaranja drugog fajla ili zatvaranja
+    /// prozora). Vraća <c>true</c> ako izmjena nema ili ih korisnik odbacuje.
+    /// </summary>
+    public async Task<bool> ConfirmDiscardChangesAsync()
+    {
+        if (!Validation.HasUnsavedChanges)
+        {
+            return true;
+        }
+
+        return await _dialogs.ConfirmAsync(
+            "Izmjene nisu sačuvane",
+            "Sadržaj u editoru je izmijenjen i nije sačuvan (ulazni fajl je netaknut). Da li da odbacim izmjene?",
+            "Odbaci izmjene",
+            "Otkaži",
+            isDangerous: true);
+    }
+
     internal static bool IsSchemaFile(string path) =>
         Path.GetExtension(path).ToUpperInvariant() is ".XSD" or ".ZIP";
 
@@ -278,6 +303,13 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IDisposable
         }
 
         var activeTab = SelectedTabIndex == 1 ? (DocumentTabViewModel)Cleaning : Validation;
+        if (activeTab.GetSaveProblem() is { } problem)
+        {
+            SetStatus("Fajl nije sačuvan.", MessageSeverity.Error);
+            await _dialogs.ShowMessageAsync("Fajl nije sačuvan", problem, MessageSeverity.Error);
+            return;
+        }
+
         var content = activeTab.GetContentToSave() ?? document.Content;
         var suggested = Path.GetFileNameWithoutExtension(document.FileName) + "_kopija" + Path.GetExtension(document.FileName);
         var target = await _dialogs.PickSaveFileAsync("Sačuvaj kao", suggested, [FileFilter.Xml, FileFilter.All], document.Folder);
@@ -299,6 +331,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IDisposable
         try
         {
             await AtomicFile.WriteAllBytesAsync(fullTarget, content);
+            activeTab.MarkSaved();
             _settings.Update(s => s with { LastFolder = Path.GetDirectoryName(fullTarget) });
             SetStatus($"Sačuvano kao „{Path.GetFileName(fullTarget)}”.", MessageSeverity.Success);
         }
