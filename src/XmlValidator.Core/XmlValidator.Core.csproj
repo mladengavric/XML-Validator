@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>XmlValidator.Core</RootNamespace>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Schemas\fakture-zdravstva.xsd" LogicalName="XmlValidator.Core.Schemas.fakture-zdravstva.xsd" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="XmlValidator.Core.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="System.Xml" />
+  </ItemGroup>
+
+</Project>
