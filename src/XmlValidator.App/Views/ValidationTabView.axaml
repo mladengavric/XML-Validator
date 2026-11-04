@@ -1,5 +1,5 @@
 <!--
-  Tab „Validacija” kad je fajl otvoren: traka (Validiraj/Prekini, sažetak, šema), poruke,
+  Tab „Validacija” kad je fajl otvoren: traka (Validiraj/Prekini, Sačuvaj XML, sažetak, šema), poruke,
   editor sa bojenjem XML-a i oznakama nalaza, lista nalaza sa skokom na liniju.
   Prazno stanje (nema fajla) je u MainWindow.axaml.
 -->
@@ -41,6 +41,15 @@
                         <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
                             <PathIcon Data="{StaticResource IconStop}" />
                             <TextBlock Text="Prekini" />
+                        </StackPanel>
+                    </Button>
+                    <!-- Čuvanje XML-a (i ispravki iz editora) bez prelaska na čišćenje; ista komanda kao „Sačuvaj kao…” gore -->
+                    <Button x:Name="SaveXmlButton"
+                            Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).SaveAsCommand}"
+                            ToolTip.Tip="Sačuvaj XML (sa ispravkama iz editora) u novi fajl (Ctrl+Shift+S). Ulazni fajl se nikad ne prepisuje.">
+                        <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
+                            <PathIcon Data="{StaticResource IconSave}" />
+                            <TextBlock Text="Sačuvaj XML…" />
                         </StackPanel>
                     </Button>
                 </StackPanel>

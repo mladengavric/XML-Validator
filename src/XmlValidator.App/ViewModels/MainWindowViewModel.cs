@@ -390,7 +390,9 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IDisposable
         }
 
         var content = activeTab.GetContentToSave() ?? document.Content;
-        var suggested = Path.GetFileNameWithoutExtension(document.FileName) + "_kopija" + Path.GetExtension(document.FileName);
+        // Ispravke iz taba „Validacija” dobijaju sufiks „_ispravljen”, nepromijenjen sadržaj „_kopija”.
+        var suffix = ReferenceEquals(activeTab, Validation) && Validation.IsModified ? "_ispravljen" : "_kopija";
+        var suggested = Path.GetFileNameWithoutExtension(document.FileName) + suffix + Path.GetExtension(document.FileName);
         var target = await _dialogs.PickSaveFileAsync("Sačuvaj kao", suggested, [FileFilter.Xml, FileFilter.All], document.Folder);
         if (target is null)
         {

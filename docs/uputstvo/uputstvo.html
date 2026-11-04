@@ -127,7 +127,7 @@
 <div class="step">
 <h3>Korak 3.2 – Pregledajte greške</h3>
 <p>Ako fajl ima grešaka, crveno piše koliko ih je i na koliko faktura (npr. <b class="ui">Pronađeno 4 greške u 3 fakture</b>; jedna faktura može imati više grešaka, a greške u zaglavlju fajla se navode kao „van faktura”). Sporne linije su označene u editoru, a sve greške su u tabeli <b class="ui">Nalazi</b> (ozbiljnost, linija, kolona, vrsta i poruka).</p>
-<p>Poruka kaže <b>gdje</b> je problem (npr. „Stavka 1 fakture SIN-1”), <b>šta</b> nije u redu i <b>šta treba upisati</b>, npr. „polje „usluga-nivo” (nivo usluge) je prazno. Upišite broj nivoa usluge (cijeli broj od 0 do 65535), ili obrišite cijeli red stavke ako ta usluga ne treba da bude u fakturi.” Kad zadržite miš iznad poruke, vidi se i originalni tehnički opis greške (na engleskom), koji može zatrebati podršci.</p>
+<p>Poruka kaže <b>gdje</b> je problem (npr. „Stavka 1 fakture SIN-1”), <b>šta</b> nije u redu i <b>šta treba upisati</b>, npr. „polje „usluga-nivo” (nivo usluge) je prazno. Upišite broj nivoa usluge, ili obrišite cijeli red stavke ako ta usluga ne treba da bude u fakturi.” Kad zadržite miš iznad poruke, vidi se i originalni tehnički opis greške (na engleskom), koji može zatrebati podršci.</p>
 <figure><img src="slike/05-validacija-greske.png" alt=""><figcaption>Slika 6. Fajl sa četiri greške.</figcaption></figure>
 </div>
 
@@ -142,9 +142,9 @@
 <ol>
   <li>Ispravite tekst direktno u editoru. Fajl dobija oznaku <b class="ui">izmijenjeno</b>, a program napominje da treba ponovo validirati (<kbd>F5</kbd>).</li>
   <li>Kliknite <b class="ui">Validiraj</b> da provjerite ispravku.</li>
-  <li>Kliknite <b class="ui">Sačuvaj kao…</b> (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd>) i izaberite <b>novo</b> ime fajla. Program ne dozvoljava čuvanje preko ulaznog fajla.</li>
+  <li>Kliknite <b class="ui">Sačuvaj XML…</b> na traci taba (pored dugmeta <b class="ui">Validiraj</b>), ili <b class="ui">Sačuvaj kao…</b> gore (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd>), i izaberite <b>novo</b> ime fajla. Program predlaže ime sa dodatkom <code>_ispravljen</code> (npr. <code>fakture_ispravljen.xml</code>) i ne dozvoljava čuvanje preko ulaznog fajla. Čišćenje faktura za ovo nije potrebno.</li>
 </ol>
-<figure><img src="slike/07-validacija-izmijenjeno.png" alt=""><figcaption>Slika 8. Sadržaj je izmijenjen poslije validacije.</figcaption></figure>
+<figure><img src="slike/07-validacija-izmijenjeno.png" alt=""><figcaption>Slika 8. Sadržaj je izmijenjen poslije validacije; dugme „Sačuvaj XML…” čuva ispravljen fajl.</figcaption></figure>
 </div>
 
 <!-- ============================================================ -->

@@ -331,11 +331,18 @@ public static partial class ValidationMessages
         var other => $"Element <{other}>",
     };
 
-    /// <summary>„broj nivoa usluge (cijeli broj od 0 do 65535)” ili samo opis kad polje nema poseban naziv.</summary>
+    /// <summary>
+    /// „šifru dijagnoze (…)” ili samo opis kad polje nema poseban naziv. Opis „cijeli broj od 0 do 65535” (samo granice
+    /// tipa <c>xs:unsignedShort</c>) se uz naziv ne navodi, jer je suvišan: „Upišite broj nivoa usluge”.
+    /// </summary>
     private static string What(string field, string description) =>
         ValueNouns.TryGetValue(field, out var noun)
-            ? $"{noun} ({(description.StartsWith("datum ", StringComparison.Ordinal) ? description["datum ".Length..] : description)})"
+            ? description == UnsignedShortRange
+                ? noun
+                : $"{noun} ({(description.StartsWith("datum ", StringComparison.Ordinal) ? description["datum ".Length..] : description)})"
             : description;
+
+    private const string UnsignedShortRange = "cijeli broj od 0 do 65535";
 
     private static bool IsItem(string? element) => element is "stavka" or "stavka-recept" or "stavka-obavjest";
 
