@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>XmlValidator.Cli</RootNamespace>
+    <!-- Drugačije ime od XmlValidator.exe (aplikacija), da oba mogu biti u istom folderu. -->
+    <AssemblyName>xmlvalidator-cli</AssemblyName>
+    <AssemblyTitle>XML Validator (konzolni alat)</AssemblyTitle>
+    <Description>Validacija i čišćenje IZIS XML faktura zdravstva iz komandne linije</Description>
+    <ApplicationIcon>..\XmlValidator.App\Assets\app.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\XmlValidator.Core\XmlValidator.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="XmlValidator.Cli.Tests" />
+  </ItemGroup>
+
+</Project>

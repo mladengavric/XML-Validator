@@ -102,6 +102,22 @@ skripte) u [`docs/odstupanja-od-clean-py.md`](docs/odstupanja-od-clean-py.md).
 | Ctrl+S | Sačuvaj očišćeni fajl |
 | Ctrl+R | Sačuvaj izvještaj |
 
+## Konzolni alat
+
+`xmlvalidator-cli` radi isto što i aplikacija, iz komandne linije, za serijsku obradu i automatizaciju:
+
+```
+xmlvalidator-cli validate fakture.xml --report nalazi.txt
+xmlvalidator-cli clean fakture.xml [izlaz.xml] [--group 100] [--empty delete|skip] [--nomatch delete|skip] [--report izvjestaj.txt]
+xmlvalidator-cli help clean
+```
+
+Važe ista pravila: ulaz se nikad ne mijenja, postojeći fajl se prepisuje samo uz `--overwrite`, sumnjivi blokovi
+traže izričitu odluku (`--suspicious delete|skip`), a izlaz koji ne prolazi provjeru prema šemi čuva se samo uz
+`--allow-invalid`. Izlazni kod je 0 za uspjeh, 1 kad fajl ima greške ili izlaz nije sačuvan, 2 za pogrešne
+argumente i 3 kad fajl ne može da se pročita ili upiše. Sve opcije i primjer serijske obrade su u
+[`docs/konzolni-alat.md`](docs/konzolni-alat.md).
+
 ## Gradnja i testovi
 
 ```
@@ -110,8 +126,8 @@ dotnet test
 ```
 
 Build ima uključeno `TreatWarningsAsErrors`; testovi (xUnit v3) pokrivaju Core (validacija, šeme,
-čišćenje, paritet sa `clean.py`) i aplikaciju (ViewModel-i i UI testovi bez prozora, sa snimcima ekrana u
-`artifacts/screenshots/`).
+čišćenje, paritet sa `clean.py`), aplikaciju (ViewModel-i i UI testovi bez prozora, sa snimcima ekrana u
+`artifacts/screenshots/`) i konzolni alat.
 
 Referentno ponašanje skripte (za testove pariteta):
 
@@ -128,6 +144,9 @@ dotnet publish src/XmlValidator.App -p:PublishProfile=win-x64
 Rezultat je jedan fajl `artifacts/publish/win-x64/XmlValidator.exe` (≈ 50 MB): self-contained,
 single-file, sa ugrađenim nativnim bibliotekama i simbolima, bez trimovanja. Profili su u
 `src/XmlValidator.App/Properties/PublishProfiles/`.
+
+Konzolni alat: `dotnet publish src/XmlValidator.Cli -p:PublishProfile=win-x64` daje
+`artifacts/publish/win-x64/xmlvalidator-cli.exe` (≈ 36 MB) u istom folderu.
 
 Postoji i profil `linux-x64` (`-p:PublishProfile=linux-x64`), ali Windows je primarna platforma i
 program na Linuxu nije provjeren.
@@ -153,13 +172,14 @@ program komandom iz prethodnog odjeljka.
 ```
 src/XmlValidator.Core/        logika: validacija, šeme, čišćenje, izvještaji (bez zavisnosti od UI-ja)
 src/XmlValidator.App/         Avalonia 12 aplikacija (MVVM, CommunityToolkit.Mvvm)
+src/XmlValidator.Cli/         konzolni alat xmlvalidator-cli (validate, clean)
 tests/                        testovi i ISKLJUČIVO sintetički testni podaci
 docs/                         analize i tehnička dokumentacija
 legacy/                       stari WinForms program i clean.py (samo za čitanje)
 ```
 
 Dokumentacija: [`docs/aplikacija.md`](docs/aplikacija.md) (arhitektura aplikacije),
-[`docs/ciscenje-faktura.md`](docs/ciscenje-faktura.md), [`docs/sheme-i-validacija.md`](docs/sheme-i-validacija.md),
+[`docs/ciscenje-faktura.md`](docs/ciscenje-faktura.md), [`docs/konzolni-alat.md`](docs/konzolni-alat.md), [`docs/sheme-i-validacija.md`](docs/sheme-i-validacija.md),
 analize starog programa, FZO paketa i `clean.py` u `docs/`. Plan rada i sve odluke su u [`PLAN.md`](PLAN.md).
 
 ## Lični podaci
