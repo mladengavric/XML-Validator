@@ -135,7 +135,7 @@
                     </StackPanel>
                 </Panel>
 
-                <!-- Čuvanje: izvještaj, pregled izmjena i očišćeni XML (glavna akcija) -->
+                <!-- Čuvanje: izvještaj i očišćeni XML (glavna akcija) -->
                 <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="{StaticResource SpaceS}"
                             VerticalAlignment="Center">
                     <Button x:Name="SaveReportButton" Command="{Binding SaveReportCommand}"
@@ -146,7 +146,7 @@
                         </StackPanel>
                     </Button>
                     <Button x:Name="SaveOutputButton" Classes="primary" Command="{Binding SaveOutputCommand}"
-                            ToolTip.Tip="Pregled izmjena, pa čuvanje očišćenog XML-a u novi fajl (Ctrl+S); poslije čuvanja se fajl validira u tabu „Validacija”. Ulazni fajl se nikad ne mijenja.">
+                            ToolTip.Tip="Čuvanje očišćenog XML-a u novi fajl (Ctrl+S); ako XML još nije očišćen, prvo pita da li da ga očisti. Poslije čuvanja se fajl validira u tabu „Validacija”. Ulazni fajl se nikad ne mijenja.">
                         <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
                             <PathIcon Data="{StaticResource IconSave}" />
                             <TextBlock Text="Sačuvaj XML" />
@@ -353,7 +353,7 @@
                 <Border Classes="pane">
                     <DockPanel>
                         <Border Classes="paneHeader" DockPanel.Dock="Top">
-                            <Grid ColumnDefinitions="Auto,Auto,Auto,*,Auto" ColumnSpacing="{StaticResource SpaceS}">
+                            <Grid ColumnDefinitions="Auto,Auto,Auto,Auto,*,Auto" ColumnSpacing="{StaticResource SpaceS}">
                                 <StackPanel VerticalAlignment="Center">
                                     <TextBlock Classes="strong" Text="Fakture" />
                                     <TextBlock x:Name="RowsCountText" Classes="caption muted" Text="{Binding RowsCountText}" />
@@ -375,13 +375,9 @@
                                     </TextBox.InnerLeftContent>
                                 </TextBox>
 
-                                <!-- Grupna promjena akcije za izabrane kandidate -->
-                                <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="{StaticResource SpaceXs}"
+                                <!-- Grupna promjena akcije za izabrane kandidate, odmah uz pretragu -->
+                                <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="{StaticResource SpaceXs}"
                                             VerticalAlignment="Center">
-                                    <TextBlock x:Name="SelectedCountText" Classes="caption muted" VerticalAlignment="Center"
-                                              
-                                               Text="{Binding SelectedCandidateCount, StringFormat='Izabrano kandidata: {0}'}"
-                                               ToolTip.Tip="Ctrl ili Shift + klik bira više faktura; grupna akcija važi samo za kandidate" />
                                     <Button x:Name="DeleteSelectedButton" Classes="toolbar compact"
                                             Command="{Binding DeleteSelectedCommand}"
                                             ToolTip.Tip="Postavi akciju Obriši za izabrane kandidate; briše se samo iz očišćenog fajla (Delete u tabeli)">
@@ -404,6 +400,30 @@
                                         <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceXs}">
                                             <PathIcon Classes="small" Data="{StaticResource IconReset}" />
                                             <TextBlock Text="Vrati" />
+                                        </StackPanel>
+                                    </Button>
+                                    <TextBlock x:Name="SelectedCountText" Classes="caption muted" VerticalAlignment="Center"
+                                               Text="{Binding SelectedCandidateCount, StringFormat='Izabrano kandidata: {0}'}"
+                                               ToolTip.Tip="Ctrl ili Shift + klik bira više faktura; grupna akcija važi samo za kandidate" />
+                                </StackPanel>
+
+                                <!-- Pregled izmjena i čišćenje u memoriji (prije čuvanja) -->
+                                <StackPanel Grid.Column="5" Orientation="Horizontal" Spacing="{StaticResource SpaceXs}"
+                                            VerticalAlignment="Center">
+                                    <Button x:Name="PreviewChangesButton" Classes="toolbar compact"
+                                            Command="{Binding PreviewChangesCommand}"
+                                            ToolTip.Tip="Pregled izmjena prije čuvanja: fakture koje se brišu, ručno mijenjaju ili automatski popravljaju, uz provjeru prema šemi; ništa se ne čuva">
+                                        <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceXs}">
+                                            <PathIcon Classes="small" Data="{StaticResource IconCompare}" />
+                                            <TextBlock Text="Pregled" />
+                                        </StackPanel>
+                                    </Button>
+                                    <Button x:Name="CleanXmlButton" Classes="toolbar compact"
+                                            Command="{Binding CleanXmlCommand}"
+                                            ToolTip.Tip="Očisti XML po izabranim akcijama (u memoriji) i odmah ga ponovo analiziraj; ništa se ne čuva dok ne kliknete „Sačuvaj XML”. Ulazni fajl se nikad ne mijenja.">
+                                        <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceXs}">
+                                            <PathIcon Classes="small" Data="{StaticResource IconClean}" />
+                                            <TextBlock Text="Očisti XML" />
                                         </StackPanel>
                                     </Button>
                                 </StackPanel>

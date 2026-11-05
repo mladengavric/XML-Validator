@@ -69,6 +69,8 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IDisposable
         Validation.PropertyChanged += OnTabPropertyChanged;
         Cleaning.PropertyChanged += OnTabPropertyChanged;
         Cleaning.OpenInValidationRequested += OnOpenInValidationRequested;
+        Cleaning.CleanedInMemory += OnCleanedInMemory;
+        Cleaning.Ask = AskAsync;
         Validation.ValidationCompleted += OnValidationCompleted;
         LoadRecentFiles();
     }
@@ -543,7 +545,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IDisposable
         if (document is null || _validationShowsCleanedOutput || Validation.IsReadOnly
             || Cleaning.Document is not { } analyzed || !AppSettings.PathComparer.Equals(analyzed.Path, document.Path)
             || Validation.GetSaveProblem() is not null || Validation.GetContentToSave() is not { } content
-            || content.AsSpan().SequenceEqual(analyzed.Content))
+            || content.AsSpan().SequenceEqual(Cleaning.SourceContent ?? analyzed.Content))
         {
             return;
         }
@@ -658,11 +660,16 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IDisposable
         Validation.PropertyChanged -= OnTabPropertyChanged;
         Cleaning.PropertyChanged -= OnTabPropertyChanged;
         Cleaning.OpenInValidationRequested -= OnOpenInValidationRequested;
+        Cleaning.CleanedInMemory -= OnCleanedInMemory;
+        Cleaning.Ask = null;
         Validation.ValidationCompleted -= OnValidationCompleted;
         _cleaningCheckCts?.Cancel();
         _cleaningCheckCts?.Dispose();
         Question?.Dismiss();
     }
+
+    /// <summary>„Očisti XML”: o fakturama za čišćenje je korisnik odlučio, pa oznaka ispod taba nestaje.</summary>
+    private void OnCleanedInMemory(object? sender, EventArgs e) => ResetCleaningAttention();
 
     /// <summary>Posljednja provjera faktura za čišćenje poslije validacije; za testove.</summary>
     internal Task WhenCleaningCheckCompletedAsync() => _lastCleaningCheck;

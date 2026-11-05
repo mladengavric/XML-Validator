@@ -351,6 +351,62 @@ public static class CleaningReportFormatter
         void Row(params string[] values) => sb.Append(string.Join(";", values.Select(Escape))).Append("\r\n");
     }
 
+    /// <summary>
+    /// Izvještaj za više uzastopnih prolaza čišćenja (npr. „Očisti XML” pa još jedan prolaz): svaki prolaz je
+    /// poseban odjeljak, redom. Za jedan prolaz je isto što i <see cref="ToText(CleaningReport, ReportExportOptions?)"/>.
+    /// </summary>
+    public static string ToText(IReadOnlyList<CleaningReport> reports, ReportExportOptions? options = null)
+    {
+        ArgumentNullException.ThrowIfNull(reports);
+        if (reports.Count == 1)
+        {
+            return ToText(reports[0], options);
+        }
+
+        var sb = new StringBuilder();
+        for (var i = 0; i < reports.Count; i++)
+        {
+            sb.Append($"ČIŠĆENJE {i + 1} OD {reports.Count}").Append(i == 0 ? " (ulazni sadržaj)" : " (sadržaj poslije prethodnog čišćenja)").Append("\r\n");
+            sb.Append(ToText(reports[i], options));
+            if (i < reports.Count - 1)
+            {
+                sb.Append("\r\n");
+            }
+        }
+
+        return sb.ToString();
+    }
+
+    /// <summary>
+    /// CSV za više uzastopnih prolaza čišćenja: zaglavlje jednom, a prva kolona „Čišćenje” je redni broj prolaza
+    /// (linije se odnose na sadržaj tog prolaza). Za jedan prolaz je isto što i <see cref="ToCsv(CleaningReport, ReportExportOptions?)"/>.
+    /// </summary>
+    public static string ToCsv(IReadOnlyList<CleaningReport> reports, ReportExportOptions? options = null)
+    {
+        ArgumentNullException.ThrowIfNull(reports);
+        if (reports.Count == 1)
+        {
+            return ToCsv(reports[0], options);
+        }
+
+        var sb = new StringBuilder();
+        for (var i = 0; i < reports.Count; i++)
+        {
+            var lines = ToCsv(reports[i], options).Split("\r\n");
+            for (var l = i == 0 ? 0 : 1; l < lines.Length; l++)
+            {
+                if (lines[l].Length == 0)
+                {
+                    continue;
+                }
+
+                sb.Append(l == 0 ? "Čišćenje" : (i + 1).ToString(CultureInfo.InvariantCulture)).Append(';').Append(lines[l]).Append("\r\n");
+            }
+        }
+
+        return sb.ToString();
+    }
+
     /// <summary>Kodiranje za upis CSV-a: UTF-8 sa BOM-om, da ga Excel ispravno otvori.</summary>
     public static Encoding CsvEncoding { get; } = new UTF8Encoding(encoderShouldEmitUTF8Identifier: true);
 

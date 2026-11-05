@@ -44,6 +44,14 @@ public sealed partial class CleaningTabViewModel : DocumentTabViewModel, IDispos
     private Task _lastBackgroundWork = Task.CompletedTask;
     private string? _contentNote;
 
+    /// <summary>Prolazi „Očisti XML” (sadržaj prije čišćenja, sesija i izlaz), redom; prazno dok XML nije čišćen.</summary>
+    private readonly List<CleanPass> _cleanPasses = [];
+
+    /// <summary>Tekstovi faktura koje su ostale poslije „Očisti XML”, za prenos odluka u novu analizu.</summary>
+    private Dictionary<string, int>? _keptTexts;
+
+    private sealed record CleanPass(OpenedDocument Before, CleaningSession Session, CleaningResult Result);
+
     public CleaningTabViewModel(
         CleaningService cleaning,
         XmlValidationService validator,
@@ -87,6 +95,23 @@ public sealed partial class CleaningTabViewModel : DocumentTabViewModel, IDispos
 
     /// <summary>Zahtjev glavnom prozoru da otvori fajl u tabu „Validacija”.</summary>
     public event EventHandler<OpenInValidationEventArgs>? OpenInValidationRequested;
+
+    /// <summary>XML je očišćen u memoriji („Očisti XML”) i ponovo analiziran.</summary>
+    public event EventHandler? CleanedInMemory;
+
+    /// <summary>
+    /// Pitanje „Da/Ne” (glavni prozor ga prikazuje preko prozora): <c>true</c> = Da, <c>false</c> = Ne,
+    /// <c>null</c> = zatvoreno bez odgovora. Bez njega se koristi obična potvrda.
+    /// </summary>
+    public Func<string, string, Task<bool?>>? Ask { get; set; }
+
+    /// <summary>XML je očišćen u memoriji („Očisti XML”), a sadržaj još nije sačuvan.</summary>
+    public bool IsCleanedInMemory => _cleanPasses.Count > 0;
+
+    /// <summary>
+    /// Sadržaj od kojeg je čišćenje počelo (prije prvog „Očisti XML”); dok XML nije čišćen, analiziran sadržaj.
+    /// </summary>
+    public byte[]? SourceContent => _cleanPasses.Count > 0 ? _cleanPasses[0].Before.Content : Document?.Content;
 
     // ---------------------------------------------------------------- podešavanja
 
@@ -293,7 +318,7 @@ public sealed partial class CleaningTabViewModel : DocumentTabViewModel, IDispos
 
     /// <summary>Korisnik je donio odluke (akcije, izmjene) koje nisu sačuvane u očišćen fajl.</summary>
     public override bool HasUnsavedChanges =>
-        _session is { } session && _savedVersion != session.Version && HasDecisions(session);
+        _session is { } session && _savedVersion != session.Version && (HasDecisions(session) || _cleanPasses.Count > 0);
 
     // ---------------------------------------------------------------- javni API
 
@@ -331,6 +356,8 @@ public sealed partial class CleaningTabViewModel : DocumentTabViewModel, IDispos
     private void SetDocument(OpenedDocument? document, string? contentNote)
     {
         _contentNote = contentNote;
+        _cleanPasses.Clear();
+        _keptTexts = null;
         CancelRunningAnalysis();
         base.SetDocument(document);
         ClearAnalysis();
@@ -569,7 +596,127 @@ public sealed partial class CleaningTabViewModel : DocumentTabViewModel, IDispos
 
     private bool CanSaveOutput() => IsInteractive && SaveBlockedReason is null && EditingRow is null;
 
-    /// <summary>Čuva očišćen fajl u novi fajl (podrazumijevano <c>&lt;ime&gt;_ociscen.xml</c>); ulaz se nikad ne prepisuje.</summary>
+    /// <summary>
+    /// „Pregled”: prozor „Pregled izmjena prije čuvanja” (fakture koje se brišu, mijenjaju ili popravljaju, uz provjeru
+    /// prema šemi), bez čuvanja. Kad je XML već očišćen, a novih odluka nema, prikazuje izmjene iz „Očisti XML”.
+    /// </summary>
+    [RelayCommand(CanExecute = nameof(CanSaveOutput))]
+    private async Task PreviewChangesAsync()
+    {
+        var document = Document;
+        if (_session is not { } session || document is null)
+        {
+            return;
+        }
+
+        IsSaving = true;
+        NotifyCommands();
+        try
+        {
+            var result = await GetCheckedResultAsync(session);
+            if (result is null)
+            {
+                return;
+            }
+
+            var changes = CleaningChangeSet.Create(result.Output.Blocks);
+            var name = document.FileName;
+            if (changes.IsEmpty && _cleanPasses.Count > 0)
+            {
+                // Očišćen XML: pregled onoga što je „Očisti XML” promijenio u odnosu na sadržaj prije čišćenja.
+                var pass = _cleanPasses[^1];
+                changes = CleaningChangeSet.Create(pass.Result.Output.Blocks);
+                result = pass.Result;
+            }
+
+            await _dialogs.ShowChangesPreviewAsync(new ChangesPreviewViewModel(changes, name, result.Validation, isConfirmation: false));
+        }
+        finally
+        {
+            IsSaving = false;
+            NotifyCommands();
+        }
+    }
+
+    /// <summary>
+    /// „Očisti XML”: primjenjuje izabrane akcije na sadržaj u memoriji i odmah ga ponovo analizira, da korisnik vidi
+    /// očišćen XML prije čuvanja. Fakture koje su ostale zadržavaju odluku (npr. preskočeni kandidati ostaju
+    /// preskočeni). Ništa se ne upisuje na disk; ulazni fajl je netaknut.
+    /// </summary>
+    [RelayCommand(CanExecute = nameof(CanSaveOutput))]
+    private async Task CleanXmlAsync()
+    {
+        var document = Document;
+        if (_session is not { } session || document is null)
+        {
+            return;
+        }
+
+        CleaningResult? result;
+        IsSaving = true;
+        NotifyCommands();
+        try
+        {
+            result = await GetCheckedResultAsync(session);
+        }
+        finally
+        {
+            IsSaving = false;
+            NotifyCommands();
+        }
+
+        if (result is null || !ReferenceEquals(session, _session))
+        {
+            return;
+        }
+
+        var changes = CleaningChangeSet.Create(result.Output.Blocks);
+        if (changes.IsEmpty)
+        {
+            Message = UserMessage.Info("XML je već očišćen: nema faktura za brisanje, ručnu izmjenu ni popravku.");
+            return;
+        }
+
+        _cleanPasses.Add(new CleanPass(document, session, result));
+        _keptTexts = [];
+        foreach (var kept in result.Output.Blocks.Where(b => b.Disposition != BlockDisposition.Deleted))
+        {
+            _keptTexts[kept.OutputText] = _keptTexts.GetValueOrDefault(kept.OutputText) + 1;
+        }
+
+        var parts = new List<string>();
+        if (changes.DeletedCount > 0)
+        {
+            parts.Add($"obrisano {Invoices(changes.DeletedCount)}");
+        }
+
+        if (changes.EditedCount > 0)
+        {
+            parts.Add($"ručno izmijenjeno {Invoices(changes.EditedCount)}");
+        }
+
+        if (changes.RepairedCount > 0)
+        {
+            parts.Add($"popravljeno {Invoices(changes.RepairedCount)}");
+        }
+
+        _contentNote = $"XML je očišćen u memoriji ({string.Join(", ", parts)}); sačuvajte ga dugmetom „Sačuvaj XML”. Ulazni fajl je netaknut.";
+        CancelRunningAnalysis();
+        base.SetDocument(new OpenedDocument(document.Path, result.Output.Bytes));
+        ClearAnalysis();
+        AnalysisError = null;
+        Message = null;
+        var analysis = RunAnalysisAsync();
+        _lastBackgroundWork = analysis;
+        NotifyCommands();
+        await analysis;
+        CleanedInMemory?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>
+    /// Čuva očišćen fajl u novi fajl (podrazumijevano <c>&lt;ime&gt;_ociscen.xml</c>); ulaz se nikad ne prepisuje.
+    /// Ako izabrane akcije još nisu primijenjene („Očisti XML”), prvo pita da li da se XML očisti i sačuva.
+    /// </summary>
     [RelayCommand(CanExecute = nameof(CanSaveOutput))]
     private async Task SaveOutputAsync()
     {
@@ -590,11 +737,30 @@ public sealed partial class CleaningTabViewModel : DocumentTabViewModel, IDispos
                 return;
             }
 
-            // Pregled izmjena (sa provjerom prema šemi) prije izbora fajla; izlaz sa greškama šeme traži „Sačuvaj svejedno”.
-            var preview = new ChangesPreviewViewModel(CleaningChangeSet.Create(result.Output.Blocks), document.FileName, result.Validation, isConfirmation: true);
-            if (!await _dialogs.ShowChangesPreviewAsync(preview))
+            var changes = CleaningChangeSet.Create(result.Output.Blocks);
+            if (!changes.IsEmpty)
             {
-                return;
+                var answer = await AskAsync(
+                    "XML nije očišćen",
+                    $"Izabrane akcije još nisu primijenjene ({DescribeChanges(changes)}). Da li želite da se XML očisti i sačuva?");
+                if (answer != true)
+                {
+                    Message = UserMessage.Info("Čuvanje je otkazano; XML nije očišćen.");
+                    return;
+                }
+            }
+
+            if (!result.Validation.IsValid)
+            {
+                var (summary, _) = ValidationTabViewModel.Summarize(result.Validation);
+                var anyway = await AskAsync(
+                    "Greške prema šemi",
+                    $"Očišćen fajl ima greške prema šemi „{result.Validation.SchemaName}”: {summary} Da li ipak želite da ga sačuvate?");
+                if (anyway != true)
+                {
+                    Message = UserMessage.Info("Čuvanje je otkazano.");
+                    return;
+                }
             }
 
             var suggested = Path.GetFileName(CleaningOutputWriter.GetDefaultOutputPath(document.Path));
@@ -635,6 +801,30 @@ public sealed partial class CleaningTabViewModel : DocumentTabViewModel, IDispos
         }
     }
 
+    private async Task<bool?> AskAsync(string title, string message) =>
+        Ask is { } ask ? await ask(title, message) : await _dialogs.ConfirmAsync(title, message, "Da", "Ne");
+
+    private static string DescribeChanges(CleaningChangeSet changes)
+    {
+        var parts = new List<string>();
+        if (changes.DeletedCount > 0)
+        {
+            parts.Add($"za brisanje: {changes.DeletedCount}");
+        }
+
+        if (changes.EditedCount > 0)
+        {
+            parts.Add($"ručno izmijenjenih: {changes.EditedCount}");
+        }
+
+        if (changes.RepairedCount > 0)
+        {
+            parts.Add($"za popravku: {changes.RepairedCount}");
+        }
+
+        return $"faktura {string.Join(", ", parts)}";
+    }
+
     private bool CanSaveReport() => IsInteractive && EditingRow is null;
 
     /// <summary>Čuva izvještaj u <c>.txt</c> ili <c>.csv</c> (po ekstenziji); JMB se ne maskira.</summary>
@@ -668,12 +858,24 @@ public sealed partial class CleaningTabViewModel : DocumentTabViewModel, IDispos
             // Izvještaj uključuje provjeru izlaza kad izlaz može da se napravi.
             var result = SaveBlockedReason is null ? await GetCheckedResultAsync(session) : null;
             var outputPath = _savedVersion == session.Version ? _savedOutputPath : null;
-            var report = CleaningReport.Create(session, result, document.Path, outputPath, _time);
+            var reports = new List<CleaningReport>();
+            foreach (var pass in _cleanPasses)
+            {
+                reports.Add(CleaningReport.Create(pass.Session, pass.Result, document.Path, outputPath, _time));
+            }
+
+            // Poslije „Očisti XML” bez novih odluka trenutno stanje ne mijenja ništa; izvještaj su prolazi čišćenja.
+            var current = CleaningReport.Create(session, result, document.Path, outputPath, _time);
+            if (reports.Count == 0 || result is null || !CleaningChangeSet.Create(result.Output.Blocks).IsEmpty)
+            {
+                reports.Add(current);
+            }
+
             var options = new ReportExportOptions();
             var isCsv = string.Equals(Path.GetExtension(fullTarget), ".csv", StringComparison.OrdinalIgnoreCase);
             var (text, encoding) = isCsv
-                ? (CleaningReportFormatter.ToCsv(report, options), CleaningReportFormatter.CsvEncoding)
-                : (CleaningReportFormatter.ToText(report, options), CleaningReportFormatter.TextEncoding);
+                ? (CleaningReportFormatter.ToCsv(reports, options), CleaningReportFormatter.CsvEncoding)
+                : (CleaningReportFormatter.ToText(reports, options), CleaningReportFormatter.TextEncoding);
             await AtomicFile.WriteAllBytesAsync(fullTarget, [.. encoding.GetPreamble(), .. encoding.GetBytes(text)]);
             _settings.Update(s => s with { LastFolder = Path.GetDirectoryName(fullTarget) });
             Message = UserMessage.Success($"Izvještaj je sačuvan: „{Path.GetFileName(fullTarget)}”.");
@@ -924,6 +1126,7 @@ public sealed partial class CleaningTabViewModel : DocumentTabViewModel, IDispos
     private void SetSession(CleaningSession session)
     {
         _session = session;
+        CarryOverKeptDecisions(session);
         _lastResult = null;
         _lastResultVersion = -1;
         _savedOutputPath = null;
@@ -943,6 +1146,39 @@ public sealed partial class CleaningTabViewModel : DocumentTabViewModel, IDispos
                 ? UserMessage.Warning($"Analiza je završena. {Invoices(summary.Unresolved)} čeka odluku prije čuvanja.")
                 : UserMessage.Success($"Analiza je završena: {Invoices(summary.Total)}, ostaje {summary.Remaining}, kandidata {summary.Candidates}.");
         Message = _contentNote is { } note ? message with { Text = $"{message.Text} {note}" } : message;
+    }
+
+    /// <summary>
+    /// Poslije „Očisti XML”: kandidati i sumnjivi blokovi koji su u prethodnom prolazu ostali u fajlu (preskočeni,
+    /// uređeni ili zadržani) dobijaju akciju Preskoči, da ih nova analiza ne vrati na podrazumijevanu akciju.
+    /// </summary>
+    private void CarryOverKeptDecisions(CleaningSession session)
+    {
+        var kept = _keptTexts;
+        _keptTexts = null;
+        if (kept is null)
+        {
+            return;
+        }
+
+        var ids = new List<int>();
+        foreach (var block in session.Blocks)
+        {
+            if ((block.Classification.IsCandidate || block.Disposition == BlockDisposition.Unresolved)
+                && kept.TryGetValue(block.Block.Text, out var count) && count > 0)
+            {
+                kept[block.Block.Text] = count - 1;
+                if (block.Action != CandidateAction.Skip)
+                {
+                    ids.Add(block.Id);
+                }
+            }
+        }
+
+        if (ids.Count > 0)
+        {
+            session.SetActionForMany(ids, CandidateAction.Skip);
+        }
     }
 
     private void ClearAnalysis()
@@ -1359,7 +1595,10 @@ public sealed partial class CleaningTabViewModel : DocumentTabViewModel, IDispos
         CancelEditCommand.NotifyCanExecuteChanged();
         RevertEditCommand.NotifyCanExecuteChanged();
         SaveOutputCommand.NotifyCanExecuteChanged();
+        PreviewChangesCommand.NotifyCanExecuteChanged();
+        CleanXmlCommand.NotifyCanExecuteChanged();
         SaveReportCommand.NotifyCanExecuteChanged();
+        OnPropertyChanged(nameof(IsCleanedInMemory));
     }
 
     private async Task<bool> ConfirmDiscardDecisionsAsync()

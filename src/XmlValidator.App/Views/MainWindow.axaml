@@ -285,14 +285,14 @@
                                TextTrimming="CharacterEllipsis" />
                     <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right"
                                 Spacing="{StaticResource SpaceS}">
-                        <Button x:Name="QuestionYesButton" Classes="primary popupAction" Content="{Binding YesText, FallbackValue=Da}"
-                                AutomationProperties.Name="{Binding YesText, FallbackValue=Da}"
-                                Command="{Binding YesCommand}"
-                                ToolTip.Tip="Odgovor „Da” (Enter dok je dugme u fokusu)" />
                         <Button x:Name="QuestionNoButton" Classes="popupAction" Content="{Binding NoText, FallbackValue=Ne}"
                                 AutomationProperties.Name="{Binding NoText, FallbackValue=Ne}"
                                 Command="{Binding NoCommand}"
                                 ToolTip.Tip="Odgovor „Ne”. Esc ili klik van pitanja ga zatvara bez odgovora." />
+                        <Button x:Name="QuestionYesButton" Classes="primary popupAction" Content="{Binding YesText, FallbackValue=Da}"
+                                AutomationProperties.Name="{Binding YesText, FallbackValue=Da}"
+                                Command="{Binding YesCommand}"
+                                ToolTip.Tip="Odgovor „Da” (Enter dok je dugme u fokusu)" />
                     </StackPanel>
                 </Grid>
             </Border>

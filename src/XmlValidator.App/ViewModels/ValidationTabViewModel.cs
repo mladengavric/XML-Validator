@@ -465,6 +465,17 @@ public sealed partial class ValidationTabViewModel : DocumentTabViewModel, IDisp
         }
 
         IssueLinesShifted?.Invoke(this, EventArgs.Empty);
+        if (removed.Count > 0 && Issues.Count == 0)
+        {
+            // Korisnik je uklonio sve nalaze: ponovna validacija bez klika na „Validiraj”.
+            _ui.Post(() =>
+            {
+                if (Issues.Count == 0 && CanValidate())
+                {
+                    _lastBackgroundWork = RunValidationAsync();
+                }
+            });
+        }
     }
 
     /// <summary>Uklanja nalaze iz liste i ažurira brojače, sažetak i izvještaj za izvoz.</summary>
