@@ -36,14 +36,14 @@
                                 ToolTip.Tip="Otvori XML fajl (Ctrl+O)">
                             <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
                                 <PathIcon Data="{StaticResource IconOpen}" />
-                                <TextBlock Text="Otvori…" />
+                                <TextBlock Text="Otvori" />
                             </StackPanel>
                         </Button>
                         <Button x:Name="SaveAsButton" Classes="toolbar" Command="{Binding SaveAsCommand}"
                                 ToolTip.Tip="Sačuvaj sadržaj u novi fajl (Ctrl+Shift+S). Ulazni fajl se nikad ne prepisuje.">
                             <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
                                 <PathIcon Data="{StaticResource IconSave}" />
-                                <TextBlock Text="Sačuvaj kao…" />
+                                <TextBlock Text="Sačuvaj kao" />
                             </StackPanel>
                         </Button>
                         <Button x:Name="CloseFileButton" Classes="toolbar" Command="{Binding CloseFileCommand}"
@@ -160,7 +160,7 @@
                                     Command="{Binding OpenCommand}" ToolTip.Tip="Otvori XML fajl (Ctrl+O)">
                                 <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
                                     <PathIcon Data="{StaticResource IconOpen}" />
-                                    <TextBlock Text="Otvori fajl…" />
+                                    <TextBlock Text="Otvori fajl" />
                                 </StackPanel>
                             </Button>
                         </StackPanel>
@@ -177,7 +177,15 @@
                     <TabItem.Header>
                         <StackPanel Classes="tabHeader" Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
                             <PathIcon Data="{StaticResource IconClean}" />
-                            <TextBlock Text="{Binding Cleaning.Header}" />
+                            <!-- Trepćuća linija ispod teksta kad otvoreni fajl ima faktura za čišćenje.
+                                 Crta se ispod teksta bez uticaja na raspored (vidi Border.attentionLine). -->
+                            <Panel>
+                                <TextBlock Text="{Binding Cleaning.Header}" />
+                                <Border x:Name="CleaningAttentionLine" Classes="attentionLine"
+                                        IsVisible="{Binding CleaningNeedsAttention}"
+                                        ToolTip.Tip="{Binding InvoicesToClean, StringFormat='Ima faktura za čišćenje: {0}'}"
+                                        AutomationProperties.Name="{Binding InvoicesToClean, StringFormat='Ima faktura za čišćenje: {0}'}" />
+                            </Panel>
                         </StackPanel>
                     </TabItem.Header>
                     <Grid>
@@ -197,7 +205,7 @@
                                     Command="{Binding OpenCommand}" ToolTip.Tip="Otvori XML fajl (Ctrl+O)">
                                 <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
                                     <PathIcon Data="{StaticResource IconOpen}" />
-                                    <TextBlock Text="Otvori fajl…" />
+                                    <TextBlock Text="Otvori fajl" />
                                 </StackPanel>
                             </Button>
                         </StackPanel>
@@ -239,7 +247,7 @@
                                        Foreground="{DynamicResource WarningForegroundBrush}" />
                         </StackPanel>
                         <Border Classes="divider" />
-                        <Button x:Name="ManageSchemasButton" Classes="link" Content="Upravljaj šemama…"
+                        <Button x:Name="ManageSchemasButton" Classes="link" Content="Upravljaj šemama"
                                 Command="{Binding ManageSchemasCommand}"
                                 ToolTip.Tip="Podešavanja → Šeme: uvoz, izbor aktivne šeme, razlike" />
                     </StackPanel>

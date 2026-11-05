@@ -219,7 +219,7 @@
                                     ToolTip.Tip="Nalijepite link ZIP paketa šema sa sajta FZO (samo https://); paket se preuzima i uvozi kao fajl">
                                 <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
                                     <PathIcon Data="{StaticResource IconDownload}" />
-                                    <TextBlock Text="Uvezi sa linka…" />
+                                    <TextBlock Text="Uvezi sa linka" />
                                 </StackPanel>
                             </Button>
                             <Button x:Name="ImportButton" Classes="primary"
@@ -227,7 +227,7 @@
                                     ToolTip.Tip="Uvoz .xsd fajla ili .zip paketa sačuvanog na računaru">
                                 <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
                                     <PathIcon Data="{StaticResource IconImport}" />
-                                    <TextBlock Text="Uvezi šemu…" />
+                                    <TextBlock Text="Uvezi šemu" />
                                 </StackPanel>
                             </Button>
                         </StackPanel>
@@ -319,14 +319,14 @@
                                     ToolTip.Tip="Naziv šeme se upisuje u izvještaje">
                                 <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
                                     <PathIcon Classes="small" Data="{StaticResource IconRename}" />
-                                    <TextBlock Text="Preimenuj…" />
+                                    <TextBlock Text="Preimenuj" />
                                 </StackPanel>
                             </Button>
                             <Button x:Name="DeleteButton" Classes="danger" Command="{Binding DeleteCommand}"
                                     ToolTip.Tip="Briše šemu iz programa (uz potvrdu). Ugrađena šema se ne može obrisati.">
                                 <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
                                     <PathIcon Classes="small" Data="{StaticResource IconDelete}" />
-                                    <TextBlock Text="Obriši…" />
+                                    <TextBlock Text="Obriši" />
                                 </StackPanel>
                             </Button>
                         </WrapPanel>

@@ -10,16 +10,17 @@
     TextBlock/SelectableTextBlock: display, title, subtitle, strong, muted, caption, mono, accent
     PathIcon: small, large, hero, status (+ info/success/warning/error), accent, muted
     ListBox: nav, list
-    TabControl: main (+ StackPanel.tabHeader u zaglavlju taba)
+    TabControl: main (+ StackPanel.tabHeader u zaglavlju taba, Border.attentionLine: trepćuća linija)
     Tab „Validacija”: Border.pane/paneHeader, Border.toolbar.tabbar, Border.banner.compact,
             Border.badge (+ accentSubtle/error), TextBlock.summary (+ ozbiljnost), TextBlock.warningText,
+            Border.toast (+ success: plutajuće obavještenje sa sjenkom),
             ComboBox.field, GridSplitter.pane, DataGrid.issues (+ TextBlock.cell/number/message/fullMessage), ToolTip.wide,
             StackPanel.emptyPane, ProgressBar.busySmall, Button.toolbar.compact,
             ae|TextEditor.xml, ui|IssueMarkerMargin
-    Tab „Čišćenje faktura”: ToggleButton.toolbar, Border.settingsPanel, Border.stats/stat (+ last/attention/error),
-            TextBlock.statLabel/statValue, DataGrid.invoices (+ ComboBox.cellAction/.unresolved, Border.partBadge),
+    Tab „Čišćenje faktura”: ToggleButton.toolbar (+ chevron), Border.settingsPanel, Border.stats/stat (+ last/attention/error),
+            TextBlock.statLabel/statValue (+ Border.stat.optional i TextBlock.statLabel.long/short za uzak prozor), DataGrid.invoices (+ ComboBox.cellAction/.unresolved, Border.partBadge),
             ListBox.notes (+ TextBlock.noteText), Border.pane.editing, Border.savebar (+ TextBlock.reason),
-            CheckBox.compact, TextBox.search, TextBlock.errorText, ProgressBar.analysis, GridSplitter.paneColumns,
+            TextBox.search, TextBlock.errorText, ProgressBar.analysis, GridSplitter.paneColumns,
             Button.icon.small, Border.banner TextBlock.message, ui|FileLineNumberMargin
     Faza 6: RadioButton.segment (uz Theme ToggleButton), Border.badge (+ info/success), Border.windowHeader,
             Border.keyCap, Border.listRow, ProgressBar.download
@@ -246,7 +247,7 @@
         <Setter Property="Foreground" Value="{DynamicResource TextDisabledBrush}" />
     </Style>
 
-    <!-- Dugme kao link (sekundarna navigacija, npr. „Upravljaj šemama…”) -->
+    <!-- Dugme kao link (sekundarna navigacija, npr. „Upravljaj šemama”) -->
     <Style Selector="Button.link">
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="BorderBrush" Value="Transparent" />
@@ -479,6 +480,29 @@
         <Setter Property="Background" Value="{DynamicResource AccentSubtleBrush}" />
     </Style>
 
+    <!-- Trepćuća linija ispod teksta taba (npr. „Čišćenje faktura” kad fajl ima faktura za čišćenje).
+         Negativna donja margina je spušta ispod teksta bez uticaja na raspored zaglavlja, pa se tab
+         ne pomjera kad se linija pojavi ili nestane. Značenje nosi i opis alata (ne samo boja). -->
+    <Style Selector="Border.attentionLine">
+        <Setter Property="Background" Value="{DynamicResource AttentionBrush}" />
+        <Setter Property="Height" Value="{DynamicResource AttentionLineHeight}" />
+        <Setter Property="Margin" Value="{DynamicResource AttentionLineMargin}" />
+        <Setter Property="CornerRadius" Value="{DynamicResource RadiusS}" />
+        <Setter Property="VerticalAlignment" Value="Bottom" />
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
+        <Style.Animations>
+            <!-- Mirno treptanje: 0,6 s u jednom smjeru, pa nazad -->
+            <Animation Duration="0:0:0.6" IterationCount="Infinite" PlaybackDirection="Alternate" Easing="SineEaseInOut">
+                <KeyFrame Cue="0%">
+                    <Setter Property="Opacity" Value="1" />
+                </KeyFrame>
+                <KeyFrame Cue="100%">
+                    <Setter Property="Opacity" Value="0.2" />
+                </KeyFrame>
+            </Animation>
+        </Style.Animations>
+    </Style>
+
     <!-- ========== Liste ========== -->
 
     <!-- Navigacija u Podešavanjima -->
@@ -573,6 +597,27 @@
         <Setter Property="MinHeight" Value="{DynamicResource ControlHeight}" />
         <Setter Property="CornerRadius" Value="{DynamicResource RadiusM}" />
         <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <!-- Plutajuće obavještenje (toast) na sredini taba: zaobljena kartica sa sjenkom -->
+    <Style Selector="Border.toast">
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Margin" Value="{DynamicResource ToastMargin}" />
+        <Setter Property="Padding" Value="{DynamicResource ToastPadding}" />
+        <Setter Property="CornerRadius" Value="{DynamicResource RadiusL}" />
+        <Setter Property="BorderThickness" Value="{DynamicResource DividerThickness}" />
+        <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}" />
+        <Setter Property="BoxShadow" Value="{DynamicResource ToastShadow}" />
+    </Style>
+    <Style Selector="Border.toast.success">
+        <Setter Property="Background" Value="{DynamicResource SuccessBackgroundBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource SuccessBorderBrush}" />
+    </Style>
+    <Style Selector="Border.toast.success TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource SuccessForegroundBrush}" />
+        <Setter Property="FontSize" Value="{DynamicResource FontSizeSubtitle}" />
     </Style>
 
     <Style Selector="Border.banner.compact">
@@ -756,6 +801,13 @@
         <Setter Property="Foreground" Value="{DynamicResource AccentTextBrush}" />
     </Style>
 
+    <!-- Strelica „Podešavanja analize” uz „Analiziraj”: kvadratno dugme samo sa ikonicom -->
+    <Style Selector="ToggleButton.toolbar.chevron">
+        <Setter Property="Padding" Value="{DynamicResource ThicknessS}" />
+        <Setter Property="MinWidth" Value="{DynamicResource ControlHeight}" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+    </Style>
+
     <!-- Panel podešavanja analize (ispod trake taba, sklopiv) -->
     <Style Selector="Border.settingsPanel">
         <Setter Property="Background" Value="{DynamicResource SurfaceAltBrush}" />
@@ -804,6 +856,42 @@
         <Setter Property="FontSize" Value="{DynamicResource FontSizeSubtitle}" />
         <Setter Property="FontWeight" Value="SemiBold" />
     </Style>
+    <Style Selector="TextBlock.statLabel.short">
+        <Setter Property="IsVisible" Value="False" />
+    </Style>
+
+    <!-- Sažetak na uskom prozoru (širina područja sažetka u traci taba „Čišćenje faktura”):
+         prvo zbijene pločice i kraća oznaka, pa se pločice sklanjaju od najmanje važne
+         (Ukupno i Popravki, pa Ostaje, pa Kandidata). „Čeka odluku” i „Upozorenja” ostaju uvijek.
+         Ukupno, ostaje i kandidata su i u poruci o završenoj analizi i u zaglavlju tabele.
+         Pragovi su izmjerene širine pločica (font 12/16) uz malu rezervu. -->
+    <ContainerQuery Name="SummaryArea" Query="max-width:524">
+        <Style Selector="Border.stat">
+            <Setter Property="Padding" Value="{DynamicResource StatCompactPadding}" />
+        </Style>
+        <Style Selector="TextBlock.statLabel.long">
+            <Setter Property="IsVisible" Value="False" />
+        </Style>
+        <Style Selector="TextBlock.statLabel.short">
+            <Setter Property="IsVisible" Value="True" />
+        </Style>
+    </ContainerQuery>
+    <ContainerQuery Name="SummaryArea" Query="max-width:436">
+        <Style Selector="Border.stat.hideNarrow">
+            <Setter Property="IsVisible" Value="False" />
+        </Style>
+    </ContainerQuery>
+    <ContainerQuery Name="SummaryArea" Query="max-width:304">
+        <Style Selector="Border.stat.hideNarrower">
+            <Setter Property="IsVisible" Value="False" />
+        </Style>
+    </ContainerQuery>
+    <ContainerQuery Name="SummaryArea" Query="max-width:250">
+        <Style Selector="Border.stat.hideNarrowest">
+            <Setter Property="IsVisible" Value="False" />
+        </Style>
+    </ContainerQuery>
+
     <Style Selector="Border.stat.attention TextBlock.statValue, Border.stat.attention TextBlock.statLabel">
         <Setter Property="Foreground" Value="{DynamicResource WarningForegroundBrush}" />
     </Style>
@@ -927,9 +1015,6 @@
         <Setter Property="MaxLines" Value="{DynamicResource SaveReasonMaxLines}" />
         <Setter Property="TextTrimming" Value="CharacterEllipsis" />
         <Setter Property="VerticalAlignment" Value="Center" />
-    </Style>
-    <Style Selector="CheckBox.compact">
-        <Setter Property="MinHeight" Value="{DynamicResource CompactCheckHeight}" />
     </Style>
 
     <!-- Pregled bloka: brojevi linija ulaznog fajla i označena linija -->

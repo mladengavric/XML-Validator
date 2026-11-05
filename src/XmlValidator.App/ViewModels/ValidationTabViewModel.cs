@@ -9,19 +9,26 @@ using XmlValidator.Core.Validation;
 
 namespace XmlValidator.App.ViewModels;
 
-/// <summary>Jedan red u listi nalaza validacije.</summary>
-public sealed record ValidationIssueRow(ValidationIssue Issue)
+/// <summary>
+/// Jedan red u listi nalaza validacije. Linija prati izmjene teksta u editoru (brisanje ili dodavanje redova
+/// iznad nalaza pomjera broj linije), dok <see cref="Issue"/> ostaje originalni nalaz validacije.
+/// </summary>
+public sealed partial class ValidationIssueRow(ValidationIssue issue) : ObservableObject
 {
+    public ValidationIssue Issue { get; } = issue;
+
     public bool IsError => Issue.Severity == ValidationSeverity.Error;
 
     public MessageSeverity Severity => IsError ? MessageSeverity.Error : MessageSeverity.Warning;
 
     public string SeverityText => ValidationReportFormatter.Severity(Issue.Severity);
 
-    /// <summary>Linija (0 = nepoznata).</summary>
-    public int Line => Issue.Line;
+    /// <summary>Trenutna linija u editoru (0 = nepoznata).</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(LineText))]
+    public partial int Line { get; set; } = issue.Line;
 
-    public string LineText => Issue.Line > 0 ? Issue.Line.ToString(CultureInfo.InvariantCulture) : "—";
+    public string LineText => Line > 0 ? Line.ToString(CultureInfo.InvariantCulture) : "—";
 
     public string ColumnText => Issue.Column > 0 ? Issue.Column.ToString(CultureInfo.InvariantCulture) : "—";
 
@@ -37,12 +44,13 @@ public sealed record ValidationIssueRow(ValidationIssue Issue)
     public bool HasPosition => Issue.Line > 0;
 }
 
-/// <summary>Šema u padajućoj listi taba.</summary>
-public sealed record SchemaOption(string Id, string Name, bool IsBuiltIn)
+/// <summary>Validacija je završena; nosi rezultat i validirani sadržaj (za provjeru faktura za čišćenje).</summary>
+public sealed class ValidationCompletedEventArgs(ValidationResult result, byte[]? content) : EventArgs
 {
-    public string DisplayName => IsBuiltIn ? $"{Name} (ugrađena)" : Name;
+    public ValidationResult Result { get; } = result;
 
-    public override string ToString() => DisplayName;
+    /// <summary>Validirani sadržaj kao bajtovi fajla; <c>null</c> kad tekst ne može da se zapiše u kodiranju fajla.</summary>
+    public byte[]? Content { get; } = content;
 }
 
 /// <summary>Zahtjev da editor skoči na mjesto (linija i kolona počinju od 1; kolona 0 = početak linije).</summary>
@@ -55,7 +63,8 @@ public sealed class EditorNavigationEventArgs(int line, int column) : EventArgs
 
 /// <summary>
 /// Tab „Validacija”: sadržaj fajla u editoru, validacija prema aktivnoj šemi (F5), lista nalaza sa
-/// skokom na liniju, brza promjena aktivne šeme, kopiranje i izvoz nalaza.
+/// skokom na liniju (linije prate izmjene u editoru), kopiranje i izvoz nalaza. Aktivna šema se bira u
+/// Podešavanjima (statusna traka).
 /// </summary>
 public sealed partial class ValidationTabViewModel : DocumentTabViewModel, IDisposable
 {
@@ -76,7 +85,8 @@ public sealed partial class ValidationTabViewModel : DocumentTabViewModel, IDisp
     private long _validatedRevision = -1;
     private long _savedRevision;
     private long _schemaLoadGeneration;
-    private bool _suppressSchemaSelection;
+    private string _previousText = string.Empty;
+    private CancellationTokenSource? _toastCts;
     private Task _lastBackgroundWork = Task.CompletedTask;
 
     public ValidationTabViewModel(
@@ -117,6 +127,18 @@ public sealed partial class ValidationTabViewModel : DocumentTabViewModel, IDisp
 
     /// <summary>Zahtjev editoru da skoči na mjesto nalaza (prikaz se pretplaćuje).</summary>
     public event EventHandler<EditorNavigationEventArgs>? NavigationRequested;
+
+    /// <summary>Validacija je završena sa rezultatom (glavni prozor provjerava fakture za čišćenje).</summary>
+    public event EventHandler<ValidationCompletedEventArgs>? ValidationCompleted;
+
+    /// <summary>Linije nalaza su pomjerene zbog izmjene teksta (prikaz osvježava oznake u editoru).</summary>
+    public event EventHandler? IssueLinesShifted;
+
+    /// <summary>Koliko dugo se vidi zeleno obavještenje o uspješnoj validaciji.</summary>
+    public static TimeSpan SuccessToastDuration { get; } = TimeSpan.FromSeconds(3);
+
+    /// <summary>Tekst zelenog obavještenja.</summary>
+    public const string SuccessToastText = "XML je čisto prošao validaciju prema FZO XSD šemi";
 
     // ---------------------------------------------------------------- editor
 
@@ -189,13 +211,11 @@ public sealed partial class ValidationTabViewModel : DocumentTabViewModel, IDisp
     [ObservableProperty]
     public partial ValidationIssueRow? SelectedIssue { get; set; }
 
-    // ---------------------------------------------------------------- šeme
-
-    public ObservableCollection<SchemaOption> SchemaOptions { get; } = [];
-
-    /// <summary>Izabrana šema; izbor korisnika postavlja aktivnu šemu (i ponovo pokreće validaciju).</summary>
+    /// <summary>Zeleno obavještenje „XML je čisto prošao validaciju” (nekoliko sekundi poslije validacije bez grešaka).</summary>
     [ObservableProperty]
-    public partial SchemaOption? SelectedSchema { get; set; }
+    public partial bool IsSuccessToastVisible { get; private set; }
+
+    // ---------------------------------------------------------------- šeme
 
     /// <summary>Razlog povratka na ugrađenu šemu; <c>null</c> kad je aktivna šema u redu.</summary>
     [ObservableProperty]
@@ -206,7 +226,7 @@ public sealed partial class ValidationTabViewModel : DocumentTabViewModel, IDisp
 
     // ---------------------------------------------------------------- javni API
 
-    /// <summary>Učitava listu šema (poziva glavni prozor pri pokretanju).</summary>
+    /// <summary>Učitava stanje aktivne šeme (poziva glavni prozor pri pokretanju).</summary>
     public Task InitializeAsync() => RefreshSchemasAsync();
 
     /// <summary>Postavlja otvoren fajl: dekodira ga u editor i odmah pokreće validaciju.</summary>
@@ -290,6 +310,7 @@ public sealed partial class ValidationTabViewModel : DocumentTabViewModel, IDisp
     {
         _store.Changed -= OnSchemaStoreChanged;
         CancelRunningValidation();
+        HideSuccessToast();
     }
 
     /// <summary>Pretvara završetke linija u one iz fajla kad su u fajlu ujednačeni (mješoviti ostaju kakvi jesu).</summary>
@@ -317,7 +338,7 @@ public sealed partial class ValidationTabViewModel : DocumentTabViewModel, IDisp
     {
         if (row is { HasPosition: true })
         {
-            NavigationRequested?.Invoke(this, new EditorNavigationEventArgs(row.Issue.Line, row.Issue.Column));
+            NavigationRequested?.Invoke(this, new EditorNavigationEventArgs(row.Line, row.Issue.Column));
         }
     }
 
@@ -409,47 +430,40 @@ public sealed partial class ValidationTabViewModel : DocumentTabViewModel, IDisp
         }
     }
 
-    [RelayCommand]
-    private Task ManageSchemasAsync() => _dialogs.ShowSettingsAsync(SettingsPage.Schemas);
-
     // ---------------------------------------------------------------- unutrašnje
 
     partial void OnEditorTextChanged(string value)
     {
+        var previous = _previousText;
+        _previousText = value;
         TextRevision++;
         IsModified = !string.Equals(value, _loadedText, StringComparison.Ordinal);
         OnPropertyChanged(nameof(HasUnsavedChanges));
+        ShiftIssueLines(previous, value);
     }
 
-    partial void OnSelectedSchemaChanged(SchemaOption? value)
+    /// <summary>Pomjera linije nalaza prema izmjeni teksta (npr. obrisan red stavke iznad nalaza).</summary>
+    private void ShiftIssueLines(string previous, string current)
     {
-        if (_suppressSchemaSelection || value is null)
+        if (Issues.Count == 0 || TextLineShift.Compute(previous, current) is not { } shift)
         {
             return;
         }
 
-        // SetActive može odmah pokrenuti osvježavanje (događaj skladišta); čeka se i ono.
-        var activation = ActivateSchemaAsync(value);
-        _lastBackgroundWork = Task.WhenAll(activation, _lastBackgroundWork);
-    }
-
-    private async Task ActivateSchemaAsync(SchemaOption option)
-    {
-        try
+        var changed = false;
+        foreach (var row in Issues)
         {
-            if (string.Equals(_store.ActiveSchemaId, option.Id, StringComparison.Ordinal) && !HasSchemaWarning)
+            var line = shift.Map(row.Line);
+            if (line != row.Line)
             {
-                return;
+                row.Line = line;
+                changed = true;
             }
-
-            // Changed iz skladišta osvježava listu i ponovo pokreće validaciju.
-            _store.SetActive(option.Id);
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException or ArgumentException)
+
+        if (changed)
         {
-            _log.Warning("Aktivna šema ne može da se promijeni.", ex);
-            await _dialogs.ShowMessageAsync("Šema nije promijenjena", $"Šema „{option.Name}” ne može da se postavi kao aktivna.", MessageSeverity.Error, [ex.Message]);
-            await RefreshSchemasAsync();
+            IssueLinesShifted?.Invoke(this, EventArgs.Empty);
         }
     }
 
@@ -490,6 +504,12 @@ public sealed partial class ValidationTabViewModel : DocumentTabViewModel, IDisp
             }
 
             ApplyResult(result, new ValidationReport(result, document.Path, _time.GetLocalNow(), modified), revision);
+            if (result.ErrorCount == 0)
+            {
+                ShowSuccessToast();
+            }
+
+            ValidationCompleted?.Invoke(this, new ValidationCompletedEventArgs(result, modified ? EncodeOrNull(text) : document.Content));
         }
         catch (OperationCanceledException)
         {
@@ -565,8 +585,57 @@ public sealed partial class ValidationTabViewModel : DocumentTabViewModel, IDisp
         return $"{count} {word}";
     }
 
+    private byte[]? EncodeOrNull(string text) =>
+        _format is { } format && DocumentTextDecoder.FindUnencodableCharacter(text, format) is null
+            ? DocumentTextDecoder.Encode(PrepareTextForSave(text, format), format)
+            : null;
+
+    /// <summary>Prikazuje zeleno obavještenje i sakriva ga poslije <see cref="SuccessToastDuration"/>.</summary>
+    private void ShowSuccessToast()
+    {
+        HideSuccessToast();
+        var cts = new CancellationTokenSource();
+        _toastCts = cts;
+        IsSuccessToastVisible = true;
+        _ = HideSuccessToastLaterAsync(cts);
+    }
+
+    private async Task HideSuccessToastLaterAsync(CancellationTokenSource cts)
+    {
+        try
+        {
+            await Task.Delay(SuccessToastDuration, _time, cts.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+
+        _ui.Post(() =>
+        {
+            if (ReferenceEquals(_toastCts, cts))
+            {
+                HideSuccessToast();
+            }
+        });
+    }
+
+    private void HideSuccessToast()
+    {
+        var cts = _toastCts;
+        _toastCts = null;
+        if (cts is not null)
+        {
+            cts.Cancel();
+            cts.Dispose();
+        }
+
+        IsSuccessToastVisible = false;
+    }
+
     private void ClearResult()
     {
+        HideSuccessToast();
         _report = null;
         _validatedRevision = -1;
         Issues.Clear();
@@ -615,42 +684,21 @@ public sealed partial class ValidationTabViewModel : DocumentTabViewModel, IDisp
     private async Task RefreshSchemasAsync()
     {
         var generation = Interlocked.Increment(ref _schemaLoadGeneration);
-        IReadOnlyList<SchemaInfo> list;
         ActiveSchema active;
         try
         {
-            (list, active) = await Task.Run(() => (_store.List(), _schemas.GetActiveSchema()));
+            active = await Task.Run(_schemas.GetActiveSchema);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            _log.Error("Lista šema ne može da se učita.", ex);
-            SchemaWarning = "Lista šema ne može da se učita. Detalji su u logu.";
+            _log.Error("Aktivna šema ne može da se učita.", ex);
+            SchemaWarning = "Aktivna šema ne može da se učita. Detalji su u logu.";
             return;
         }
 
         if (generation != Interlocked.Read(ref _schemaLoadGeneration))
         {
             return; // stigao je noviji zahtjev
-        }
-
-        var options = list.Select(s => new SchemaOption(s.Id, s.Name, s.IsBuiltIn)).ToList();
-        _suppressSchemaSelection = true;
-        try
-        {
-            if (!SchemaOptions.SequenceEqual(options))
-            {
-                SchemaOptions.Clear();
-                foreach (var option in options)
-                {
-                    SchemaOptions.Add(option);
-                }
-            }
-
-            SelectedSchema = SchemaOptions.FirstOrDefault(o => o.Id == active.Info.Id);
-        }
-        finally
-        {
-            _suppressSchemaSelection = false;
         }
 
         SchemaWarning = active.IsFallback ? active.FallbackReason : null;

@@ -132,7 +132,7 @@ public sealed partial class ChangesPreviewViewModel : ViewModelBase
 
     public bool IsOutputValid { get; } = true;
 
-    public string ConfirmText => !IsConfirmation ? "Zatvori" : IsOutputValid ? "Sačuvaj…" : "Sačuvaj svejedno…";
+    public string ConfirmText => !IsConfirmation ? "Zatvori" : IsOutputValid ? "Sačuvaj" : "Sačuvaj svejedno";
 
     /// <summary>Tekst dugmeta za odustajanje; <c>null</c> kad je pregled samo prikaz.</summary>
     public string? CancelText => IsConfirmation ? "Otkaži" : null;

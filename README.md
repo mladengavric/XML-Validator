@@ -16,10 +16,11 @@ Uputstvo za korišćenje sa slikama za svaki korak: [`docs/uputstvo/Uputstvo-XML
   kažu gdje je problem i šta treba upisati (npr. „Stavka 1 fakture SIN-1: polje „usluga-nivo” je prazno. Upišite cijeli
   broj nivoa usluge, ili obrišite cijeli red stavke…”); originalna tehnička poruka je u opisu alata
   (miš iznad poruke) i u izvještaju. Sažetak kaže i na koliko faktura su greške.
-  Sadržaj se može urediti i sačuvati u novi fajl dugmetom „Sačuvaj XML…” na tabu (bez čišćenja); nalazi se kopiraju ili izvoze u `.txt`/`.csv`.
+  Sadržaj se može urediti i sačuvati u novi fajl dugmetom „Sačuvaj XML” na tabu (bez čišćenja; ako u fajlu ima
+  faktura za čišćenje, program pita da li da pređe na čišćenje). Brojevi linija u nalazima prate izmjene u editoru; nalazi se kopiraju ili izvoze u `.txt`/`.csv`.
 - **Čišćenje faktura (SHMP)** (tab „Čišćenje faktura”): analiza faktura po pravilima iz `clean.py`,
   automatske popravke polomljenih zagrada, izbor akcije po fakturi (Obriši / Uredi / Preskoči),
-  pregled izmjena prije čuvanja i detaljan izvještaj (`.txt`/`.csv`, uz opciju „Maskiraj JMB”).
+  pregled izmjena prije čuvanja i detaljan izvještaj (`.txt`/`.csv`). Sačuvan očišćen fajl se odmah validira u tabu „Validacija”.
 - **Upravljanje šemama** (Podešavanja → Šeme): uvoz nove verzije šeme iz `.xsd` fajla, `.zip` paketa
   kakav FZO objavljuje na svom sajtu ili direktno sa linka (`https`), izbor aktivne šeme, pregled
   razlika prema aktivnoj, povratak na ugrađenu.

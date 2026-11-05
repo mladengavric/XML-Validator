@@ -1,7 +1,7 @@
 <!--
   Pregled izmjena (ulaz prema izlazu čišćenja): sažetak, provjera izlaza prema šemi, filter po vrsti,
   lista blokova koji se brišu, ručno mijenjaju ili automatski popravljaju i, za izabrani blok,
-  tekst u ulazu i u izlazu jedan pored drugog. Prije čuvanja: „Sačuvaj…” / „Otkaži”; inače samo „Zatvori”.
+  tekst u ulazu i u izlazu jedan pored drugog. Prije čuvanja: „Sačuvaj” (ili „Sačuvaj svejedno”) / „Otkaži”; inače samo „Zatvori”.
 -->
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"

@@ -51,9 +51,6 @@ public sealed record AppSettings
     [JsonConverter(typeof(JsonStringEnumConverter<CandidateAction>))]
     public CandidateAction? NoGroupNoJmbMatchAction { get; init; } = CandidateAction.Delete;
 
-    /// <summary>Poslije čuvanja očišćenog fajla otvori ga u tabu „Validacija” (podrazumijevano isključeno).</summary>
-    public bool ValidateAfterSave { get; init; }
-
     /// <summary>Posljednja adresa sa koje je preuzeta šema („Uvezi sa linka…”); nudi se pri sljedećem uvozu.</summary>
     public string? LastSchemaUrl { get; init; }
 
@@ -113,7 +110,6 @@ public sealed record AppSettings
         && RepairBrackets == other.RepairBrackets
         && EmptyInvoiceAction == other.EmptyInvoiceAction
         && NoGroupNoJmbMatchAction == other.NoGroupNoJmbMatchAction
-        && ValidateAfterSave == other.ValidateAfterSave
         && LastSchemaUrl == other.LastSchemaUrl;
 
     public override int GetHashCode() => HashCode.Combine(LastFolder, RecentFiles.Count, Theme, TargetGroup, RepairBrackets);

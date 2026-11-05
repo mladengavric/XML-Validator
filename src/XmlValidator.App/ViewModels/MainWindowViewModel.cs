@@ -26,6 +26,11 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IDisposable
     private readonly ISchemaProvider _schemas;
     private readonly IAppLog _log;
     private Task<bool> _lastOpenInValidation = Task.FromResult(false);
+    private Task _lastCleaningCheck = Task.CompletedTask;
+    private CancellationTokenSource? _cleaningCheckCts;
+
+    /// <summary>Revizija teksta taba „Validacija” predata tabu „Čišćenje faktura” (izmjene idu u očišćen fajl).</summary>
+    private long? _handedOverRevision;
 
     public MainWindowViewModel(
         ISettingsService settings,
@@ -60,6 +65,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IDisposable
         Validation.PropertyChanged += OnTabPropertyChanged;
         Cleaning.PropertyChanged += OnTabPropertyChanged;
         Cleaning.OpenInValidationRequested += OnOpenInValidationRequested;
+        Validation.ValidationCompleted += OnValidationCompleted;
         LoadRecentFiles();
     }
 
@@ -72,6 +78,17 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IDisposable
     [NotifyPropertyChangedFor(nameof(Title))]
     [NotifyCanExecuteChangedFor(nameof(SaveAsCommand))]
     public partial int SelectedTabIndex { get; set; }
+
+    /// <summary>
+    /// Validirani XML nema grešaka, a ima faktura za čišćenje: tab „Čišćenje faktura” to pokazuje trepćućom
+    /// linijom dok ga korisnik ne otvori.
+    /// </summary>
+    [ObservableProperty]
+    public partial bool CleaningNeedsAttention { get; private set; }
+
+    /// <summary>Broj faktura za čišćenje iz posljednje provjere (za opis alata uz oznaku na tabu).</summary>
+    [ObservableProperty]
+    public partial int InvoicesToClean { get; private set; }
 
     /// <summary>Posljednji fajl otvoren za oba taba.</summary>
     [ObservableProperty]
@@ -112,7 +129,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IDisposable
 
     /// <summary>Učitavanje ili čuvanje je u toku.</summary>
     [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(OpenCommand), nameof(OpenRecentCommand), nameof(SaveAsCommand), nameof(CloseFileCommand))]
+    [NotifyCanExecuteChangedFor(nameof(OpenCommand), nameof(OpenRecentCommand), nameof(SaveAsCommand), nameof(CloseFileCommand), nameof(SaveValidatedXmlCommand))]
     public partial bool IsBusy { get; private set; }
 
     public ObservableCollection<RecentFileItem> RecentFiles { get; } = [];
@@ -194,6 +211,8 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IDisposable
             var content = await File.ReadAllBytesAsync(fullPath);
             var document = new OpenedDocument(fullPath, content);
             Document = document;
+            _handedOverRevision = null;
+            ResetCleaningAttention();
             Validation.SetDocument(document);
             Cleaning.SetDocument(document);
             _settings.Update(s => s.WithRecentFile(fullPath));
@@ -275,7 +294,9 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IDisposable
     public async Task<bool> OpenInValidationTabAsync(string path)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
-        if (IsBusy || !await ConfirmDiscardAsync(Validation.HasUnsavedChanges, cleaning: false))
+        // Izmjene predate čišćenju su u očišćenom fajlu; ne pita se da li da se odbace.
+        var handedOver = _handedOverRevision == Validation.TextRevision;
+        if (IsBusy || !await ConfirmDiscardAsync(Validation.HasUnsavedChanges && !handedOver, cleaning: false))
         {
             return false;
         }
@@ -287,6 +308,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IDisposable
         {
             var content = await File.ReadAllBytesAsync(fullPath);
             Validation.SetDocument(new OpenedDocument(fullPath, content));
+            _handedOverRevision = null;
             SelectedTabIndex = 0;
             _settings.Update(s => s.WithRecentFile(fullPath));
             SetStatus($"Očišćen fajl „{fileName}” je otvoren u tabu „Validacija”.", MessageSeverity.Success);
@@ -363,6 +385,8 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IDisposable
         }
 
         var name = (Document ?? Validation.Document ?? Cleaning.Document)?.FileName;
+        _handedOverRevision = null;
+        ResetCleaningAttention();
         Validation.SetDocument(null);
         Cleaning.SetDocument(null);
         Document = null;
@@ -373,9 +397,95 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IDisposable
 
     /// <summary>Čuva sadržaj u novi fajl. Ulazni fajl se nikad ne prepisuje.</summary>
     [RelayCommand(CanExecute = nameof(CanSaveAs))]
-    private async Task SaveAsAsync()
+    private Task SaveAsAsync() => SaveTabAsync(ActiveTab);
+
+    private bool CanSaveValidatedXml() => !IsBusy && Validation.Document is not null && Validation.HasUnsavedChanges;
+
+    /// <summary>
+    /// „Sačuvaj XML” na tabu „Validacija” (aktivno samo kad je XML izmijenjen u editoru): ako u izmijenjenom
+    /// sadržaju ima faktura za čišćenje, pita da li da se pređe na čišćenje (Da: tab „Čišćenje faktura” analizira
+    /// sadržaj iz editora; Ne: čuvanje se nastavlja). Ulazni fajl se nikad ne prepisuje.
+    /// </summary>
+    [RelayCommand(CanExecute = nameof(CanSaveValidatedXml))]
+    private async Task SaveValidatedXmlAsync()
     {
-        var activeTab = ActiveTab;
+        var document = Validation.Document;
+        if (document is null)
+        {
+            return;
+        }
+
+        if (Validation.GetSaveProblem() is { } problem)
+        {
+            SetStatus("Fajl nije sačuvan.", MessageSeverity.Error);
+            await _dialogs.ShowMessageAsync("Fajl nije sačuvan", problem, MessageSeverity.Error);
+            return;
+        }
+
+        var content = Validation.GetContentToSave() ?? document.Content;
+        int? count;
+        IsBusy = true;
+        try
+        {
+            SetStatus("Provjeravam da li ima faktura za čišćenje…", MessageSeverity.Info);
+            count = await Cleaning.CountInvoicesToCleanAsync(content);
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+
+        if (count > 0)
+        {
+            var choice = await _dialogs.ChooseAsync(
+                "Fakture za čišćenje",
+                $"U XML-u ima {Invoices(count.Value)} za čišćenje (fakture koje FZO ne prihvata po pravilu SHMP ili čekaju odluku). "
+                + "Da li želite da uradite čišćenje prije čuvanja?",
+                [YesOption, NoOption],
+                "Izaberi");
+            if (choice is null)
+            {
+                SetStatus("Čuvanje je otkazano.", MessageSeverity.Info);
+                return;
+            }
+
+            if (choice == YesOption)
+            {
+                await HandOverToCleaningAsync(document, content);
+                return;
+            }
+        }
+
+        await SaveTabAsync(Validation);
+    }
+
+    /// <summary>Odgovor „Da” u pitanju o čišćenju.</summary>
+    public const string YesOption = "Da";
+
+    /// <summary>Odgovor „Ne” u pitanju o čišćenju.</summary>
+    public const string NoOption = "Ne";
+
+    /// <summary>Tab „Čišćenje faktura” dobija sadržaj iz editora i postaje aktivan.</summary>
+    private async Task HandOverToCleaningAsync(OpenedDocument document, byte[] content)
+    {
+        if (!await ConfirmDiscardAsync(validation: false, Cleaning.HasUnsavedChanges))
+        {
+            return;
+        }
+
+        Cleaning.SetEditedDocument(new OpenedDocument(document.Path, content));
+        _handedOverRevision = Validation.TextRevision;
+        CleaningNeedsAttention = false;
+        SelectedTabIndex = 1;
+        SetStatus("Sadržaj iz editora je predat na čišćenje; očišćen fajl sačuvajte dugmetom „Sačuvaj XML” na tabu „Čišćenje faktura”.", MessageSeverity.Info);
+    }
+
+    /// <summary>„1 faktura”, „3 fakture”, „5 faktura” (srpska množina).</summary>
+    internal static string Invoices(int count) =>
+        count % 10 is >= 2 and <= 4 && count % 100 is < 12 or > 14 ? $"{count} fakture" : $"{count} faktura";
+
+    private async Task SaveTabAsync(DocumentTabViewModel activeTab)
+    {
         var document = activeTab.Document;
         if (document is null)
         {
@@ -462,6 +572,72 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IDisposable
         Validation.PropertyChanged -= OnTabPropertyChanged;
         Cleaning.PropertyChanged -= OnTabPropertyChanged;
         Cleaning.OpenInValidationRequested -= OnOpenInValidationRequested;
+        Validation.ValidationCompleted -= OnValidationCompleted;
+        _cleaningCheckCts?.Cancel();
+        _cleaningCheckCts?.Dispose();
+    }
+
+    /// <summary>Posljednja provjera faktura za čišćenje poslije validacije; za testove.</summary>
+    internal Task WhenCleaningCheckCompletedAsync() => _lastCleaningCheck;
+
+    partial void OnSelectedTabIndexChanged(int value)
+    {
+        if (value == 1)
+        {
+            CleaningNeedsAttention = false;
+        }
+    }
+
+    /// <summary>Poslije validacije bez grešaka provjerava da li u istom sadržaju ima faktura za čišćenje.</summary>
+    private void OnValidationCompleted(object? sender, ValidationCompletedEventArgs e)
+    {
+        ResetCleaningAttention();
+        if (e.Result.ErrorCount > 0 || e.Content is not { } content)
+        {
+            return;
+        }
+
+        var cts = new CancellationTokenSource();
+        _cleaningCheckCts = cts;
+        _lastCleaningCheck = CheckInvoicesToCleanAsync(content, cts);
+    }
+
+    private async Task CheckInvoicesToCleanAsync(byte[] content, CancellationTokenSource cts)
+    {
+        try
+        {
+            var count = await Cleaning.CountInvoicesToCleanAsync(content, cts.Token);
+            _ui.Post(() =>
+            {
+                if (ReferenceEquals(_cleaningCheckCts, cts))
+                {
+                    InvoicesToClean = count ?? 0;
+                    CleaningNeedsAttention = count > 0 && SelectedTabIndex != 1;
+                }
+            });
+        }
+        catch (OperationCanceledException)
+        {
+            // novija validacija ili zatvoren fajl
+        }
+        catch (Exception ex)
+        {
+            _log.Warning("Provjera faktura za čišćenje nije uspjela.", ex);
+        }
+    }
+
+    private void ResetCleaningAttention()
+    {
+        var cts = _cleaningCheckCts;
+        _cleaningCheckCts = null;
+        if (cts is not null)
+        {
+            cts.Cancel();
+            cts.Dispose();
+        }
+
+        CleaningNeedsAttention = false;
+        InvoicesToClean = 0;
     }
 
     private void OnTabPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
@@ -471,10 +647,12 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IDisposable
             OnPropertyChanged(nameof(Title));
             SaveAsCommand.NotifyCanExecuteChanged();
             CloseFileCommand.NotifyCanExecuteChanged();
+            SaveValidatedXmlCommand.NotifyCanExecuteChanged();
         }
         else if (e.PropertyName is nameof(DocumentTabViewModel.HasUnsavedChanges))
         {
             OnPropertyChanged(nameof(HasUnsavedChanges));
+            SaveValidatedXmlCommand.NotifyCanExecuteChanged();
         }
     }
 

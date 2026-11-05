@@ -42,6 +42,7 @@ public sealed partial class CleaningTabViewModel : DocumentTabViewModel, IDispos
     private CandidateAction? _editPreviousAction;
     private bool _editChangedAction;
     private Task _lastBackgroundWork = Task.CompletedTask;
+    private string? _contentNote;
 
     public CleaningTabViewModel(
         CleaningService cleaning,
@@ -118,14 +119,6 @@ public sealed partial class CleaningTabViewModel : DocumentTabViewModel, IDispos
     /// <summary>Automatske popravke zagrada; promjena traži novu analizu.</summary>
     [ObservableProperty]
     public partial bool RepairBrackets { get; set; }
-
-    /// <summary>Poslije čuvanja očišćenog fajla otvori ga u tabu „Validacija”.</summary>
-    [ObservableProperty]
-    public partial bool ValidateAfterSave { get; set; }
-
-    /// <summary>Maskiraj JMB u izvezenom izvještaju (podrazumijevano isključeno, ne pamti se).</summary>
-    [ObservableProperty]
-    public partial bool MaskJmb { get; set; }
 
     // ---------------------------------------------------------------- analiza
 
@@ -305,8 +298,39 @@ public sealed partial class CleaningTabViewModel : DocumentTabViewModel, IDispos
     // ---------------------------------------------------------------- javni API
 
     /// <summary>Postavlja otvoren fajl i odmah pokreće analizu.</summary>
-    public override void SetDocument(OpenedDocument? document)
+    public override void SetDocument(OpenedDocument? document) => SetDocument(document, contentNote: null);
+
+    /// <summary>
+    /// Analizira sadržaj iz editora taba „Validacija” (sa izmjenama koje još nisu sačuvane). Putanja ostaje putanja
+    /// ulaznog fajla, koji se ne mijenja; očišćen fajl se i dalje čuva u novi fajl.
+    /// </summary>
+    public void SetEditedDocument(OpenedDocument document)
     {
+        ArgumentNullException.ThrowIfNull(document);
+        SetDocument(document, "Analiziran je sadržaj iz taba „Validacija”, sa izmjenama koje još nisu sačuvane (ulazni fajl je netaknut).");
+    }
+
+    /// <summary>
+    /// Broj faktura za čišćenje u sadržaju (kandidati i fakture koje čekaju odluku), sa trenutnim podešavanjima.
+    /// Ne mijenja analizu u tabu. <c>null</c> kad sadržaj ne može da se analizira.
+    /// </summary>
+    public async Task<int?> CountInvoicesToCleanAsync(byte[] content, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(content);
+        try
+        {
+            var session = await _cleaning.AnalyzeAsync(content, _settings.Current.ToCleaningOptions(), progress: null, cancellationToken);
+            return session.Blocks.Count(b => b.Classification.IsCandidate || b.Disposition == BlockDisposition.Unresolved);
+        }
+        catch (InvoiceDocumentException)
+        {
+            return null;
+        }
+    }
+
+    private void SetDocument(OpenedDocument? document, string? contentNote)
+    {
+        _contentNote = contentNote;
         CancelRunningAnalysis();
         base.SetDocument(document);
         ClearAnalysis();
@@ -595,10 +619,8 @@ public sealed partial class CleaningTabViewModel : DocumentTabViewModel, IDispos
             _settings.Update(s => s with { LastFolder = Path.GetDirectoryName(fullTarget) });
             Message = UserMessage.Success(
                 $"Očišćen fajl je sačuvan: „{Path.GetFileName(fullTarget)}” (ostaje {Invoices(Summary.Remaining)} od {Summary.Total}).");
-            if (ValidateAfterSave)
-            {
-                OpenInValidationRequested?.Invoke(this, new OpenInValidationEventArgs(fullTarget));
-            }
+            // Sačuvan očišćen fajl se uvijek validira u tabu „Validacija”.
+            OpenInValidationRequested?.Invoke(this, new OpenInValidationEventArgs(fullTarget));
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException)
         {
@@ -643,7 +665,7 @@ public sealed partial class CleaningTabViewModel : DocumentTabViewModel, IDispos
 
     private bool CanSaveReport() => IsInteractive && EditingRow is null;
 
-    /// <summary>Čuva izvještaj u <c>.txt</c> ili <c>.csv</c> (po ekstenziji), uz opciju „Maskiraj JMB”.</summary>
+    /// <summary>Čuva izvještaj u <c>.txt</c> ili <c>.csv</c> (po ekstenziji); JMB se ne maskira.</summary>
     [RelayCommand(CanExecute = nameof(CanSaveReport))]
     private async Task SaveReportAsync()
     {
@@ -675,14 +697,14 @@ public sealed partial class CleaningTabViewModel : DocumentTabViewModel, IDispos
             var result = SaveBlockedReason is null ? await GetCheckedResultAsync(session) : null;
             var outputPath = _savedVersion == session.Version ? _savedOutputPath : null;
             var report = CleaningReport.Create(session, result, document.Path, outputPath, _time);
-            var options = new ReportExportOptions(MaskJmb);
+            var options = new ReportExportOptions();
             var isCsv = string.Equals(Path.GetExtension(fullTarget), ".csv", StringComparison.OrdinalIgnoreCase);
             var (text, encoding) = isCsv
                 ? (CleaningReportFormatter.ToCsv(report, options), CleaningReportFormatter.CsvEncoding)
                 : (CleaningReportFormatter.ToText(report, options), CleaningReportFormatter.TextEncoding);
             await AtomicFile.WriteAllBytesAsync(fullTarget, [.. encoding.GetPreamble(), .. encoding.GetBytes(text)]);
             _settings.Update(s => s with { LastFolder = Path.GetDirectoryName(fullTarget) });
-            Message = UserMessage.Success($"Izvještaj je sačuvan: „{Path.GetFileName(fullTarget)}”{(MaskJmb ? " (JMB maskiran)" : string.Empty)}.");
+            Message = UserMessage.Success($"Izvještaj je sačuvan: „{Path.GetFileName(fullTarget)}”.");
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
@@ -743,14 +765,6 @@ public sealed partial class CleaningTabViewModel : DocumentTabViewModel, IDispos
         }
     }
 
-    partial void OnValidateAfterSaveChanged(bool value)
-    {
-        if (!_loadingSettings)
-        {
-            _settings.Update(s => s with { ValidateAfterSave = value });
-        }
-    }
-
     partial void OnSelectedFilterChanged(Option<InvoiceFilter> value) => ApplyFilter();
 
     partial void OnSearchTextChanged(string value) => ApplyFilter();
@@ -793,7 +807,6 @@ public sealed partial class CleaningTabViewModel : DocumentTabViewModel, IDispos
             EmptyInvoiceAction = DefaultActionOptions.First(o => o.Value == settings.EmptyInvoiceAction);
             NoGroupNoJmbMatchAction = DefaultActionOptions.First(o => o.Value == settings.NoGroupNoJmbMatchAction);
             RepairBrackets = settings.RepairBrackets;
-            ValidateAfterSave = settings.ValidateAfterSave;
         }
         finally
         {
@@ -952,11 +965,12 @@ public sealed partial class CleaningTabViewModel : DocumentTabViewModel, IDispos
         ClearPreview();
         Refresh(refilter: true);
         var summary = Summary;
-        Message = summary.Total == 0
+        var message = summary.Total == 0
             ? UserMessage.Warning("U fajlu nema nijedne fakture.")
             : summary.HasUnresolved
                 ? UserMessage.Warning($"Analiza je završena. {Invoices(summary.Unresolved)} čeka odluku prije čuvanja.")
                 : UserMessage.Success($"Analiza je završena: {Invoices(summary.Total)}, ostaje {summary.Remaining}, kandidata {summary.Candidates}.");
+        Message = _contentNote is { } note ? message with { Text = $"{message.Text} {note}" } : message;
     }
 
     private void ClearAnalysis()

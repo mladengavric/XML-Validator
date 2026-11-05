@@ -68,6 +68,7 @@ public partial class ValidationTabView : UserControl
             _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
             _viewModel.NavigationRequested -= OnNavigationRequested;
             _viewModel.Issues.CollectionChanged -= OnIssuesChanged;
+            _viewModel.IssueLinesShifted -= OnIssueLinesShifted;
         }
 
         _viewModel = DataContext as ValidationTabViewModel;
@@ -77,6 +78,7 @@ public partial class ValidationTabView : UserControl
             _viewModel.PropertyChanged += OnViewModelPropertyChanged;
             _viewModel.NavigationRequested += OnNavigationRequested;
             _viewModel.Issues.CollectionChanged += OnIssuesChanged;
+            _viewModel.IssueLinesShifted += OnIssueLinesShifted;
         }
 
         LoadTextFromViewModel();
@@ -145,7 +147,10 @@ public partial class ValidationTabView : UserControl
 
     // ---------------------------------------------------------------- nalazi
 
-    private void OnIssuesChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    /// <summary>Linije nalaza su pomjerene izmjenom teksta: oznake prate nove linije.</summary>
+    private void OnIssueLinesShifted(object? sender, EventArgs e) => OnIssuesChanged(sender, null);
+
+    private void OnIssuesChanged(object? sender, NotifyCollectionChangedEventArgs? e)
     {
         // Kolekcija se puni red po red; oznake se računaju jednom, poslije cijele izmjene.
         if (_markersPending)
