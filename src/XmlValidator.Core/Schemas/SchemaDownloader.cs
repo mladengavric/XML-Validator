@@ -234,6 +234,52 @@ public sealed class SchemaDownloader : IDisposable
         }
     }
 
+    /// <summary>
+    /// Vrijeme posljednje izmjene fajla na serveru (zaglavlje <c>Last-Modified</c>, zahtjev <c>HEAD</c>),
+    /// bez preuzimanja sadržaja. Ista vrijednost se vidi u koloni „Last modified” na listi fajlova servera.
+    /// </summary>
+    /// <returns>Vrijeme izmjene ili <c>null</c> kad ga server ne javlja.</returns>
+    /// <exception cref="SchemaDownloadException">Neispravna adresa, greška servera ili mreže, istek vremena.</exception>
+    public async Task<DateTimeOffset?> GetLastModifiedAsync(string url, CancellationToken cancellationToken = default)
+    {
+        if (ValidateUrl(url, out var uri) is { } problem)
+        {
+            throw new SchemaDownloadException(problem);
+        }
+
+        try
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Head, uri);
+            using var response = await _client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+            var finalUri = response.RequestMessage?.RequestUri ?? uri!;
+            if (finalUri.Scheme != Uri.UriSchemeHttps)
+            {
+                throw new SchemaDownloadException("Server je preusmjerio provjeru na nebezbjednu adresu (http).");
+            }
+
+            if (!response.IsSuccessStatusCode)
+            {
+                throw new SchemaDownloadException(response.StatusCode == HttpStatusCode.NotFound
+                    ? "Šema nije pronađena na sajtu FZO (404)."
+                    : $"Server je vratio grešku {(int)response.StatusCode} ({response.ReasonPhrase}).");
+            }
+
+            return response.Content.Headers.LastModified;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (TaskCanceledException ex)
+        {
+            throw new SchemaDownloadException("Provjera je trajala predugo (server ne odgovara). Pokušajte ponovo.", ex);
+        }
+        catch (HttpRequestException ex)
+        {
+            throw new SchemaDownloadException($"Provjera nije uspjela: {ex.Message} Provjerite internet vezu.", ex);
+        }
+    }
+
     public void Dispose() => _client.Dispose();
 
     internal static string FormatSize(long bytes) => bytes >= 1024 * 1024

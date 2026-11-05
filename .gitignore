@@ -36,3 +36,15 @@ __pycache__/
 *.xml
 *.XML
 !tests/TestData/**/*.xml
+
+# --- Ne objavljuje se u javnom repozitorijumu (fajlovi ostaju lokalno) ---
+# Repozitorijum je javan (zbog nadogradnje programa preko GitHub release-a);
+# interni materijal, stari kod, testovi i testni podaci se ne objavljuju.
+primjer-anonimizovan.xml
+primjer-anonimizovan.*
+/legacy/
+/CLAUDE.md
+/PLAN.md
+/.claude/
+/docs/**/*.md
+/tests/

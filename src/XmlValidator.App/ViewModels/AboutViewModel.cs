@@ -70,11 +70,13 @@ public sealed partial class AboutViewModel : ViewModelBase
 
     private readonly IClipboardService _clipboard;
 
-    public AboutViewModel(AppPaths paths, IClipboardService clipboard)
+    public AboutViewModel(AppPaths paths, IClipboardService clipboard, UpdateViewModel update)
     {
         ArgumentNullException.ThrowIfNull(paths);
         ArgumentNullException.ThrowIfNull(clipboard);
+        ArgumentNullException.ThrowIfNull(update);
         _clipboard = clipboard;
+        Update = update;
         DataFolder = paths.Root;
         Version = ReadVersion(typeof(AboutViewModel).Assembly);
         Components =
@@ -86,6 +88,22 @@ public sealed partial class AboutViewModel : ViewModelBase
     }
 
     public string AppName => MainWindowViewModel.AppTitle;
+
+    /// <summary>Autor programa.</summary>
+    public const string Author = "Mladen Gavrić";
+
+    /// <summary>„© godina autor”; godina je iz datuma na računaru.</summary>
+    public string CopyrightText => $"© {DateTime.Now.Year} {Author}";
+
+    /// <summary>Tab „Nadogradnja”.</summary>
+    public UpdateViewModel Update { get; }
+
+    /// <summary>Indeks izabranog taba (tab „Nadogradnja” je <see cref="UpdateTabIndex"/>).</summary>
+    [CommunityToolkit.Mvvm.ComponentModel.ObservableProperty]
+    public partial int SelectedTabIndex { get; set; }
+
+    /// <summary>Indeks taba „Nadogradnja”.</summary>
+    public const int UpdateTabIndex = 1;
 
     public string Description =>
         "Validacija IZIS XML faktura zdravstva prema XSD šemi i čišćenje faktura po pravilu Službe hitne medicinske pomoći (SHMP). "
@@ -107,7 +125,7 @@ public sealed partial class AboutViewModel : ViewModelBase
 
     /// <summary>Tekst za prijavu problema: verzija, okruženje i paketi (bez ličnih podataka).</summary>
     public string DiagnosticText =>
-        $"{AppName} {Version}{Environment.NewLine}{RuntimeText}{Environment.NewLine}"
+        $"{AppName} {Version}{Environment.NewLine}{CopyrightText}{Environment.NewLine}{RuntimeText}{Environment.NewLine}"
         + string.Join(Environment.NewLine, Components.Select(c => $"{c.Name} {c.Version} ({c.License})"));
 
     public event EventHandler? CloseRequested;
@@ -116,7 +134,11 @@ public sealed partial class AboutViewModel : ViewModelBase
     private Task CopyDiagnosticsAsync() => _clipboard.SetTextAsync(DiagnosticText);
 
     [RelayCommand]
-    private void Close() => CloseRequested?.Invoke(this, EventArgs.Empty);
+    private void Close()
+    {
+        Update.CancelRunning();
+        CloseRequested?.Invoke(this, EventArgs.Empty);
+    }
 
     internal static string ReadVersion(string assemblyName)
     {

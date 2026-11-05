@@ -75,6 +75,7 @@ public sealed partial class SchemasSettingsViewModel : ViewModelBase, IDisposabl
     private readonly IAppLog _log;
     private readonly SchemaDownloader _downloader;
     private readonly AppPaths _paths;
+    private readonly SchemaUpdateService _updates;
     private CancellationTokenSource? _downloadCancellation;
     private int _loadGeneration;
 
@@ -86,8 +87,11 @@ public sealed partial class SchemasSettingsViewModel : ViewModelBase, IDisposabl
         IUiDispatcher ui,
         IAppLog log,
         SchemaDownloader downloader,
-        AppPaths paths)
+        AppPaths paths,
+        SchemaUpdateService updates)
     {
+        ArgumentNullException.ThrowIfNull(updates);
+        _updates = updates;
         ArgumentNullException.ThrowIfNull(downloader);
         ArgumentNullException.ThrowIfNull(paths);
         _downloader = downloader;
@@ -114,7 +118,7 @@ public sealed partial class SchemasSettingsViewModel : ViewModelBase, IDisposabl
     public partial SchemaItemViewModel? SelectedSchema { get; set; }
 
     [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(ImportCommand), nameof(ImportFromUrlCommand), nameof(SetActiveCommand), nameof(DeleteCommand), nameof(RenameCommand), nameof(ShowDiffCommand))]
+    [NotifyCanExecuteChangedFor(nameof(ImportCommand), nameof(ImportFromUrlCommand), nameof(CheckForUpdateCommand), nameof(SetActiveCommand), nameof(DeleteCommand), nameof(RenameCommand), nameof(ShowDiffCommand))]
     public partial bool IsBusy { get; private set; }
 
     [ObservableProperty]
@@ -160,7 +164,7 @@ public sealed partial class SchemasSettingsViewModel : ViewModelBase, IDisposabl
     public ObservableCollection<SchemaDiffSection> DiffSections { get; } = [];
 
     /// <summary>Tekst za prazno stanje liste (samo ugrađena šema).</summary>
-    public string ImportHint => "Prevucite .xsd ili .zip fajl ovdje, kliknite „Uvezi šemu…”, ili nalijepite link ZIP paketa sa sajta FZO preko „Uvezi sa linka…”.";
+    public string ImportHint => "Prevucite .xsd ili .zip fajl ovdje, kliknite „Uvezi sa računara”, nalijepite link ZIP paketa sa sajta FZO preko „Uvezi sa linka”, ili kliknite „Provjeri novu verziju” da program sam provjeri šemu na sajtu FZO.";
 
     /// <summary>
     /// Uvoz šeme sa linka: preuzima <c>.zip</c> ili <c>.xsd</c> (samo <c>https</c>, ograničena veličina) u privremeni
@@ -279,7 +283,7 @@ public sealed partial class SchemasSettingsViewModel : ViewModelBase, IDisposabl
         }
     }
 
-    /// <summary>Uvoz šeme iz fajla (dugme „Uvezi šemu…” ili prevlačenje).</summary>
+    /// <summary>Uvoz šeme iz fajla (dugme „Uvezi sa računara” ili prevlačenje).</summary>
     public async Task ImportFromPathAsync(string path)
     {
         ArgumentNullException.ThrowIfNull(path);
@@ -330,7 +334,7 @@ public sealed partial class SchemasSettingsViewModel : ViewModelBase, IDisposabl
     [RelayCommand(CanExecute = nameof(CanImport))]
     private async Task ImportAsync()
     {
-        var path = await _dialogs.PickOpenFileAsync("Uvezi šemu", [FileFilter.SchemaPackage, FileFilter.All], _settings.Current.LastFolder);
+        var path = await _dialogs.PickOpenFileAsync("Uvezi šemu sa računara", [FileFilter.SchemaPackage, FileFilter.All], _settings.Current.LastFolder);
         if (path is not null)
         {
             await ImportFromPathAsync(path);
@@ -349,6 +353,65 @@ public sealed partial class SchemasSettingsViewModel : ViewModelBase, IDisposabl
         if (!string.IsNullOrWhiteSpace(url))
         {
             await ImportFromUrlAsync(url);
+        }
+    }
+
+    /// <summary>
+    /// „Provjeri novu verziju”: poredi šemu sa sajta FZO (<see cref="FzoSchemaSource"/>) sa aktivnom i, uz
+    /// pristanak, sama je preuzima, uvozi i postavlja kao aktivnu (isto kao ponuda pri pokretanju).
+    /// </summary>
+    [RelayCommand(CanExecute = nameof(CanImport))]
+    private async Task CheckForUpdateAsync()
+    {
+        if (IsBusy)
+        {
+            return;
+        }
+
+        Message = null;
+        SetBusy("Provjeravam šemu na sajtu FZO…");
+        try
+        {
+            var check = await _updates.CheckAsync(atStartup: false);
+            if (!check.HasUpdate)
+            {
+                Message = UserMessage.Success(
+                    $"Nema nove verzije: aktivna šema „{check.ActiveName}” je ista kao na sajtu FZO (izmijenjena {check.RemoteModifiedText}).");
+                return;
+            }
+
+            ClearBusy();
+            var install = await _dialogs.ConfirmAsync(
+                "Nova šema na sajtu FZO",
+                check.OfferText,
+                check.State == SchemaUpdateState.ImportedNotActive ? "Postavi kao aktivnu" : "Preuzmi i postavi",
+                "Ne sada");
+            if (!install)
+            {
+                _updates.MarkSeen(check.RemoteModified);
+                Message = UserMessage.Info("Šema nije nadograđena. Aktivna šema nije promijenjena.");
+                return;
+            }
+
+            SetBusy("Preuzimam i uvozim šemu sa sajta FZO…");
+            var result = await _updates.InstallAsync(check);
+            CloseDiff();
+            await LoadAsync(result.Schema.Id);
+            Message = UserMessage.Success(result.Message);
+        }
+        catch (SchemaDownloadException ex)
+        {
+            _log.Warning("Provjera ili nadogradnja šeme sa sajta FZO nije uspjela.", ex);
+            Message = UserMessage.Error("Provjera šeme na sajtu FZO nije uspjela.", [ex.Message]);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException)
+        {
+            _log.Warning("Šema sa sajta FZO ne može da se postavi kao aktivna.", ex);
+            Message = UserMessage.Error("Šema sa sajta FZO ne može da se postavi kao aktivna.", [ex.Message]);
+        }
+        finally
+        {
+            ClearBusy();
         }
     }
 

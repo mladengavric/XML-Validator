@@ -63,8 +63,11 @@ public interface IDialogService
     /// </summary>
     Task<bool> ShowChangesPreviewAsync(ViewModels.ChangesPreviewViewModel preview);
 
-    /// <summary>Prozor „O programu” (verzija, licence, prečice).</summary>
-    Task ShowAboutAsync();
+    /// <summary>
+    /// Prozor „O programu” (verzija, nadogradnja, licence, prečice). <paramref name="showUpdate"/> otvara tab
+    /// „Nadogradnja” i provjerava verziju; <paramref name="startUpdate"/> odmah pokreće i nadogradnju.
+    /// </summary>
+    Task ShowAboutAsync(bool showUpdate = false, bool startUpdate = false);
 }
 
 /// <summary>Primjena teme (svijetla, tamna, po sistemu).</summary>

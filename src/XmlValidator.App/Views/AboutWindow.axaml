@@ -1,10 +1,12 @@
 <!--
-  „O programu”: naziv, verzija i opis programa, okruženje i folder sa podacima, prečice na tastaturi
-  i korišćene biblioteke sa licencama. Adrese se mogu selektovati i kopirati (ne otvara se browser).
+  „O programu”: naziv, verzija, opis i autor programa, okruženje i folder sa podacima, nadogradnja
+  (verzija na GitHub-u), prečice na tastaturi i korišćene biblioteke sa licencama.
+  Adrese se mogu selektovati i kopirati (ne otvara se browser).
 -->
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:XmlValidator.App.ViewModels"
+        xmlns:ui="using:XmlValidator.App.Controls"
         x:Class="XmlValidator.App.Views.AboutWindow"
         x:DataType="vm:AboutViewModel"
         Title="O programu"
@@ -37,12 +39,13 @@
                         </Border>
                     </StackPanel>
                     <TextBlock Classes="muted wrap" Text="{Binding Description}" />
+                    <TextBlock x:Name="CopyrightText" Classes="caption muted" Text="{Binding CopyrightText}" />
                 </StackPanel>
             </Grid>
         </Border>
 
         <!-- ===== Sadržaj ===== -->
-        <TabControl x:Name="Sections" Grid.Row="1" Classes="main">
+        <TabControl x:Name="Sections" Grid.Row="1" Classes="main" SelectedIndex="{Binding SelectedTabIndex}">
 
             <!-- Okruženje -->
             <TabItem AutomationProperties.Name="Okruženje">
@@ -76,6 +79,119 @@
                             <PathIcon Classes="small muted" Data="{StaticResource IconInfo}" VerticalAlignment="Top" />
                             <TextBlock Grid.Column="1" Classes="caption muted wrap"
                                        Text="Za prijavu problema kliknite „Kopiraj podatke o verziji” i nalijepite tekst u poruku. Tekst sadrži samo verziju programa, okruženja i biblioteka, bez podataka iz faktura." />
+                        </Grid>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- Nadogradnja -->
+            <TabItem x:Name="UpdateTab" AutomationProperties.Name="Nadogradnja programa">
+                <TabItem.Header>
+                    <StackPanel Classes="tabHeader" Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
+                        <PathIcon Data="{StaticResource IconDownload}" />
+                        <TextBlock Text="Nadogradnja" />
+                    </StackPanel>
+                </TabItem.Header>
+                <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel Margin="{StaticResource PagePadding}" Spacing="{StaticResource SpaceM}"
+                                DataContext="{Binding Update}" x:DataType="vm:UpdateViewModel">
+
+                        <!-- Trenutna i najnovija verzija -->
+                        <Grid ColumnDefinitions="*,*" ColumnSpacing="{StaticResource SpaceS}">
+                            <Border Classes="settingRow">
+                                <StackPanel Spacing="{StaticResource SpaceXs}">
+                                    <TextBlock Classes="caption muted strong" Text="Trenutna verzija" />
+                                    <TextBlock x:Name="CurrentVersionText" Classes="title mono" Text="{Binding CurrentVersionText}" />
+                                    <TextBlock Classes="caption muted" Text="{Binding PlatformText}" />
+                                </StackPanel>
+                            </Border>
+                            <Border Grid.Column="1" Classes="settingRow">
+                                <StackPanel Spacing="{StaticResource SpaceXs}">
+                                    <TextBlock Classes="caption muted strong" Text="Najnovija verzija na GitHub-u" />
+                                    <TextBlock x:Name="LatestVersionText" Classes="title mono" Text="{Binding LatestVersionText}" />
+                                    <TextBlock Classes="caption muted" Text="{Binding PublishedText}" />
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+
+                        <!-- Stanje provjere / nadogradnje -->
+                        <Border x:Name="UpdateMessage" Classes="banner" IsVisible="{Binding HasMessage}"
+                                ui:SeverityStyle.Severity="{Binding Message.Severity}">
+                            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="{StaticResource SpaceM}">
+                                <PathIcon Classes="status" ui:SeverityStyle.Severity="{Binding Message.Severity}"
+                                          VerticalAlignment="Top" />
+                                <StackPanel Grid.Column="1" Spacing="{StaticResource SpaceXs}">
+                                    <SelectableTextBlock Classes="wrap strong" Text="{Binding Message.Text}" />
+                                    <ItemsControl ItemsSource="{Binding Message.Details}" IsVisible="{Binding Message.HasDetails}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate x:DataType="x:String">
+                                                <SelectableTextBlock Classes="caption wrap" Text="{Binding}" />
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <!-- Napredak preuzimanja -->
+                        <Grid x:Name="UpdateProgressPanel" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="{StaticResource SpaceS}"
+                              IsVisible="{Binding IsDownloading}">
+                            <ProgressBar x:Name="UpdateProgress" Classes="download" Minimum="0" Maximum="100"
+                                         VerticalAlignment="Center"
+                                         IsIndeterminate="{Binding !IsDownloadProgressKnown}"
+                                         Value="{Binding DownloadPercent, TargetNullValue=0, FallbackValue=0}"
+                                         AutomationProperties.Name="Napredak preuzimanja nove verzije" />
+                            <TextBlock Grid.Column="1" Classes="caption muted mono" VerticalAlignment="Center"
+                                       MinWidth="{StaticResource ProgressPercentWidth}" TextAlignment="Right"
+                                       Text="{Binding DownloadPercent, StringFormat='{}{0:0} %', TargetNullValue=''}"
+                                       IsVisible="{Binding IsDownloadProgressKnown}" />
+                            <Button x:Name="CancelUpdateButton" Grid.Column="2" Command="{Binding CancelCommand}"
+                                    ToolTip.Tip="Prekini preuzimanje; program ostaje nepromijenjen">
+                                <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
+                                    <PathIcon Data="{StaticResource IconStop}" />
+                                    <TextBlock Text="Prekini" />
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+
+                        <!-- Dugmad -->
+                        <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
+                            <Button x:Name="CheckUpdateButton" Command="{Binding CheckCommand}"
+                                    ToolTip.Tip="Provjeri posljednju objavljenu verziju na GitHub-u">
+                                <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
+                                    <PathIcon Data="{StaticResource IconRefresh}" />
+                                    <TextBlock Text="Provjeri" />
+                                </StackPanel>
+                            </Button>
+                            <Button x:Name="InstallUpdateButton" Classes="primary" Command="{Binding InstallCommand}"
+                                    ToolTip.Tip="Preuzmi novu verziju, zamijeni ovaj program njome i pokreni je (ovaj program se zatvara)">
+                                <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
+                                    <PathIcon Data="{StaticResource IconDownload}" />
+                                    <TextBlock Text="Nadogradi" />
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+
+                        <!-- Šta je novo u posljednjoj verziji -->
+                        <Border x:Name="ReleaseNotesPane" Classes="pane" IsVisible="{Binding HasRelease}">
+                            <StackPanel>
+                                <Border Classes="paneHeader">
+                                    <TextBlock Classes="strong wrap" Text="{Binding ReleaseTitle}" />
+                                </Border>
+                                <ScrollViewer MaxHeight="{StaticResource DetailsMaxHeight}" HorizontalScrollBarVisibility="Disabled">
+                                    <SelectableTextBlock x:Name="ReleaseNotesText" Classes="wrap" Margin="{StaticResource PagePadding}"
+                                                         Text="{Binding ReleaseNotes}" />
+                                </ScrollViewer>
+                            </StackPanel>
+                        </Border>
+
+                        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="{StaticResource SpaceS}">
+                            <PathIcon Classes="small muted" Data="{StaticResource IconInfo}" VerticalAlignment="Top" />
+                            <StackPanel Grid.Column="1" Spacing="{StaticResource SpaceXs}">
+                                <TextBlock Classes="caption muted wrap"
+                                           Text="Program provjerava novu verziju ubrzo poslije pokretanja i pri otvaranju ovog prozora. Nadogradnja preuzima novu verziju za ovaj sistem, zamjenjuje ovaj program, pokreće novu verziju i javlja kad je instalirana. Podešavanja, šeme i fajlovi ostaju isti." />
+                                <SelectableTextBlock Classes="caption mono accent wrap" Text="{Binding ReleasePageText}" />
+                            </StackPanel>
                         </Grid>
                     </StackPanel>
                 </ScrollViewer>

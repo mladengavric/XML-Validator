@@ -140,11 +140,25 @@ public sealed class AvaloniaDialogService : IDialogService
         return preview.Result == true;
     }
 
-    public async Task ShowAboutAsync()
+    public async Task ShowAboutAsync(bool showUpdate = false, bool startUpdate = false)
     {
         var viewModel = _services.GetRequiredService<AboutViewModel>();
+        if (showUpdate || startUpdate)
+        {
+            viewModel.SelectedTabIndex = AboutViewModel.UpdateTabIndex;
+        }
+
         var window = new AboutWindow { DataContext = viewModel };
         viewModel.CloseRequested += (_, _) => window.Close();
+        window.Closed += (_, _) => viewModel.Update.CancelRunning();
+        window.Opened += async (_, _) =>
+        {
+            await viewModel.Update.CheckAsync();
+            if (startUpdate && viewModel.Update.InstallCommand.CanExecute(null))
+            {
+                await viewModel.Update.InstallAsync();
+            }
+        };
         await ShowWindowAsync(window, null);
     }
 

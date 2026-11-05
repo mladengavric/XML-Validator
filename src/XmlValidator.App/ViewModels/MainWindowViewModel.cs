@@ -181,6 +181,153 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IDisposable
         }
     }
 
+    /// <summary>Koliko poslije pokretanja počinju provjere nove verzije programa i šeme.</summary>
+    public static TimeSpan StartupCheckDelay { get; } = TimeSpan.FromSeconds(3);
+
+    /// <summary>
+    /// Provjere ubrzo poslije pokretanja: poruka o završenoj nadogradnji, nova verzija programa na GitHub-u
+    /// i nova šema na sajtu FZO. Svaka nova verzija se nudi pitanjem „Da/Ne”; „Ne” znači da se ista verzija
+    /// pri pokretanju više ne nudi (ručna provjera je i dalje moguća). Greške mreže se samo bilježe u log.
+    /// </summary>
+    public async Task RunStartupChecksAsync(
+        AppUpdateService appUpdates,
+        SchemaUpdateService schemaUpdates,
+        string? updatedFrom,
+        int? oldProcessId,
+        TimeSpan delay,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(appUpdates);
+        ArgumentNullException.ThrowIfNull(schemaUpdates);
+        try
+        {
+            if (updatedFrom is not null)
+            {
+                var cleanup = appUpdates.CleanupAfterUpdateAsync(oldProcessId, cancellationToken);
+                var current = appUpdates.CurrentVersion.ToString(3);
+                SetStatus($"Instalirana je najnovija verzija programa ({current}).", MessageSeverity.Success);
+                await _dialogs.ShowMessageAsync(
+                    "Nadogradnja je završena",
+                    $"Instalirana je najnovija verzija programa: {current} (prethodna je bila {updatedFrom}).",
+                    MessageSeverity.Success);
+                await cleanup;
+            }
+
+            await Task.Delay(delay, cancellationToken);
+            var installing = updatedFrom is null && await OfferAppUpdateAsync(appUpdates, cancellationToken);
+            if (!installing)
+            {
+                await OfferSchemaUpdateAsync(schemaUpdates, cancellationToken);
+            }
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            // Program se zatvara.
+        }
+    }
+
+    /// <summary>Nudi novu verziju programa; <c>true</c> kad je korisnik pristao (nadogradnja je pokrenuta).</summary>
+    private async Task<bool> OfferAppUpdateAsync(AppUpdateService updates, CancellationToken cancellationToken)
+    {
+        if (AppUpdateService.Platform is null)
+        {
+            return false;
+        }
+
+        Core.Updates.ReleaseInfo release;
+        try
+        {
+            release = await updates.GetLatestAsync(cancellationToken);
+        }
+        catch (Core.Updates.UpdateException ex)
+        {
+            _log.Warning("Provjera nove verzije programa pri pokretanju nije uspjela.", ex);
+            return false;
+        }
+
+        var version = release.Version.ToString(3);
+        if (!updates.IsNewer(release) || _settings.Current.DeclinedAppVersion == version)
+        {
+            return false;
+        }
+
+        await WaitUntilIdleAsync(cancellationToken);
+        var answer = await AskAsync(
+            "Nova verzija programa",
+            $"Na GitHub-u je nova verzija programa: {version} (trenutna je {updates.CurrentVersion.ToString(3)}). "
+            + "Da li da je program preuzme i instalira? Program će se zatvoriti i ponovo pokrenuti u novoj verziji.");
+        if (answer == false)
+        {
+            _settings.Update(s => s with { DeclinedAppVersion = version });
+            SetStatus($"Nova verzija {version} se može instalirati u „O programu” → „Nadogradnja”.", MessageSeverity.Info);
+        }
+
+        if (answer != true)
+        {
+            return false;
+        }
+
+        await _dialogs.ShowAboutAsync(showUpdate: true, startUpdate: true);
+        return true;
+    }
+
+    /// <summary>Nudi novu šemu sa sajta FZO i, uz pristanak, sama je preuzima, uvozi i postavlja kao aktivnu.</summary>
+    private async Task OfferSchemaUpdateAsync(SchemaUpdateService updates, CancellationToken cancellationToken)
+    {
+        SchemaUpdateCheck check;
+        try
+        {
+            check = await updates.CheckAsync(atStartup: true, cancellationToken);
+        }
+        catch (SchemaDownloadException ex)
+        {
+            _log.Warning("Provjera šeme na sajtu FZO pri pokretanju nije uspjela.", ex);
+            return;
+        }
+
+        if (!check.HasUpdate)
+        {
+            return;
+        }
+
+        await WaitUntilIdleAsync(cancellationToken);
+        var answer = await AskAsync("Nova šema na sajtu FZO", check.OfferText);
+        if (answer != true)
+        {
+            if (answer == false)
+            {
+                updates.MarkSeen(check.RemoteModified);
+                SetStatus("Šema nije nadograđena. Provjera je moguća u Podešavanja → Šeme → „Provjeri novu verziju”.", MessageSeverity.Info);
+            }
+
+            return;
+        }
+
+        SetStatus("Preuzimam šemu sa sajta FZO…", MessageSeverity.Info);
+        try
+        {
+            var result = await updates.InstallAsync(check, cancellationToken);
+            await RefreshSchemaStatusAsync();
+            SetStatus(result.Message, MessageSeverity.Success);
+            await _dialogs.ShowMessageAsync("Šema je nadograđena", result.Message, MessageSeverity.Success);
+        }
+        catch (SchemaDownloadException ex)
+        {
+            _log.Warning("Nadogradnja šeme nije uspjela.", ex);
+            SetStatus("Šema nije nadograđena.", MessageSeverity.Error);
+            await _dialogs.ShowMessageAsync("Šema nije nadograđena", ex.Message, MessageSeverity.Error);
+        }
+    }
+
+    /// <summary>Čeka da se završi otvoreno pitanje ili posao, da pitanje o novoj verziji ne prekine korisnika.</summary>
+    private async Task WaitUntilIdleAsync(CancellationToken cancellationToken)
+    {
+        while (HasQuestion || IsBusy)
+        {
+            await Task.Delay(TimeSpan.FromMilliseconds(500), cancellationToken);
+        }
+    }
+
     /// <summary>Otvara fajl. Vraća <c>true</c> ako je fajl učitan.</summary>
     public async Task<bool> OpenFileAsync(string path)
     {

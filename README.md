@@ -25,7 +25,13 @@ Uputstvo za korišćenje sa slikama za svaki korak: [`docs/uputstvo/Uputstvo-XML
   odmah validira u tabu „Validacija”.
 - **Upravljanje šemama** (Podešavanja → Šeme): uvoz nove verzije šeme iz `.xsd` fajla, `.zip` paketa
   kakav FZO objavljuje na svom sajtu ili direktno sa linka (`https`), izbor aktivne šeme, pregled
-  razlika prema aktivnoj, povratak na ugrađenu.
+  razlika prema aktivnoj, povratak na ugrađenu. Program prati šemu `fakture-zdravstva.xsd` na sajtu FZO
+  (`https://zdravstvo-srpske.org/rp/xml-sheme/`, „Last modified”): ubrzo poslije pokretanja nudi novu verziju i,
+  uz pristanak, sam je preuzima, uvozi i postavlja kao aktivnu; ista provjera je i na dugmetu „Provjeri novu verziju”.
+- **Nadogradnja programa** („O programu” → „Nadogradnja”): program poredi svoju verziju sa posljednjim
+  [GitHub release-om](https://github.com/mladengavric/XML-Validator/releases), nudi nadogradnju ubrzo poslije
+  pokretanja, preuzima novu verziju za Windows ili Linux, zamjenjuje sebe njome, pokreće je i javlja da je
+  instalirana. Podešavanja i šeme ostaju isti.
 
 **Ulazni fajl se nikad ne mijenja.** Rezultat čišćenja uvijek ide u novi fajl (podrazumijevano
 `<ime>_ociscen.xml`), a kodiranje, BOM, završeci linija i tekst faktura koje ostaju čuvaju se bajt po bajt.
@@ -99,8 +105,8 @@ svrstava u jednu kategoriju:
   popravke se mogu isključiti.
 - Rezultat se prije čuvanja provjerava na ispravnost XML-a i prema aktivnoj XSD šemi.
 
-Detaljna pravila su u [`PLAN.md`](PLAN.md), a namjerne razlike u odnosu na `clean.py` (ispravke grešaka
-skripte) u [`docs/odstupanja-od-clean-py.md`](docs/odstupanja-od-clean-py.md).
+Program namjerno odstupa od `clean.py` samo tamo gdje je skripta imala grešku; svako odstupanje je pokriveno
+testom.
 
 ## Prečice
 
@@ -130,8 +136,8 @@ xmlvalidator-cli help clean
 Važe ista pravila: ulaz se nikad ne mijenja, postojeći fajl se prepisuje samo uz `--overwrite`, sumnjivi blokovi
 traže izričitu odluku (`--suspicious delete|skip`), a izlaz koji ne prolazi provjeru prema šemi čuva se samo uz
 `--allow-invalid`. Izlazni kod je 0 za uspjeh, 1 kad fajl ima greške ili izlaz nije sačuvan, 2 za pogrešne
-argumente i 3 kad fajl ne može da se pročita ili upiše. Sve opcije i primjer serijske obrade su u
-[`docs/konzolni-alat.md`](docs/konzolni-alat.md).
+argumente i 3 kad fajl ne može da se pročita ili upiše. Sve opcije sa objašnjenjem daje
+`xmlvalidator-cli help clean`.
 
 ## Gradnja i testovi
 
@@ -140,15 +146,8 @@ dotnet build
 dotnet test
 ```
 
-Build ima uključeno `TreatWarningsAsErrors`; testovi (xUnit v3) pokrivaju Core (validacija, šeme,
-čišćenje, paritet sa `clean.py`), aplikaciju (ViewModel-i i UI testovi bez prozora, sa snimcima ekrana u
-`artifacts/screenshots/`) i konzolni alat.
-
-Referentno ponašanje skripte (za testove pariteta):
-
-```
-python legacy/clean.py <ulaz.xml> <izlaz.xml>
-```
+Build ima uključeno `TreatWarningsAsErrors`. Testovi (xUnit v3, Core, aplikacija sa UI testovima bez prozora
+i konzolni alat) i testni podaci se ne objavljuju u javnom repozitorijumu.
 
 ## Objavljivanje (pakovanje)
 
@@ -179,8 +178,10 @@ MAJOR za promjene koje mijenjaju rezultat čišćenja ili rad sa postojećim pod
 prozoru „O programu” (F1) i u svojstvima `.exe` fajla (Windows → Properties → Details); u svojstvima je
 uz verziju i kratak hash commita iz kojeg je program napravljen.
 
-Za novo izdanje: promijeniti `Version`, napraviti commit, označiti ga (`git tag v1.0.1`) i objaviti
-program komandom iz prethodnog odjeljka.
+Za novo izdanje: promijeniti `Version`, napraviti commit, označiti ga (`git tag v1.0.1`), objaviti
+program komandom iz prethodnog odjeljka i napraviti GitHub release sa oznakom `v<verzija>`. Nadogradnja u
+programu traži u release-u tačno ove fajlove: `XmlValidator.exe` (Windows) i
+`XmlValidator-<verzija>-linux-x64.tar.gz` (Linux, sa programom `XmlValidator` u arhivi).
 
 ## Struktura repozitorijuma
 
@@ -188,21 +189,14 @@ program komandom iz prethodnog odjeljka.
 src/XmlValidator.Core/        logika: validacija, šeme, čišćenje, izvještaji (bez zavisnosti od UI-ja)
 src/XmlValidator.App/         Avalonia 12 aplikacija (MVVM, CommunityToolkit.Mvvm)
 src/XmlValidator.Cli/         konzolni alat xmlvalidator-cli (validate, clean)
-tests/                        testovi i ISKLJUČIVO sintetički testni podaci
-docs/                         analize i tehnička dokumentacija
-legacy/                       stari WinForms program i clean.py (samo za čitanje)
+docs/uputstvo/                 PDF uputstvo za korišćenje (izvor uputstvo.html, skripta napravi-uputstvo.py)
 ```
-
-Dokumentacija: [`docs/aplikacija.md`](docs/aplikacija.md) (arhitektura aplikacije),
-[`docs/ciscenje-faktura.md`](docs/ciscenje-faktura.md), [`docs/konzolni-alat.md`](docs/konzolni-alat.md), [`docs/sheme-i-validacija.md`](docs/sheme-i-validacija.md),
-analize starog programa, FZO paketa i `clean.py` u `docs/`. Plan rada i sve odluke su u [`PLAN.md`](PLAN.md).
 
 ## Lični podaci
 
-Fakture sadrže JMB i zdravstvene podatke. U repozitorijumu nema stvarnih faktura: `.gitignore` isključuje
-sve `*.xml` fajlove osim sintetičkih testnih podataka u `tests/TestData/` (i odobrenog anonimizovanog
-primjera u `tests/TestData/samples/`). Program ne šalje ništa na mrežu, osim kad korisnik izričito
-pokrene „Uvezi sa linka” za šemu.
+Fakture sadrže JMB i zdravstvene podatke. U repozitorijumu nema faktura: `.gitignore` isključuje sve `*.xml`
+fajlove. Program nikad ne šalje sadržaj faktura na mrežu. Na internet pristupa samo da bi provjerio i preuzeo
+novu verziju programa (GitHub) i novu šemu (sajt FZO), i kad korisnik pokrene „Uvezi sa linka”.
 
 ## Licence
 

@@ -35,11 +35,34 @@ public partial class App : Application
             var viewModel = _services.GetRequiredService<MainWindowViewModel>();
             // Glavni prozor se otvara preko cijelog ekrana; Width/Height iz XAML-a ostaju veličina pri vraćanju.
             // Samo ovdje (pravo pokretanje), da bi UI testovi imali stalnu veličinu prozora za snimke.
-            desktop.MainWindow = new MainWindow { DataContext = viewModel, WindowState = WindowState.Maximized };
-            desktop.Exit += (_, _) => _services.Dispose();
+            var mainWindow = new MainWindow { DataContext = viewModel, WindowState = WindowState.Maximized };
+            desktop.MainWindow = mainWindow;
+            var shutdown = new CancellationTokenSource();
+            desktop.Exit += (_, _) =>
+            {
+                shutdown.Cancel();
+                _services.Dispose();
+                shutdown.Dispose();
+            };
 
-            var startupFile = desktop.Args is { Length: > 0 } args ? args[0] : null;
-            Dispatcher.UIThread.Post(async () => await viewModel.InitializeAsync(startupFile));
+            // Nadogradnja programa: pitanje za nesačuvane izmjene prije preuzimanja i zatvaranje bez pitanja poslije.
+            var appUpdates = _services.GetRequiredService<AppUpdateService>();
+            appUpdates.ConfirmCloseAsync = viewModel.ConfirmDiscardChangesAsync;
+            appUpdates.Shutdown = () =>
+            {
+                mainWindow.AllowCloseWithoutConfirmation();
+                desktop.Shutdown();
+            };
+
+            var (updatedFrom, oldProcessId, args) = AppUpdateService.ParseArguments(desktop.Args ?? []);
+            var startupFile = args.Count > 0 ? args[0] : null;
+            var schemaUpdates = _services.GetRequiredService<SchemaUpdateService>();
+            var token = shutdown.Token;
+            Dispatcher.UIThread.Post(async () =>
+            {
+                await viewModel.InitializeAsync(startupFile);
+                await viewModel.RunStartupChecksAsync(appUpdates, schemaUpdates, updatedFrom, oldProcessId, MainWindowViewModel.StartupCheckDelay, token);
+            });
         }
 
         base.OnFrameworkInitializationCompleted();

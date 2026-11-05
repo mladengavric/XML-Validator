@@ -27,34 +27,39 @@ EDGE = Path(r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe")
 IMAGES = {
     "01-pocetni-ekran.png": ("main-empty-dark.png", [(12, 6, 1192, 44), (12, 55, 308, 94), (6, 748, 1194, 779)]),
     "02-prevlacenje.png": ("main-drop-overlay-dark.png", [(410, 300, 790, 480)]),
-    "03-nedavni-fajlovi.png": ("main-recent-menu-dark.png", [(374, 6, 542, 42), (372, 44, 720, 190)]),
-    "04-validacija-ispravan.png": ("validation-valid-dark.png", [(14, 102, 131, 141), (306, 104, 494, 141), (720, 104, 1042, 141)]),
-    "05-validacija-greske.png": ("validation-errors-dark.png", [(308, 106, 602, 138), (17, 557, 1183, 729)]),
-    "06-validacija-izabrana-greska.png": ("validation-issue-selected-dark.png", [(17, 683, 1183, 728), (17, 443, 1183, 462), (910, 518, 974, 548)]),
-    "07-validacija-izmijenjeno.png": ("validation-modified-dark.png", [(308, 102, 652, 142), (233, 175, 316, 194), (136, 102, 293, 141)]),
-    "08-ciscenje-analiza.png": ("cleaning-file-dark.png", [(14, 104, 136, 143), (160, 102, 672, 146), (160, 225, 522, 261)]),
-    "09-ciscenje-podesavanja.png": ("cleaning-settings-dark.png", [(978, 104, 1188, 144), (8, 160, 1192, 290)]),
-    "10-ciscenje-prikazi.png": ("cleaning-settings-show-960-dark.png", [(196, 182, 666, 220), (788, 443, 916, 479), (838, 634, 946, 660)]),
-    "11-ciscenje-vise-faktura.png": ("cleaning-multiselect-dark.png", [(12, 299, 1188, 407), (942, 229, 1178, 259)]),
-    "12-ciscenje-sumnjiv-blok.png": ("cleaning-suspicious-dark.png", [(12, 333, 1188, 369), (724, 520, 1186, 584)]),
-    "13-ciscenje-uredi.png": ("cleaning-edit-dark.png", [(790, 283, 916, 317), (14, 372, 710, 634), (576, 378, 698, 417)]),
-    "14-ciscenje-popravka.png": ("cleaning-repair-note-dark.png", [(12, 299, 1188, 335), (724, 526, 1186, 574)]),
-    "15-pregled-izmjena.png": ("changes-preview-dark.png", [(70, 94, 1018, 132), (70, 161, 574, 194), (828, 648, 934, 686)]),
-    "24-izvjestaj.png": ("cleaning-file-dark.png", [(606, 700, 784, 738), (272, 704, 472, 736)]),
-    "16-podesavanja-opste.png": ("settings-general-dark.png", [(208, 358, 916, 444), (208, 448, 916, 534)]),
-    "17-podesavanja-opste-akcije.png": ("settings-general-bottom-dark.png", [(208, 56, 916, 264), (208, 266, 916, 338), (206, 347, 417, 386)]),
-    "18-seme.png": ("settings-schemas-builtin-dark.png", [(208, 176, 916, 247)]),
-    "19-seme-uvoz.png": ("settings-schemas-import-dark.png", [(766, 22, 918, 62), (206, 181, 395, 220), (399, 181, 607, 220), (208, 394, 916, 572)]),
-    "20-seme-link.png": ("settings-schemas-download-dark.png", [(598, 22, 762, 62), (208, 112, 916, 180)]),
-    "21-zatvori.png": ("main-validation-file-dark.png", [(260, 6, 352, 42)]),
-    "22-o-programu.png": ("about-shortcuts-dark.png", [(144, 111, 253, 150), (24, 174, 736, 592)]),
+    "03-nedavni-fajlovi.png": ("main-recent-menu-dark.png", [(390, 6, 546, 42), (383, 42, 730, 190)]),
+    "04-validacija-ispravan.png": ("validation-valid-dark.png", [(16, 104, 129, 139), (150, 106, 320, 138), (370, 300, 830, 480)]),
+    "05-validacija-greske.png": ("validation-errors-dark.png", [(150, 106, 432, 138), (17, 557, 1183, 729)]),
+    "06-validacija-izabrana-greska.png": ("validation-issue-selected-dark.png", [(17, 683, 1183, 728), (17, 444, 1183, 461), (922, 518, 986, 548)]),
+    "07-validacija-izmijenjeno.png": ("validation-modified-dark.png", [(150, 104, 490, 141), (233, 175, 316, 194), (1038, 104, 1184, 139)]),
+    "07a-validacija-pitanje.png": ("validation-save-question-dark.png", [(370, 300, 830, 480), (140, 56, 306, 94)]),
+    "08-ciscenje-analiza.png": ("cleaning-file-dark.png", [(16, 106, 137, 141), (205, 104, 715, 145), (160, 226, 522, 260)]),
+    "09-ciscenje-podesavanja.png": ("cleaning-settings-dark.png", [(145, 108, 177, 140), (8, 160, 1192, 290)]),
+    "10-ciscenje-prikazi.png": ("cleaning-settings-show-960-dark.png", [(198, 184, 666, 218), (792, 443, 914, 550), (8, 697, 950, 742)]),
+    "11-ciscenje-vise-faktura.png": ("cleaning-multiselect-dark.png", [(12, 299, 1188, 407), (514, 229, 748, 259)]),
+    "12-ciscenje-sumnjiv-blok.png": ("cleaning-suspicious-dark.png", [(12, 334, 1188, 370), (724, 544, 1186, 606), (8, 697, 1192, 742)]),
+    "13-ciscenje-uredi.png": ("cleaning-edit-dark.png", [(794, 286, 912, 313), (14, 390, 708, 678), (494, 398, 696, 433)]),
+    "14-ciscenje-popravka.png": ("cleaning-repair-note-dark.png", [(12, 300, 1188, 334), (724, 580, 1186, 626)]),
+    "15-ciscenje-pregled-ocisti.png": ("cleaning-file-dark.png", [(984, 230, 1178, 258)]),
+    "15a-pregled-izmjena.png": ("changes-preview-view-dark.png", [(70, 128, 572, 156), (16, 170, 1024, 330), (932, 648, 1016, 684)]),
+    "24-sacuvaj.png": ("cleaning-file-dark.png", [(862, 106, 1030, 141), (1038, 106, 1184, 141)]),
+    "16-podesavanja-opste.png": ("settings-general-dark.png", [(208, 130, 916, 200), (208, 358, 916, 444), (208, 448, 916, 534)]),
+    "17-podesavanja-opste-akcije.png": ("settings-general-bottom-dark.png", [(208, 58, 916, 262), (208, 268, 916, 336), (208, 349, 415, 384)]),
+    "18-seme.png": ("settings-schemas-builtin-dark.png", [(380, 24, 571, 59), (208, 226, 916, 297)]),
+    "25-seme-nova-verzija.png": ("startup-schema-update-dark.png", [(370, 300, 830, 480)]),
+    "19-seme-uvoz.png": ("settings-schemas-import-dark.png", [(737, 24, 916, 59), (208, 235, 605, 268), (208, 460, 916, 572)]),
+    "20-seme-link.png": ("settings-schemas-download-dark.png", [(580, 24, 729, 59), (208, 164, 916, 230)]),
+    "21-zatvori.png": ("main-validation-file-dark.png", [(246, 8, 358, 42), (140, 56, 306, 94)]),
+    "26-nadogradnja-pitanje.png": ("startup-app-update-dark.png", [(370, 300, 830, 480)]),
+    "27-nadogradnja.png": ("about-update-dark.png", [(145, 131, 289, 168), (24, 193, 736, 288), (24, 301, 269, 335)]),
+    "22-o-programu.png": ("about-shortcuts-dark.png", [(296, 131, 402, 168), (24, 193, 736, 590), (88, 92, 218, 108)]),
 }
 
 # Isjecanje (lijevo, gore, desno, dolje): donji dio podešavanja prikazuje privremenu putanju test okruženja.
-CROPS = {"17-podesavanja-opste-akcije.png": (0, 0, None, 400)}
+CROPS = {"17-podesavanja-opste-akcije.png": (0, 0, None, 400), "03-nedavni-fajlovi.png": (0, 0, None, 215)}
 
 # Prekrivanje teksta koji otkriva putanju na računaru (lista nedavnih fajlova): (x1, y1, x2, y2, zamjenski tekst).
-MASKS = {"03-nedavni-fajlovi.png": [(422, 104, 712, 122, r"C:\Fakture")]}
+MASKS = {"03-nedavni-fajlovi.png": [(434, 104, 712, 121, r"C:\Fakture")]}
 
 BOX_COLOR = (255, 59, 48)
 BOX_WIDTH = 4

@@ -215,6 +215,13 @@
                         </StackPanel>
                         <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="{StaticResource SpaceS}"
                                     VerticalAlignment="Top">
+                            <Button x:Name="CheckForUpdateButton" Command="{Binding CheckForUpdateCommand}"
+                                    ToolTip.Tip="Provjeri da li na sajtu FZO (zdravstvo-srpske.org/rp/xml-sheme) ima nova verzija šeme fakture-zdravstva.xsd; ako ima, program je sam preuzima, uvozi i postavlja kao aktivnu">
+                                <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
+                                    <PathIcon Data="{StaticResource IconRefresh}" />
+                                    <TextBlock Text="Provjeri novu verziju" />
+                                </StackPanel>
+                            </Button>
                             <Button x:Name="ImportFromUrlButton" Command="{Binding ImportFromUrlCommand}"
                                     ToolTip.Tip="Nalijepite link ZIP paketa šema sa sajta FZO (samo https://); paket se preuzima i uvozi kao fajl">
                                 <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
@@ -227,7 +234,7 @@
                                     ToolTip.Tip="Uvoz .xsd fajla ili .zip paketa sačuvanog na računaru">
                                 <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
                                     <PathIcon Data="{StaticResource IconImport}" />
-                                    <TextBlock Text="Uvezi šemu" />
+                                    <TextBlock Text="Uvezi sa računara" />
                                 </StackPanel>
                             </Button>
                         </StackPanel>

@@ -54,6 +54,15 @@ public sealed record AppSettings
     /// <summary>Posljednja adresa sa koje je preuzeta šema („Uvezi sa linka…”); nudi se pri sljedećem uvozu.</summary>
     public string? LastSchemaUrl { get; init; }
 
+    /// <summary>
+    /// „Last modified” šeme na sajtu FZO za koju je pri pokretanju već provjereno (i ponuđeno) da li je nova;
+    /// pri pokretanju se ista verzija ne nudi ponovo. Dugme „Provjeri novu verziju” ovo ne gleda.
+    /// </summary>
+    public DateTimeOffset? SeenFzoSchemaModified { get; init; }
+
+    /// <summary>Verzija programa za koju je korisnik pri pokretanju odgovorio „Ne” (ne nudi se ponovo pri pokretanju).</summary>
+    public string? DeclinedAppVersion { get; init; }
+
     /// <summary>Poređenje putanja: na Windowsu bez obzira na velika i mala slova.</summary>
     internal static StringComparer PathComparer { get; } =
         OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
@@ -110,7 +119,9 @@ public sealed record AppSettings
         && RepairBrackets == other.RepairBrackets
         && EmptyInvoiceAction == other.EmptyInvoiceAction
         && NoGroupNoJmbMatchAction == other.NoGroupNoJmbMatchAction
-        && LastSchemaUrl == other.LastSchemaUrl;
+        && LastSchemaUrl == other.LastSchemaUrl
+        && SeenFzoSchemaModified == other.SeenFzoSchemaModified
+        && DeclinedAppVersion == other.DeclinedAppVersion;
 
     public override int GetHashCode() => HashCode.Combine(LastFolder, RecentFiles.Count, Theme, TargetGroup, RepairBrackets);
 }

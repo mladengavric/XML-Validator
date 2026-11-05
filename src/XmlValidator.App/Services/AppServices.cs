@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using XmlValidator.App.ViewModels;
 using XmlValidator.Core.Cleaning;
 using XmlValidator.Core.Schemas;
+using XmlValidator.Core.Updates;
 using XmlValidator.Core.Validation;
 
 namespace XmlValidator.App.Services;
@@ -31,6 +32,9 @@ public static class AppServices
         services.AddSingleton<ISettingsService, SettingsService>();
         services.AddSingleton(_ => new SchemaStore(paths.SchemasFolder));
         services.AddSingleton(_ => new SchemaDownloader());
+        services.AddSingleton(_ => new GitHubReleaseClient(productVersion: AboutViewModel.ReadVersion(typeof(AppServices).Assembly)));
+        services.AddSingleton<AppUpdateService>();
+        services.AddSingleton<SchemaUpdateService>();
         services.AddSingleton<StoreSchemaProvider>();
         services.AddSingleton<ISchemaProvider>(sp => sp.GetRequiredService<StoreSchemaProvider>());
         services.AddSingleton<XmlValidationService>();
@@ -43,6 +47,7 @@ public static class AppServices
         services.AddTransient<GeneralSettingsViewModel>();
         services.AddTransient<SchemasSettingsViewModel>();
         services.AddTransient<SettingsViewModel>();
+        services.AddTransient<UpdateViewModel>();
         services.AddTransient<AboutViewModel>();
         return services;
     }

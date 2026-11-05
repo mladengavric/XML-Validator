@@ -187,6 +187,9 @@ public partial class MainWindow : Window
         }
     }
 
+    /// <summary>Sljedeće zatvaranje ide bez pitanja za nesačuvane izmjene (nadogradnja ih je već potvrdila).</summary>
+    internal void AllowCloseWithoutConfirmation() => _closeConfirmed = true;
+
     private async Task ConfirmCloseAsync(MainWindowViewModel viewModel)
     {
         _closeQuestionOpen = true;
