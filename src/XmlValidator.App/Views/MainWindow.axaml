@@ -140,7 +140,14 @@
                     <TabItem.Header>
                         <StackPanel Classes="tabHeader" Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
                             <PathIcon Data="{StaticResource IconValidate}" />
-                            <TextBlock Text="{Binding Validation.Header}" />
+                            <!-- Trepćuća crvena linija ispod teksta kad otvoreni fajl ima grešaka validacije -->
+                            <Panel>
+                                <TextBlock Text="{Binding Validation.Header}" />
+                                <Border x:Name="ValidationAttentionLine" Classes="attentionLine error"
+                                        IsVisible="{Binding ValidationNeedsAttention}"
+                                        ToolTip.Tip="{Binding ValidationAttentionText}"
+                                        AutomationProperties.Name="{Binding ValidationAttentionText}" />
+                            </Panel>
                         </StackPanel>
                     </TabItem.Header>
                     <Grid>
@@ -177,14 +184,14 @@
                     <TabItem.Header>
                         <StackPanel Classes="tabHeader" Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
                             <PathIcon Data="{StaticResource IconClean}" />
-                            <!-- Trepćuća linija ispod teksta kad otvoreni fajl ima faktura za čišćenje.
+                            <!-- Trepćuća narandžasta linija ispod teksta kad otvoreni fajl ima faktura za čišćenje.
                                  Crta se ispod teksta bez uticaja na raspored (vidi Border.attentionLine). -->
                             <Panel>
                                 <TextBlock Text="{Binding Cleaning.Header}" />
                                 <Border x:Name="CleaningAttentionLine" Classes="attentionLine"
                                         IsVisible="{Binding CleaningNeedsAttention}"
-                                        ToolTip.Tip="{Binding InvoicesToClean, StringFormat='Ima faktura za čišćenje: {0}'}"
-                                        AutomationProperties.Name="{Binding InvoicesToClean, StringFormat='Ima faktura za čišćenje: {0}'}" />
+                                        ToolTip.Tip="{Binding CleaningAttentionText}"
+                                        AutomationProperties.Name="{Binding CleaningAttentionText}" />
                             </Panel>
                         </StackPanel>
                     </TabItem.Header>
@@ -254,6 +261,42 @@
                 </Grid>
             </Border>
         </Grid>
+
+        <!-- ===== Male kartice u sredini prozora (Border.popupCard: ista veličina i stil) ===== -->
+
+        <!-- Obavještenje o uspješnoj validaciji; ViewModel ga sakriva poslije 3 s -->
+        <Border x:Name="SuccessToast" Classes="popupCard success"
+                IsVisible="{Binding Validation.IsSuccessToastVisible}" IsHitTestVisible="False">
+            <StackPanel Classes="popupCenter">
+                <PathIcon Classes="status success xl" HorizontalAlignment="Center" />
+                <TextBlock Classes="subtitle wrap" TextAlignment="Center"
+                           Text="{x:Static vm:ValidationTabViewModel.SuccessToastText}" />
+            </StackPanel>
+        </Border>
+
+        <!-- Pitanje Da/Ne preko cijelog prozora: klik van kartice ili Esc ga zatvara bez odgovora
+             (MainWindow.axaml.cs); pozadina hvata klikove, pa ne stižu do kontrola ispod. -->
+        <Panel x:Name="QuestionOverlay" Classes="popupScrim" IsVisible="{Binding HasQuestion}">
+            <Border x:Name="QuestionCard" Classes="popupCard" DataContext="{Binding Question}">
+                <Grid x:DataType="vm:QuestionViewModel" RowDefinitions="Auto,*,Auto" RowSpacing="{StaticResource SpaceS}">
+                    <TextBlock x:Name="QuestionTitle" Classes="subtitle" Text="{Binding Title}"
+                               TextTrimming="CharacterEllipsis" />
+                    <TextBlock x:Name="QuestionMessage" Grid.Row="1" Classes="wrap" Text="{Binding Message}"
+                               TextTrimming="CharacterEllipsis" />
+                    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right"
+                                Spacing="{StaticResource SpaceS}">
+                        <Button x:Name="QuestionYesButton" Classes="primary popupAction" Content="{Binding YesText, FallbackValue=Da}"
+                                AutomationProperties.Name="{Binding YesText, FallbackValue=Da}"
+                                Command="{Binding YesCommand}"
+                                ToolTip.Tip="Odgovor „Da” (Enter dok je dugme u fokusu)" />
+                        <Button x:Name="QuestionNoButton" Classes="popupAction" Content="{Binding NoText, FallbackValue=Ne}"
+                                AutomationProperties.Name="{Binding NoText, FallbackValue=Ne}"
+                                Command="{Binding NoCommand}"
+                                ToolTip.Tip="Odgovor „Ne”. Esc ili klik van pitanja ga zatvara bez odgovora." />
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Panel>
 
         <!-- ===== Nagovještaj tokom prevlačenja fajla ===== -->
         <Border x:Name="DropOverlay" Classes="dropOverlay" IsVisible="False" IsHitTestVisible="False">

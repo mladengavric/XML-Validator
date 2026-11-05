@@ -1,22 +1,21 @@
 namespace XmlValidator.App.ViewModels;
 
 /// <summary>
-/// Pomak linija između dvije verzije teksta, za jednu izmjenu (kucanje, brisanje ili lijepljenje bloka).
-/// Izmijenjen dio se nalazi kao razlika između zajedničkog početka i zajedničkog kraja oba teksta.
-/// Prelom linije je <c>\r\n</c>, <c>\n</c> ili <c>\r</c>, kao kod XML čitača koji broji linije nalaza.
+/// Promjena redova između dvije verzije teksta, za jednu izmjenu (kucanje, brisanje ili lijepljenje bloka).
+/// Izmijenjen dio se prvo nalazi po znakovima (zajednički početak i kraj oba teksta), proširi na cijele redove,
+/// pa se unutar njega porede cijeli redovi. Tako se zna koji su redovi obrisani, a koji samo pomjereni.
+/// Prelom reda je <c>\r\n</c>, <c>\n</c> ili <c>\r</c>, kao kod XML čitača koji broji linije nalaza.
 /// </summary>
-/// <param name="StartLine">Prva linija (od 1) koju izmjena dira.</param>
-/// <param name="OldEndLine">Posljednja linija izmijenjenog dijela u starom tekstu.</param>
-/// <param name="NewEndLine">Posljednja linija izmijenjenog dijela u novom tekstu.</param>
-/// <param name="EndsAtLineStart">Izmijenjeni dio u starom tekstu se završava na početku linije
-/// (npr. umetnuti ili obrisani cijeli redovi), pa se i linija <paramref name="OldEndLine"/> samo pomjera.</param>
-internal sealed record TextLineShift(int StartLine, int OldEndLine, int NewEndLine, bool EndsAtLineStart)
+/// <param name="FirstLine">Prvi zamijenjeni red starog teksta (od 1).</param>
+/// <param name="RemovedLines">Broj redova starog teksta koji su zamijenjeni (obrisani ili izmijenjeni).</param>
+/// <param name="InsertedLines">Broj redova novog teksta koji su došli na njihovo mjesto.</param>
+internal sealed record TextLineShift(int FirstLine, int RemovedLines, int InsertedLines)
 {
-    /// <summary>Razlika u broju linija (negativna kad su linije obrisane).</summary>
-    public int Delta => NewEndLine - OldEndLine;
+    /// <summary>Razlika u broju redova (negativna kad su redovi obrisani).</summary>
+    public int Delta => InsertedLines - RemovedLines;
 
     /// <summary>
-    /// Pomak linija; <c>null</c> kad se broj linija nije promijenio (izmjena unutar linije ne pomjera nalaze).
+    /// Promjena redova; <c>null</c> kad se broj redova nije promijenio (izmjena unutar reda ne pomjera nalaze).
     /// </summary>
     public static TextLineShift? Compute(string previous, string current)
     {
@@ -24,6 +23,11 @@ internal sealed record TextLineShift(int StartLine, int OldEndLine, int NewEndLi
         ArgumentNullException.ThrowIfNull(current);
 
         var prefix = previous.AsSpan().CommonPrefixLength(current);
+        if (prefix == previous.Length && prefix == current.Length)
+        {
+            return null;
+        }
+
         var max = Math.Min(previous.Length, current.Length) - prefix;
         var suffix = 0;
         while (suffix < max && previous[previous.Length - 1 - suffix] == current[current.Length - 1 - suffix])
@@ -31,50 +35,97 @@ internal sealed record TextLineShift(int StartLine, int OldEndLine, int NewEndLi
             suffix++;
         }
 
-        // Prelom \r\n se ne cijepa: početak izmjene ide ispred \r, a kraj iza \n (u bilo kojem od dva teksta).
-        if (prefix > 0 && previous[prefix - 1] == '\r'
-            && ((prefix < previous.Length && previous[prefix] == '\n') || (prefix < current.Length && current[prefix] == '\n')))
+        // Prozor izmjene se širi na cijele redove u oba teksta (početak i kraj na granici reda).
+        var start = prefix;
+        while (start > 0 && !(AtLineBoundary(previous, start) && AtLineBoundary(current, start)))
         {
-            prefix--;
+            start--;
         }
 
-        if (suffix > 0 && previous[^suffix] == '\n'
-            && ((previous.Length - suffix - 1 >= prefix && previous[previous.Length - suffix - 1] == '\r')
-                || (current.Length - suffix - 1 >= prefix && current[current.Length - suffix - 1] == '\r')))
+        var oldEnd = previous.Length - suffix;
+        var newEnd = current.Length - suffix;
+        while (!(AtLineBoundary(previous, oldEnd) && AtLineBoundary(current, newEnd)))
         {
-            suffix--;
+            oldEnd++;
+            newEnd++;
         }
 
-        var removed = previous.AsSpan(prefix, previous.Length - prefix - suffix);
-        var inserted = current.AsSpan(prefix, current.Length - prefix - suffix);
-        var removedBreaks = CountBreaks(removed);
-        var insertedBreaks = CountBreaks(inserted);
-        if (removedBreaks == insertedBreaks)
+        var oldLines = SplitLines(previous.AsSpan(start, oldEnd - start));
+        var newLines = SplitLines(current.AsSpan(start, newEnd - start));
+
+        var same = 0;
+        while (same < oldLines.Count && same < newLines.Count && oldLines[same] == newLines[same])
+        {
+            same++;
+        }
+
+        var sameEnd = 0;
+        while (sameEnd < oldLines.Count - same && sameEnd < newLines.Count - same
+            && oldLines[oldLines.Count - 1 - sameEnd] == newLines[newLines.Count - 1 - sameEnd])
+        {
+            sameEnd++;
+        }
+
+        var removed = oldLines.Count - same - sameEnd;
+        var inserted = newLines.Count - same - sameEnd;
+        if (removed == inserted)
         {
             return null;
         }
 
-        var start = CountBreaks(previous.AsSpan(0, prefix)) + 1;
-        var end = previous.Length - suffix;
-        var endsAtLineStart = end == 0 || previous[end - 1] is '\n' or '\r';
-        return new TextLineShift(start, start + removedBreaks, start + insertedBreaks, endsAtLineStart);
+        var first = CountBreaks(previous.AsSpan(0, start)) + 1 + same;
+        return new TextLineShift(first, removed, inserted);
     }
 
-    /// <summary>Nova linija za liniju iz starog teksta (0 = nepoznata, ostaje 0).</summary>
+    /// <summary>Red je obrisan (zamijenjen je, a na njegovo mjesto nije došao nijedan red).</summary>
+    public bool IsDeleted(int line) =>
+        InsertedLines == 0 && line >= FirstLine && line < FirstLine + RemovedLines;
+
+    /// <summary>
+    /// Novi red za red starog teksta (0 = nepoznat, ostaje 0). Obrisan red ide na prvi red iza obrisanog dijela;
+    /// da li je obrisan, kaže <see cref="IsDeleted"/>.
+    /// </summary>
     public int Map(int line)
     {
-        if (line <= 0 || line < StartLine)
+        if (line <= 0 || line < FirstLine)
         {
             return line;
         }
 
-        if (line > OldEndLine || (line == OldEndLine && EndsAtLineStart))
+        if (line >= FirstLine + RemovedLines)
         {
             return line + Delta;
         }
 
-        // Linija u izmijenjenom dijelu: ostaje ako i dalje postoji, inače ide na kraj novog dijela.
-        return Math.Min(line, NewEndLine);
+        return InsertedLines == 0 ? FirstLine : FirstLine + Math.Min(line - FirstLine, InsertedLines - 1);
+    }
+
+    /// <summary>Pozicija je na početku reda (ili na kraju teksta); \r\n se ne cijepa.</summary>
+    private static bool AtLineBoundary(string text, int offset) =>
+        offset <= 0 || offset >= text.Length
+        || text[offset - 1] == '\n'
+        || (text[offset - 1] == '\r' && text[offset] != '\n');
+
+    /// <summary>Redovi zajedno sa prelomom (posljednji može biti bez preloma).</summary>
+    private static List<string> SplitLines(ReadOnlySpan<char> text)
+    {
+        var lines = new List<string>();
+        var begin = 0;
+        for (var i = 0; i < text.Length; i++)
+        {
+            if (IsBreakEnd(text, i))
+            {
+                lines.Add(text[begin..(i + 1)].ToString());
+                begin = i + 1;
+            }
+        }
+
+        if (begin < text.Length)
+        {
+            lines.Add(text[begin..].ToString());
+        }
+
+        return lines;
     }
 
     private static int CountBreaks(ReadOnlySpan<char> text)
@@ -82,20 +133,16 @@ internal sealed record TextLineShift(int StartLine, int OldEndLine, int NewEndLi
         var count = 0;
         for (var i = 0; i < text.Length; i++)
         {
-            if (text[i] == '\n')
+            if (IsBreakEnd(text, i))
             {
                 count++;
-            }
-            else if (text[i] == '\r')
-            {
-                count++;
-                if (i + 1 < text.Length && text[i + 1] == '\n')
-                {
-                    i++;
-                }
             }
         }
 
         return count;
     }
+
+    /// <summary>Znak na poziciji završava prelom reda (\n, ili \r koji nije dio \r\n).</summary>
+    private static bool IsBreakEnd(ReadOnlySpan<char> text, int i) =>
+        text[i] == '\n' || (text[i] == '\r' && (i + 1 >= text.Length || text[i + 1] != '\n'));
 }

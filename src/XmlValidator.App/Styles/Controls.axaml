@@ -13,7 +13,8 @@
     TabControl: main (+ StackPanel.tabHeader u zaglavlju taba, Border.attentionLine: trepćuća linija)
     Tab „Validacija”: Border.pane/paneHeader, Border.toolbar.tabbar, Border.banner.compact,
             Border.badge (+ accentSubtle/error), TextBlock.summary (+ ozbiljnost), TextBlock.warningText,
-            Border.toast (+ success: plutajuće obavještenje sa sjenkom),
+            Border.popupCard (+ success), Panel.popupScrim, StackPanel.popupCenter, Button.popupAction:
+            male kartice u sredini glavnog prozora (obavještenje, pitanje Da/Ne), iste veličine,
             ComboBox.field, GridSplitter.pane, DataGrid.issues (+ TextBlock.cell/number/message/fullMessage), ToolTip.wide,
             StackPanel.emptyPane, ProgressBar.busySmall, Button.toolbar.compact,
             ae|TextEditor.xml, ui|IssueMarkerMargin
@@ -503,6 +504,47 @@
         </Style.Animations>
     </Style>
 
+    <Style Selector="Border.attentionLine.error">
+        <Setter Property="Background" Value="{DynamicResource ErrorForegroundBrush}" />
+    </Style>
+
+    <!-- ========== Male kartice u sredini prozora (obavještenje, pitanje) ========== -->
+
+    <!-- Ista veličina, radijus, sjenka i položaj za sve male kartice -->
+    <Style Selector="Border.popupCard">
+        <Setter Property="Width" Value="{DynamicResource PopupCardWidth}" />
+        <Setter Property="Height" Value="{DynamicResource PopupCardHeight}" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Padding" Value="{DynamicResource PopupCardPadding}" />
+        <Setter Property="CornerRadius" Value="{DynamicResource RadiusL}" />
+        <Setter Property="BorderThickness" Value="{DynamicResource DividerThickness}" />
+        <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}" />
+        <Setter Property="BoxShadow" Value="{DynamicResource PopupShadow}" />
+    </Style>
+    <Style Selector="Border.popupCard.success">
+        <Setter Property="Background" Value="{DynamicResource SuccessBackgroundBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource SuccessBorderBrush}" />
+    </Style>
+    <Style Selector="Border.popupCard.success TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource SuccessForegroundBrush}" />
+    </Style>
+    <!-- Sadržaj obavještenja: ikonica i tekst u sredini kartice -->
+    <Style Selector="StackPanel.popupCenter">
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Spacing" Value="{DynamicResource SpaceM}" />
+    </Style>
+    <!-- Sloj ispod pitanja: blago zatamnjenje; pozadina mora postojati da bi hvatala klikove -->
+    <Style Selector="Panel.popupScrim">
+        <Setter Property="Background" Value="{DynamicResource PopupScrimBrush}" />
+    </Style>
+    <Style Selector="Button.popupAction">
+        <Setter Property="MinWidth" Value="{DynamicResource PopupButtonMinWidth}" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+    </Style>
+
     <!-- ========== Liste ========== -->
 
     <!-- Navigacija u Podešavanjima -->
@@ -597,27 +639,6 @@
         <Setter Property="MinHeight" Value="{DynamicResource ControlHeight}" />
         <Setter Property="CornerRadius" Value="{DynamicResource RadiusM}" />
         <Setter Property="VerticalAlignment" Value="Center" />
-    </Style>
-
-    <!-- Plutajuće obavještenje (toast) na sredini taba: zaobljena kartica sa sjenkom -->
-    <Style Selector="Border.toast">
-        <Setter Property="HorizontalAlignment" Value="Center" />
-        <Setter Property="VerticalAlignment" Value="Center" />
-        <Setter Property="Margin" Value="{DynamicResource ToastMargin}" />
-        <Setter Property="Padding" Value="{DynamicResource ToastPadding}" />
-        <Setter Property="CornerRadius" Value="{DynamicResource RadiusL}" />
-        <Setter Property="BorderThickness" Value="{DynamicResource DividerThickness}" />
-        <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}" />
-        <Setter Property="BoxShadow" Value="{DynamicResource ToastShadow}" />
-    </Style>
-    <Style Selector="Border.toast.success">
-        <Setter Property="Background" Value="{DynamicResource SuccessBackgroundBrush}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource SuccessBorderBrush}" />
-    </Style>
-    <Style Selector="Border.toast.success TextBlock">
-        <Setter Property="Foreground" Value="{DynamicResource SuccessForegroundBrush}" />
-        <Setter Property="FontSize" Value="{DynamicResource FontSizeSubtitle}" />
     </Style>
 
     <Style Selector="Border.banner.compact">

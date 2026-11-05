@@ -34,6 +34,81 @@ public partial class MainWindow : Window
 
         // Prečice aktivnog taba rade i kad je fokus van taba (traka, zaglavlje taba, statusna traka).
         AddHandler(KeyDownEvent, OnActiveTabKeyDown, RoutingStrategies.Bubble);
+
+        // Pitanje Da/Ne: klik van kartice i Esc ga zatvaraju; fokus ide na „Da” i vraća se poslije.
+        QuestionOverlay.AddHandler(PointerPressedEvent, OnQuestionOverlayPointerPressed, RoutingStrategies.Bubble, handledEventsToo: true);
+        AddHandler(KeyDownEvent, OnQuestionKeyDown, RoutingStrategies.Tunnel);
+        QuestionOverlay.PropertyChanged += OnQuestionOverlayPropertyChanged;
+    }
+
+    private IInputElement? _focusBeforeQuestion;
+
+    private QuestionViewModel? CurrentQuestion => (DataContext as MainWindowViewModel)?.Question;
+
+    private void OnQuestionOverlayPointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        // Klik nikad ne prolazi do kontrola ispod sloja; klik van kartice zatvara pitanje bez odgovora.
+        var insideCard = e.Source is Visual source
+            && (ReferenceEquals(source, QuestionCard) || QuestionCard.IsVisualAncestorOf(source));
+        if (!insideCard)
+        {
+            CurrentQuestion?.DismissCommand.Execute(null);
+            e.Handled = true;
+        }
+    }
+
+    private void OnQuestionKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (!QuestionOverlay.IsVisible || CurrentQuestion is not { } question)
+        {
+            return;
+        }
+
+        switch (e.Key)
+        {
+            case Key.Escape:
+                e.Handled = true;
+                question.DismissCommand.Execute(null);
+                break;
+
+            // Fokus ostaje u kartici: Tab/strelice prebacuju između „Da” i „Ne”.
+            case Key.Tab or Key.Left or Key.Right:
+                e.Handled = true;
+                (QuestionYesButton.IsFocused ? QuestionNoButton : QuestionYesButton).Focus(NavigationMethod.Tab);
+                break;
+
+            // Enter i razmak aktiviraju dugme u fokusu.
+            case Key.Enter or Key.Space:
+                break;
+
+            // Ostale prečice (Ctrl+O, F5…) ne stižu do prozora ispod pitanja.
+            default:
+                e.Handled = true;
+                break;
+        }
+    }
+
+    private void OnQuestionOverlayPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
+    {
+        if (e.Property != IsVisibleProperty)
+        {
+            return;
+        }
+
+        if (QuestionOverlay.IsVisible)
+        {
+            _focusBeforeQuestion = FocusManager?.GetFocusedElement();
+            Dispatcher.UIThread.Post(() => QuestionYesButton.Focus(NavigationMethod.Tab), DispatcherPriority.Input);
+        }
+        else
+        {
+            var previous = _focusBeforeQuestion;
+            _focusBeforeQuestion = null;
+            if (previous is InputElement { IsEffectivelyVisible: true, IsEffectivelyEnabled: true } element)
+            {
+                element.Focus();
+            }
+        }
     }
 
     /// <summary>Prikaz aktivnog taba (ako je fajl otvoren), za prečice tog taba.</summary>

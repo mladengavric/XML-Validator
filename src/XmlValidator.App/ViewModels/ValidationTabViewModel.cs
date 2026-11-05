@@ -442,7 +442,10 @@ public sealed partial class ValidationTabViewModel : DocumentTabViewModel, IDisp
         ShiftIssueLines(previous, value);
     }
 
-    /// <summary>Pomjera linije nalaza prema izmjeni teksta (npr. obrisan red stavke iznad nalaza).</summary>
+    /// <summary>
+    /// Nalazi prate izmjenu teksta: nalazi u obrisanim redovima nestaju iz liste (i iz brojača grešaka), a
+    /// nalazi ispod izmjene dobijaju nove brojeve linija. Ostali nalazi važe do nove validacije (F5).
+    /// </summary>
     private void ShiftIssueLines(string previous, string current)
     {
         if (Issues.Count == 0 || TextLineShift.Compute(previous, current) is not { } shift)
@@ -450,21 +453,63 @@ public sealed partial class ValidationTabViewModel : DocumentTabViewModel, IDisp
             return;
         }
 
-        var changed = false;
+        var removed = Issues.Where(r => r.HasPosition && shift.IsDeleted(r.Line)).ToList();
         foreach (var row in Issues)
         {
-            var line = shift.Map(row.Line);
-            if (line != row.Line)
-            {
-                row.Line = line;
-                changed = true;
-            }
+            row.Line = shift.Map(row.Line);
         }
 
-        if (changed)
+        if (removed.Count > 0)
         {
-            IssueLinesShifted?.Invoke(this, EventArgs.Empty);
+            RemoveIssues(removed);
         }
+
+        IssueLinesShifted?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>Uklanja nalaze iz liste i ažurira brojače, sažetak i izvještaj za izvoz.</summary>
+    private void RemoveIssues(IReadOnlyList<ValidationIssueRow> rows)
+    {
+        if (SelectedIssue is { } selected && rows.Contains(selected))
+        {
+            SelectedIssue = null;
+        }
+
+        foreach (var row in rows)
+        {
+            Issues.Remove(row);
+        }
+
+        if (Result is not { } result)
+        {
+            return;
+        }
+
+        var gone = rows.Select(r => r.Issue).ToHashSet();
+        var remaining = result.Issues.Where(i => !gone.Contains(i)).ToList();
+        var errors = Math.Max(0, result.ErrorCount - rows.Count(r => r.IsError));
+        var remainingErrors = remaining.Where(i => i.Severity == ValidationSeverity.Error).ToList();
+        var updated = result with
+        {
+            Issues = remaining,
+            ErrorCount = errors,
+            WarningCount = Math.Max(0, result.WarningCount - rows.Count(r => !r.IsError)),
+            InvoicesWithErrors = result.IsTruncated
+                ? result.InvoicesWithErrors
+                : remainingErrors.Select(i => i.InvoiceOrdinal).OfType<int>().Distinct().Count(),
+            ErrorsOutsideInvoices = result.IsTruncated
+                ? result.ErrorsOutsideInvoices
+                : remainingErrors.Count(i => i.InvoiceOrdinal is null),
+        };
+
+        Result = updated;
+        if (_report is not null)
+        {
+            _report = _report with { Result = updated };
+        }
+
+        (SummaryText, SummarySeverity) = Summarize(updated);
+        OnPropertyChanged(nameof(HasIssues));
     }
 
     private async Task RunValidationAsync()
