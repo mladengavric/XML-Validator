@@ -50,7 +50,7 @@
                                 ToolTip.Tip="Zatvori fajl (Ctrl+W)">
                             <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
                                 <PathIcon Data="{StaticResource IconCloseFile}" />
-                                <TextBlock Text="Zatvori" />
+                                <TextBlock Text="Zatvori XML" />
                             </StackPanel>
                         </Button>
                         <Border Classes="divider" />

@@ -27,6 +27,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IDisposable
     private readonly IAppLog _log;
     private Task<bool> _lastOpenInValidation = Task.FromResult(false);
     private Task _lastCleaningCheck = Task.CompletedTask;
+    private Task _lastTabSync = Task.CompletedTask;
     private CancellationTokenSource? _cleaningCheckCts;
 
     /// <summary>Tab „Validacija” prikazuje očišćen fajl sačuvan iz taba „Čišćenje faktura” (odluke su donesene).</summary>
@@ -517,6 +518,51 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IDisposable
         _handedOverRevision = Validation.TextRevision;
         SelectedTabIndex = 1;
         SetStatus("Sadržaj iz editora je predat na čišćenje; očišćen fajl sačuvajte dugmetom „Sačuvaj XML” na tabu „Čišćenje faktura”.", MessageSeverity.Info);
+    }
+
+    /// <summary>Posljednje usklađivanje taba „Čišćenje faktura” sa editorom; za testove.</summary>
+    internal Task WhenTabSyncCompletedAsync() => _lastTabSync;
+
+    partial void OnSelectedTabIndexChanged(int value)
+    {
+        if (value == 1)
+        {
+            _lastTabSync = SyncCleaningWithEditorAsync();
+        }
+    }
+
+    /// <summary>
+    /// Pri prelasku na tab „Čišćenje faktura”: ako se sadržaj u editoru taba „Validacija” (npr. ispravke) razlikuje
+    /// od sadržaja koji čišćenje analizira, čišćenje ponovo analizira sadržaj iz editora. Tako očišćen fajl sadrži
+    /// ispravke i bez prethodnog „Sačuvaj XML”. Ulazni fajl se ne mijenja.
+    /// </summary>
+    private async Task SyncCleaningWithEditorAsync()
+    {
+        var document = Validation.Document;
+        if (document is null || _validationShowsCleanedOutput || Validation.IsReadOnly
+            || Cleaning.Document is not { } analyzed || !AppSettings.PathComparer.Equals(analyzed.Path, document.Path)
+            || Validation.GetSaveProblem() is not null || Validation.GetContentToSave() is not { } content
+            || content.AsSpan().SequenceEqual(analyzed.Content))
+        {
+            return;
+        }
+
+        if (!await ConfirmDiscardAsync(validation: false, Cleaning.HasUnsavedChanges))
+        {
+            SetStatus("Tab „Čišćenje faktura” i dalje prikazuje analizu prethodnog sadržaja, bez izmjena iz editora.", MessageSeverity.Warning);
+            return;
+        }
+
+        if (Validation.IsModified)
+        {
+            Cleaning.SetEditedDocument(new OpenedDocument(document.Path, content));
+            _handedOverRevision = Validation.TextRevision;
+            SetStatus("Tab „Čišćenje faktura” analizira sadržaj iz editora, sa izmjenama iz taba „Validacija”.", MessageSeverity.Info);
+        }
+        else
+        {
+            Cleaning.SetDocument(document);
+        }
     }
 
     /// <summary>„1 faktura”, „3 fakture”, „5 faktura” (srpska množina).</summary>
