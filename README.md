@@ -112,7 +112,6 @@ skripte) u [`docs/odstupanja-od-clean-py.md`](docs/odstupanja-od-clean-py.md).
 | F1 | O programu (verzija, licence, sve prečice) |
 | F5 | Validiraj / Analiziraj (u aktivnom tabu) |
 | F8 / Shift+F8 | Sljedeća / prethodna greška |
-| Ctrl+D | Pregled izmjena (čišćenje) |
 | Ctrl+S | Sačuvaj očišćeni fajl |
 | Ctrl+R | Sačuvaj izvještaj |
 

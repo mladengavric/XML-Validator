@@ -44,7 +44,6 @@ public static class KeyboardShortcuts
         new(Cleaning, "F5", "Analiziraj"),
         new(Cleaning, "Ctrl+F", "Pretraga po broju i JMB-u"),
         new(Cleaning, "Delete", "Obriši označene fakture (kandidate)"),
-        new(Cleaning, "Ctrl+D", "Pregled izmjena"),
         new(Cleaning, "Ctrl+S", "Sačuvaj očišćeni fajl"),
         new(Cleaning, "Ctrl+R", "Sačuvaj izvještaj"),
         new(Cleaning, "Ctrl+Enter", "Primijeni izmjenu bloka (u editoru)"),

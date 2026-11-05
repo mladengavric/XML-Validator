@@ -242,6 +242,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IDisposable
             ResetCleaningAttention();
             Validation.SetDocument(document);
             Cleaning.SetDocument(document);
+            SelectedTabIndex = 0; // novi XML se uvijek otvara u tabu „Validacija”
             _settings.Update(s => s.WithRecentFile(fullPath));
             SetStatus($"Otvoren fajl „{fileName}” ({document.SizeText}).", MessageSeverity.Success);
             return true;

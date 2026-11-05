@@ -70,7 +70,8 @@ public sealed class ChangePreviewRow
 
 /// <summary>
 /// Pregled razlika između ulaza i izlaza (blokovi koji se brišu, mijenjaju ručno ili automatski popravljaju).
-/// Prije čuvanja je potvrda („Sačuvaj” / „Otkaži”), a iz komande „Pregled izmjena” samo prikaz („Zatvori”).
+/// Prikazuje se prije čuvanja očišćenog fajla, kao potvrda („Sačuvaj” / „Otkaži”); režim samo za prikaz
+/// („Zatvori”) se više ne koristi u tabu, ali ga prozor i dalje podržava.
 /// </summary>
 public sealed partial class ChangesPreviewViewModel : ViewModelBase
 {

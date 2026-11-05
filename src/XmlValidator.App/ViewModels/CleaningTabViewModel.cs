@@ -635,34 +635,6 @@ public sealed partial class CleaningTabViewModel : DocumentTabViewModel, IDispos
         }
     }
 
-    /// <summary>„Pregled izmjena” (Ctrl+D): lista blokova koji se brišu, mijenjaju ili popravljaju, bez čuvanja.</summary>
-    [RelayCommand(CanExecute = nameof(CanSaveOutput))]
-    private async Task PreviewChangesAsync()
-    {
-        var document = Document;
-        if (_session is not { } session || document is null)
-        {
-            return;
-        }
-
-        IsSaving = true;
-        NotifyCommands();
-        try
-        {
-            var result = await GetCheckedResultAsync(session);
-            if (result is not null)
-            {
-                await _dialogs.ShowChangesPreviewAsync(
-                    new ChangesPreviewViewModel(CleaningChangeSet.Create(result.Output.Blocks), document.FileName, result.Validation, isConfirmation: false));
-            }
-        }
-        finally
-        {
-            IsSaving = false;
-            NotifyCommands();
-        }
-    }
-
     private bool CanSaveReport() => IsInteractive && EditingRow is null;
 
     /// <summary>Čuva izvještaj u <c>.txt</c> ili <c>.csv</c> (po ekstenziji); JMB se ne maskira.</summary>
@@ -1387,7 +1359,6 @@ public sealed partial class CleaningTabViewModel : DocumentTabViewModel, IDispos
         CancelEditCommand.NotifyCanExecuteChanged();
         RevertEditCommand.NotifyCanExecuteChanged();
         SaveOutputCommand.NotifyCanExecuteChanged();
-        PreviewChangesCommand.NotifyCanExecuteChanged();
         SaveReportCommand.NotifyCanExecuteChanged();
     }
 

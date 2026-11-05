@@ -157,7 +157,7 @@ public sealed class ShmpCleaningRule : ICleaningRule
                 var raw = data.Groups[g];
                 if (!ServiceGroup.TryParse(raw, out var value))
                 {
-                    warnings[i].Add($"Neispravna vrijednost usluga-grupa „{raw}” (nije cijeli broj 0–65535); stavka se ne računa kao grupa {TargetGroup}.");
+                    warnings[i].Add($"Neispravna vrijednost usluga-grupa „{raw}”; stavka se ne računa kao grupa {TargetGroup}.");
                     continue;
                 }
 

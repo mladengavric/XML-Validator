@@ -17,7 +17,6 @@
          Ctrl+F u CleaningTabView.axaml.cs, Delete samo u tabeli faktura, Ctrl+Enter/Esc samo u editoru bloka. -->
     <UserControl.KeyBindings>
         <KeyBinding Gesture="Ctrl+S" Command="{Binding SaveOutputCommand}" />
-        <KeyBinding Gesture="Ctrl+D" Command="{Binding PreviewChangesCommand}" />
         <KeyBinding Gesture="Ctrl+R" Command="{Binding SaveReportCommand}" />
     </UserControl.KeyBindings>
 
@@ -144,13 +143,6 @@
                         <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
                             <PathIcon Data="{StaticResource IconReport}" />
                             <TextBlock Text="Sačuvaj izvještaj" />
-                        </StackPanel>
-                    </Button>
-                    <Button x:Name="PreviewChangesButton" Command="{Binding PreviewChangesCommand}"
-                            ToolTip.Tip="Pregled blokova koji se brišu, ručno mijenjaju ili automatski popravljaju, uz provjeru prema šemi; ništa se ne čuva (Ctrl+D)">
-                        <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpaceS}">
-                            <PathIcon Data="{StaticResource IconCompare}" />
-                            <TextBlock Text="Pregled izmjena" />
                         </StackPanel>
                     </Button>
                     <Button x:Name="SaveOutputButton" Classes="primary" Command="{Binding SaveOutputCommand}"
